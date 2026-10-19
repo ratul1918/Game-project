@@ -15,6 +15,12 @@ server/target/
 [Bb]uilds/
 [Ll]ogs/
 [Uu]ser[Ss]ettings/
+client/Library/
+client/Temp/
+client/Logs/
+client/obj/
+client/UserSettings/
+client/Build/
 MemoryCaptures/
 Recordings/
 *.csproj
