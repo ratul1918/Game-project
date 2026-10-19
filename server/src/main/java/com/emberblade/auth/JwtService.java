@@ -2,7 +2,6 @@ package com.emberblade.auth;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import java.time.Duration;
 import java.time.Instant;
@@ -19,9 +18,7 @@ public class JwtService {
     public JwtService(
             @Value("${emberblade.jwt.secret}") String secret,
             @Value("${emberblade.jwt.expiration-minutes}") long expirationMinutes) {
-        byte[] encoded = Decoders.BASE64URL.isDecodable(secret)
-                ? Decoders.BASE64URL.decode(secret)
-                : secret.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] encoded = secret.getBytes(java.nio.charset.StandardCharsets.UTF_8);
         if (encoded.length < 32) {
             throw new IllegalArgumentException("JWT secret must be at least 32 bytes");
         }
