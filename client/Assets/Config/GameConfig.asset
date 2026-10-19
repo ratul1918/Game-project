@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ce8f28eb8bd4408bb3a06252e2a5dd6, type: 3}
+  m_Name: GameConfig
+  m_EditorClassIdentifier: Assembly-CSharp::EmberBlade.Config.GameConfig
+  playerMoveSpeed: 5
+  playerRotationSpeed: 12
+  cameraDistance: 6
+  cameraHeight: 2.5
+  cameraLookSensitivity: 0.12
+  playerMaxHealth: 100
+  lightAttackDamage: 25
+  lightAttackCooldown: 0.45
+  lightAttackRange: 1.6
+  lightAttackRadius: 0.65
+  dodgeDuration: 0.35
+  dodgeCooldown: 1.2
+  dodgeDistance: 3
+  parryWindow: 0.25
+  parryCooldown: 0.6
+  parryEmberGain: 20
+  emberMax: 100
+  emberEmpoweredDamageMultiplier: 2
+  scoutHealth: 45
+  scoutSpeed: 4
+  scoutDamage: 8
+  scoutAttackRange: 1.35
+  scoutAttackCooldown: 1.4
+  skirmisherHealth: 80
+  skirmisherSpeed: 2.5
+  skirmisherDamage: 14
+  skirmisherAttackRange: 1.5
+  skirmisherAttackCooldown: 2
+  skirmisherWindup: 0.4
+  enemyChaseRange: 18
+  scoutCount: 3
+  skirmisherCount: 2
