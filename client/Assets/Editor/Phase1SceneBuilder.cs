@@ -168,6 +168,7 @@ public static class Phase1SceneBuilder
     private static Canvas ConfigureCanvas(Canvas canvas)
     {
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        GetOrAddComponent<RectTransform>(canvas.gameObject);
         CanvasScaler scaler = GetOrAddComponent<CanvasScaler>(canvas.gameObject);
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920f, 1080f);
@@ -190,6 +191,7 @@ public static class Phase1SceneBuilder
 
     private static void ConfigurePanel(GameObject panel, Vector2 size, Vector2 pivot)
     {
+        GetOrAddComponent<RectTransform>(panel);
         Image image = GetOrAddComponent<Image>(panel);
         image.color = new Color(0.04f, 0.04f, 0.06f, 0.94f);
         RectTransform rect = panel.GetComponent<RectTransform>();
@@ -206,7 +208,12 @@ public static class Phase1SceneBuilder
         GameObject textObject = existing != null ? existing.gameObject : new GameObject(name);
         if (existing == null)
         {
+            textObject.AddComponent<RectTransform>();
             textObject.transform.SetParent(parent, false);
+        }
+        else
+        {
+            GetOrAddComponent<RectTransform>(textObject);
         }
 
         TMP_Text text = GetOrAddComponent<TextMeshProUGUI>(textObject);
@@ -223,7 +230,12 @@ public static class Phase1SceneBuilder
         GameObject inputObject = existing != null ? existing.gameObject : new GameObject(name);
         if (existing == null)
         {
+            inputObject.AddComponent<RectTransform>();
             inputObject.transform.SetParent(parent, false);
+        }
+        else
+        {
+            GetOrAddComponent<RectTransform>(inputObject);
         }
 
         Image background = GetOrAddComponent<Image>(inputObject);
@@ -246,7 +258,12 @@ public static class Phase1SceneBuilder
         GameObject buttonObject = existing != null ? existing.gameObject : new GameObject(name);
         if (existing == null)
         {
+            buttonObject.AddComponent<RectTransform>();
             buttonObject.transform.SetParent(parent, false);
+        }
+        else
+        {
+            GetOrAddComponent<RectTransform>(buttonObject);
         }
 
         Image image = GetOrAddComponent<Image>(buttonObject);
@@ -265,7 +282,7 @@ public static class Phase1SceneBuilder
             return child;
         }
 
-        GameObject created = new GameObject(name);
+        GameObject created = new GameObject(name, typeof(RectTransform));
         created.transform.SetParent(parent, false);
         return created.transform;
     }
