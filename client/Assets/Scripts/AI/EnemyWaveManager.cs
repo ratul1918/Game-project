@@ -58,6 +58,19 @@ namespace EmberBlade.AI
             SpawnWave();
         }
 
+        public void ResetWave()
+        {
+            foreach (EnemyController enemy in new List<EnemyController>(aliveEnemies))
+            {
+                if (enemy != null)
+                {
+                    Destroy(enemy.gameObject);
+                }
+            }
+            aliveEnemies.Clear();
+            countChanged?.Invoke(0);
+        }
+
         private void SpawnWave()
         {
             for (int index = 0; index < config.scoutCount; index++)
