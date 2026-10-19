@@ -60,5 +60,9 @@ namespace EmberBlade.Config
         public int barricadeTrapDamage = 25;
         public float barricadeTrapCooldown = 1f;
         public float barricadePlacementRange = 12f;
+
+        [Header("Missions")]
+        public float dialogueInteractionRange = 3f;
+        public float missionRestartDelay = 2f;
     }
 }

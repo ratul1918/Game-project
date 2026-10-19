@@ -20,6 +20,11 @@ namespace EmberBlade.UI
                 Debug.LogWarning("HudController requires an active NetworkManager.");
                 return;
             }
+            if (threatText == null || alertBanner == null || alertText == null)
+            {
+                Debug.LogError($"HudController on '{name}' is missing threatText, alertBanner, or alertText.", this);
+                return;
+            }
 
             NetworkManager.Instance.WarStateDeltaReceived += UpdateThreat;
             NetworkManager.Instance.RaidAlertReceived += ShowRaidAlert;
@@ -39,11 +44,18 @@ namespace EmberBlade.UI
 
         private void UpdateThreat(NetworkManager.WarStateDelta state)
         {
-            threatText.text = $"Emberfield threat: {state.value}";
+            if (threatText != null)
+            {
+                threatText.text = $"Emberfield threat: {state.value}";
+            }
         }
 
         private void ShowRaidAlert(NetworkManager.RaidAlert alert)
         {
+            if (alertText == null || alertBanner == null)
+            {
+                return;
+            }
             alertText.text = alert.message;
             alertBanner.SetActive(true);
             if (hideAlertCoroutine != null)

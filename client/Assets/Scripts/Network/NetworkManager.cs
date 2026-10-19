@@ -12,11 +12,15 @@ namespace EmberBlade.Network
         [SerializeField] private string websocketUrl = "ws://localhost:8080/ws";
 
         private WebSocket socket;
+        private WebSocketOpenEventHandler openHandler;
+        private WebSocketErrorEventHandler errorHandler;
+        private WebSocketCloseEventHandler closeHandler;
+        private WebSocketMessageEventHandler messageHandler;
 
         public event Action<WarStateDelta> WarStateDeltaReceived;
         public event Action<RaidAlert> RaidAlertReceived;
 
-        private async void Awake()
+        private void Awake()
         {
             if (Instance != null && Instance != this)
             {
@@ -38,14 +42,19 @@ namespace EmberBlade.Network
 
             if (socket != null)
             {
+                DetachSocketHandlers();
                 await socket.Close();
             }
 
             socket = new WebSocket($"{websocketUrl}?token={Uri.EscapeDataString(token)}");
-            socket.OnOpen += () => Debug.Log("Connected to Ember Blade server.");
-            socket.OnError += error => Debug.LogWarning($"Ember Blade WebSocket error: {error}");
-            socket.OnClose += code => Debug.Log($"Ember Blade WebSocket disconnected: {code}");
-            socket.OnMessage += HandleMessage;
+            openHandler = () => Debug.Log("Connected to Ember Blade server.");
+            errorHandler = error => Debug.LogWarning($"Ember Blade WebSocket error: {error}");
+            closeHandler = code => Debug.Log($"Ember Blade WebSocket disconnected: {code}");
+            messageHandler = HandleMessage;
+            socket.OnOpen += openHandler;
+            socket.OnError += errorHandler;
+            socket.OnClose += closeHandler;
+            socket.OnMessage += messageHandler;
 
             try
             {
@@ -94,8 +103,26 @@ namespace EmberBlade.Network
         {
             if (socket != null)
             {
+                DetachSocketHandlers();
                 await socket.Close();
             }
+            if (Instance == this)
+            {
+                Instance = null;
+            }
+        }
+
+        private void DetachSocketHandlers()
+        {
+            if (socket == null)
+            {
+                return;
+            }
+
+            socket.OnOpen -= openHandler;
+            socket.OnError -= errorHandler;
+            socket.OnClose -= closeHandler;
+            socket.OnMessage -= messageHandler;
         }
 
         [Serializable]

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using EmberBlade.Config;
+using EmberBlade.Missions;
 using EmberBlade.Combat;
 
 namespace EmberBlade.Player
@@ -24,6 +25,10 @@ namespace EmberBlade.Player
         private void Update()
         {
             if (health != null && health.IsDead)
+            {
+                return;
+            }
+            if (DialogueUI.IsAnyDialogueOpen)
             {
                 return;
             }

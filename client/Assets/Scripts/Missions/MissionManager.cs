@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using EmberBlade.AI;
 using EmberBlade.Combat;
+using EmberBlade.Config;
 
 namespace EmberBlade.Missions
 {
@@ -16,16 +18,19 @@ namespace EmberBlade.Missions
         [SerializeField] private GameObject royalRider;
         [SerializeField] private TMP_Text objectiveText;
         [SerializeField] private TMP_Text resultText;
+        [SerializeField] private GameConfig config;
 
         private readonly string[] harvestDialogues =
         {
             "tomas", "mara", "villager-one", "villager-two", "lira"
         };
+        private readonly HashSet<string> completedDialogueIds = new();
         private int completedHarvestDialogues;
         private bool raidStarted;
         private bool mission2Restarting;
         private int raidWave;
         private string currentMission;
+        private bool initialized;
 
         public event Action<string> OnMissionStarted;
         public event Action<string, bool> OnMissionCompleted;
@@ -40,8 +45,15 @@ namespace EmberBlade.Missions
             GameObject smoke,
             GameObject rider,
             TMP_Text objective,
-            TMP_Text result)
+            TMP_Text result,
+            GameConfig gameConfig)
         {
+            if (initialized)
+            {
+                Debug.LogError($"MissionManager '{name}' was initialized more than once.", this);
+                return;
+            }
+            initialized = true;
             dialogueUI = dialogue;
             barricadeManager = barricade;
             enemyWaveManager = enemies;
@@ -50,6 +62,7 @@ namespace EmberBlade.Missions
             royalRider = rider;
             objectiveText = objective;
             resultText = result;
+            config = gameConfig;
             dialogueUI.OnDialogueCompleted += HandleDialogueCompleted;
             playerHealth.OnDied += HandlePlayerDied;
             barricadeManager.enabled = false;
@@ -80,7 +93,7 @@ namespace EmberBlade.Missions
                 else if (raidWave == 2)
                 {
                     CompleteMission("1.2", true);
-                    StartMission("1.3");
+                    StartMission(MissionSequence.Next("1.2"));
                 }
             }
         }
@@ -92,6 +105,7 @@ namespace EmberBlade.Missions
             if (missionId == "1.1")
             {
                 completedHarvestDialogues = 0;
+                completedDialogueIds.Clear();
                 objectiveText.text = "Speak with Tomas, Mara, the two villagers, and Lira.";
                 resultText.text = string.Empty;
             }
@@ -99,6 +113,7 @@ namespace EmberBlade.Missions
             {
                 raidStarted = false;
                 raidWave = 0;
+                barricadeManager.ResetBuildPhase();
                 barricadeManager.enabled = true;
                 objectiveText.text = "Build defenses before the raid.";
             }
@@ -113,12 +128,15 @@ namespace EmberBlade.Missions
         {
             if (currentMission == "1.1")
             {
-                for (int index = 0; index < harvestDialogues.Length; index++)
+                if (completedDialogueIds.Add(dialogueId))
                 {
-                    if (harvestDialogues[index] == dialogueId)
+                    for (int index = 0; index < harvestDialogues.Length; index++)
                     {
-                        completedHarvestDialogues++;
-                        break;
+                        if (harvestDialogues[index] == dialogueId)
+                        {
+                            completedHarvestDialogues++;
+                            break;
+                        }
                     }
                 }
 
@@ -126,7 +144,7 @@ namespace EmberBlade.Missions
                 {
                     smokeObject.SetActive(true);
                     CompleteMission("1.1", true);
-                    StartMission("1.2");
+                    StartMission(MissionSequence.Next("1.1"));
                 }
             }
             else if (currentMission == "1.3" && dialogueId == "royal-rider")
@@ -145,7 +163,7 @@ namespace EmberBlade.Missions
                 raidWave = 0;
                 CompleteMission("1.2", false);
                 resultText.text = "Mission failed. Restarting...";
-                Invoke(nameof(RestartMission2), 2f);
+                Invoke(nameof(RestartMission2), config != null ? config.missionRestartDelay : 2f);
             }
         }
 
@@ -155,6 +173,19 @@ namespace EmberBlade.Missions
             enemyWaveManager.ResetWave();
             playerHealth.Initialize(playerHealth.MaxHealth);
             StartMission("1.2");
+        }
+
+        private void OnDisable()
+        {
+            CancelInvoke(nameof(RestartMission2));
+            if (dialogueUI != null)
+            {
+                dialogueUI.OnDialogueCompleted -= HandleDialogueCompleted;
+            }
+            if (playerHealth != null)
+            {
+                playerHealth.OnDied -= HandlePlayerDied;
+            }
         }
 
         private void CompleteMission(string missionId, bool success)

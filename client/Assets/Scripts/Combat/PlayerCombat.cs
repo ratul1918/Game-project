@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using EmberBlade.Config;
 using EmberBlade.AI;
+using EmberBlade.Missions;
 
 namespace EmberBlade.Combat
 {
@@ -39,6 +40,11 @@ namespace EmberBlade.Combat
 
         private void Update()
         {
+            if (DialogueUI.IsAnyDialogueOpen)
+            {
+                return;
+            }
+
             if (Keyboard.current != null && Keyboard.current.leftShiftKey.wasPressedThisFrame)
             {
                 TryDodge();

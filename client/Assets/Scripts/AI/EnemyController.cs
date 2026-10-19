@@ -46,6 +46,14 @@ namespace EmberBlade.AI
             agent = GetComponent<NavMeshAgent>();
             health = GetComponent<Health>();
             bodyRenderer ??= GetComponentInChildren<Renderer>();
+            if (config == null || player == null || playerCombat == null
+                || agent == null || health == null)
+            {
+                Debug.LogError($"EnemyController on '{name}' is missing config, player, playerCombat, " +
+                               "NavMeshAgent, or Health.", this);
+                enabled = false;
+                return;
+            }
             baseColor = bodyRenderer != null ? bodyRenderer.material.color : Color.white;
             health.Initialize(isSkirmisher ? config.skirmisherHealth : config.scoutHealth);
             health.OnDied += Die;

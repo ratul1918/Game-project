@@ -2,6 +2,7 @@ using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using EmberBlade.Config;
 
 namespace EmberBlade.Missions
 {
@@ -12,7 +13,7 @@ namespace EmberBlade.Missions
         [SerializeField] private TMP_Text speakerText;
         [SerializeField] private TMP_Text dialogueText;
         [SerializeField] private TMP_Text promptText;
-        [SerializeField] private float interactionRange = 3f;
+        [SerializeField] private GameConfig config;
 
         private DialogueInteractable nearby;
         private DialogueData activeDialogue;
@@ -26,15 +27,19 @@ namespace EmberBlade.Missions
             DialogueInteractable[] targets,
             TMP_Text speaker,
             TMP_Text dialogue,
-            TMP_Text prompt)
+            TMP_Text prompt,
+            GameConfig gameConfig)
         {
             player = playerTarget;
             interactables = targets;
             speakerText = speaker;
             dialogueText = dialogue;
             promptText = prompt;
+            config = gameConfig;
             Hide();
         }
+
+        public static bool IsAnyDialogueOpen { get; private set; }
 
         private void Update()
         {
@@ -65,7 +70,7 @@ namespace EmberBlade.Missions
         private DialogueInteractable FindNearby()
         {
             DialogueInteractable closest = null;
-            float closestDistance = interactionRange;
+            float closestDistance = config != null ? config.dialogueInteractionRange : 3f;
             foreach (DialogueInteractable target in interactables ?? Array.Empty<DialogueInteractable>())
             {
                 if (target == null || target.Dialogue == null)
@@ -88,6 +93,7 @@ namespace EmberBlade.Missions
             activeDialogue = target.Dialogue;
             lineIndex = 0;
             showing = true;
+            IsAnyDialogueOpen = true;
             ShowNextLine();
         }
 
@@ -117,6 +123,7 @@ namespace EmberBlade.Missions
         {
             string id = activeDialogue.dialogueId;
             showing = false;
+            IsAnyDialogueOpen = false;
             activeDialogue = null;
             speakerText.text = string.Empty;
             dialogueText.text = string.Empty;
@@ -126,9 +133,15 @@ namespace EmberBlade.Missions
         private void Hide()
         {
             showing = false;
+            IsAnyDialogueOpen = false;
             if (speakerText != null) speakerText.text = string.Empty;
             if (dialogueText != null) dialogueText.text = string.Empty;
             if (promptText != null) promptText.text = string.Empty;
+        }
+
+        private void OnDisable()
+        {
+            IsAnyDialogueOpen = false;
         }
     }
 }

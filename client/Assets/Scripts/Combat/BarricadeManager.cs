@@ -31,6 +31,27 @@ namespace EmberBlade.Combat
 
         public bool BuildPhaseActive => buildPhase;
 
+        public void ResetBuildPhase()
+        {
+            foreach (GameObject piece in placedPieces)
+            {
+                if (piece != null)
+                {
+                    Destroy(piece);
+                }
+            }
+            placedPieces.Clear();
+            wallsPlaced = 0;
+            trapsPlaced = 0;
+            remainingBuildTime = config != null ? config.barricadeBuildTime : 0f;
+            buildPhase = true;
+            if (ghost != null)
+            {
+                ghost.SetActive(true);
+            }
+            UpdateHud();
+        }
+
         public void Initialize(
             GameConfig gameConfig,
             Camera camera,
@@ -51,6 +72,14 @@ namespace EmberBlade.Combat
             wallMaterial = wall;
             trapMaterial = trap;
             enemyWaveManager = enemies;
+            if (config == null || placementCamera == null || placementRoot == null
+                || timerText == null || inventoryText == null || instructionText == null
+                || wallMaterial == null || trapMaterial == null || enemyWaveManager == null)
+            {
+                Debug.LogError($"BarricadeManager on '{name}' is missing a required serialized reference.", this);
+                enabled = false;
+                return;
+            }
             remainingBuildTime = config.barricadeBuildTime;
             EnsureGhost();
             UpdateHud();
@@ -151,8 +180,7 @@ namespace EmberBlade.Combat
             }
 
             bool placingWall = selectedType == BarricadePieceType.Wall;
-            if (placingWall && wallsPlaced >= config.maxBarricadeWalls
-                || !placingWall && trapsPlaced >= config.maxBarricadeTraps)
+            if (!CanPlaceWithinLimit(selectedType, wallsPlaced, trapsPlaced, config))
             {
                 return;
             }
@@ -219,6 +247,10 @@ namespace EmberBlade.Combat
 
         private void StartRaid()
         {
+            if (!buildPhase)
+            {
+                return;
+            }
             buildPhase = false;
             ghost.SetActive(false);
             BarricadeResult.Record(wallsPlaced, trapsPlaced);
@@ -241,6 +273,22 @@ namespace EmberBlade.Combat
                 }
             }
             return true;
+        }
+
+        public static bool CanPlaceWithinLimit(
+            BarricadePieceType type,
+            int currentWalls,
+            int currentTraps,
+            GameConfig gameConfig)
+        {
+            if (gameConfig == null)
+            {
+                return false;
+            }
+
+            return type == BarricadePieceType.Wall
+                ? currentWalls < gameConfig.maxBarricadeWalls
+                : currentTraps < gameConfig.maxBarricadeTraps;
         }
 
         private Vector3 Snap(Vector3 point)

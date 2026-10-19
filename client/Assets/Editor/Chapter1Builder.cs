@@ -64,15 +64,20 @@ public static class Chapter1Builder
 
         List<DialogueInteractable> targets = new();
         targets.Add(CreateNpc("Tomas", new Vector3(-6f, 1f, 0f), Color.blue,
-            CreateDialogue("TomasDialogue", "tomas", "Tomas", "I want to be a soldier like you.")));
+            CreateDialogue("TomasDialogue", "tomas", "Tomas", "I want to be a soldier like you."))
+            .GetComponent<DialogueInteractable>());
         targets.Add(CreateNpc("Mara", new Vector3(-3f, 1f, 2f), Color.magenta,
-            CreateDialogue("MaraDialogue", "mara", "Mara", "The smoke on the horizon worries me.")));
+            CreateDialogue("MaraDialogue", "mara", "Mara", "The smoke on the horizon worries me."))
+            .GetComponent<DialogueInteractable>());
         targets.Add(CreateNpc("VillagerOne", new Vector3(3f, 1f, 1f), Color.gray,
-            CreateDialogue("VillagerOneDialogue", "villager-one", "Villager", "The border road is quiet for now.")));
+            CreateDialogue("VillagerOneDialogue", "villager-one", "Villager", "The border road is quiet for now."))
+            .GetComponent<DialogueInteractable>());
         targets.Add(CreateNpc("VillagerTwo", new Vector3(6f, 1f, -1f), Color.gray,
-            CreateDialogue("VillagerTwoDialogue", "villager-two", "Villager", "We will help protect Emberfield.")));
+            CreateDialogue("VillagerTwoDialogue", "villager-two", "Villager", "We will help protect Emberfield."))
+            .GetComponent<DialogueInteractable>());
         targets.Add(CreateNpc("Lira", new Vector3(0f, 1f, 5f), Color.yellow,
-            CreateDialogue("LiraDialogue", "lira", "Lira", "Take this ember stone. The fire remembers you are coming home.")));
+            CreateDialogue("LiraDialogue", "lira", "Lira", "Take this ember stone. The fire remembers you are coming home."))
+            .GetComponent<DialogueInteractable>());
         GameObject rider = CreateNpc("RoyalRider", new Vector3(0f, 1f, 9f), Color.white,
             CreateDialogue("RiderDialogue", "royal-rider", "Royal Rider", "The crown summons you. Emberfield needs you."));
         DialogueInteractable riderInteractable = rider.GetComponent<DialogueInteractable>();
@@ -123,11 +128,13 @@ public static class Chapter1Builder
         Assign(missions, "royalRider", rider);
         Assign(missions, "objectiveText", objective);
         Assign(missions, "resultText", result);
+        Assign(missions, "config", config);
         Assign(dialogueUI, "player", player.transform);
         AssignArray(dialogueUI, "interactables", targets.Cast<UnityEngine.Object>().ToArray());
         Assign(dialogueUI, "speakerText", speaker);
         Assign(dialogueUI, "dialogueText", dialogue);
         Assign(dialogueUI, "promptText", prompt);
+        Assign(dialogueUI, "config", config);
         Assign(barricades, "config", config);
         Assign(barricades, "placementCamera", camera.GetComponent<Camera>());
         Assign(barricades, "placementRoot", placementRoot.transform);

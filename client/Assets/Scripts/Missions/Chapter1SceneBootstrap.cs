@@ -4,6 +4,7 @@ using EmberBlade.AI;
 using EmberBlade.Combat;
 using EmberBlade.Config;
 using EmberBlade.Player;
+using EmberBlade.UI;
 
 namespace EmberBlade.Missions
 {
@@ -38,6 +39,11 @@ namespace EmberBlade.Missions
         private void Start()
         {
             config ??= GameConfig.LoadRuntime();
+            if (!ValidateReferences())
+            {
+                enabled = false;
+                return;
+            }
             Health health = player.GetComponent<Health>();
             EmberMeter ember = player.GetComponent<EmberMeter>();
             PlayerCombat combat = player.GetComponent<PlayerCombat>();
@@ -52,10 +58,58 @@ namespace EmberBlade.Missions
                 instructionText, wallMaterial, trapMaterial, enemyWaveManager);
             barricadeManager.enabled = false;
             combatHud.Initialize(health, ember, enemyWaveManager);
-            dialogueUI.Initialize(player.transform, dialogueTargets, speakerText, dialogueText, promptText);
+            dialogueUI.Initialize(
+                player.transform, dialogueTargets, speakerText, dialogueText, promptText, config);
             missionManager.Initialize(
                 dialogueUI, barricadeManager, enemyWaveManager, health, smokeObject,
-                royalRider, objectiveText, resultText);
+                royalRider, objectiveText, resultText, config);
+        }
+
+        private bool ValidateReferences()
+        {
+            bool valid = true;
+            valid &= Require(config, "config");
+            valid &= Require(player, "player");
+            valid &= Require(followCamera, "followCamera");
+            valid &= Require(dialogueUI, "dialogueUI");
+            valid &= Require(missionManager, "missionManager");
+            valid &= Require(barricadeManager, "barricadeManager");
+            valid &= Require(enemyWaveManager, "enemyWaveManager");
+            valid &= Require(combatHud, "combatHud");
+            valid &= Require(scoutPrefab, "scoutPrefab");
+            valid &= Require(skirmisherPrefab, "skirmisherPrefab");
+            valid &= Require(smokeObject, "smokeObject");
+            valid &= Require(royalRider, "royalRider");
+            valid &= Require(speakerText, "speakerText");
+            valid &= Require(dialogueText, "dialogueText");
+            valid &= Require(promptText, "promptText");
+            valid &= Require(objectiveText, "objectiveText");
+            valid &= Require(resultText, "resultText");
+            valid &= Require(timerText, "timerText");
+            valid &= Require(inventoryText, "inventoryText");
+            valid &= Require(instructionText, "instructionText");
+            valid &= Require(placementCamera, "placementCamera");
+            valid &= Require(placementRoot, "placementRoot");
+            valid &= Require(wallMaterial, "wallMaterial");
+            valid &= Require(trapMaterial, "trapMaterial");
+            if (player != null)
+            {
+                valid &= Require(player.GetComponent<Health>(), "player.Health");
+                valid &= Require(player.GetComponent<EmberMeter>(), "player.EmberMeter");
+                valid &= Require(player.GetComponent<PlayerCombat>(), "player.PlayerCombat");
+            }
+            return valid;
+        }
+
+        private bool Require(Object value, string fieldName)
+        {
+            if (value != null)
+            {
+                return true;
+            }
+            Debug.LogError($"Chapter1SceneBootstrap is missing '{fieldName}' on '{name}'. " +
+                           "Run Ember Blade > Build Chapter 1 Scene.", this);
+            return false;
         }
     }
 }
