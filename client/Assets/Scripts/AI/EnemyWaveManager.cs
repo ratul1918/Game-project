@@ -37,6 +37,10 @@ namespace EmberBlade.AI
             scoutPrefab = scout;
             skirmisherPrefab = skirmisher;
             countChanged = onCountChanged;
+            if (!ValidateReferences())
+            {
+                return;
+            }
             SpawnWave();
         }
 
@@ -55,11 +59,53 @@ namespace EmberBlade.AI
 
         private void SpawnEnemy(GameObject prefab, Vector3 position)
         {
-            GameObject instance = Instantiate(prefab, position, Quaternion.identity, spawnRoot);
+            if (!NavMesh.SamplePosition(position, out NavMeshHit navHit, 3f, NavMesh.AllAreas))
+            {
+                Debug.LogError($"Could not find a NavMesh spawn point near {position} for '{prefab.name}'. " +
+                               "Rebuild CombatTest so the ground NavMesh is baked.", this);
+                return;
+            }
+
+            Vector3 spawnPosition = navHit.position + Vector3.up;
+            GameObject instance = Instantiate(prefab, spawnPosition, Quaternion.identity, spawnRoot);
             EnemyController enemy = instance.GetComponent<EnemyController>();
+            if (enemy == null)
+            {
+                Debug.LogError($"Enemy prefab '{prefab.name}' is missing EnemyController.", prefab);
+                Destroy(instance);
+                return;
+            }
             bool skirmisher = instance.name.Contains("Skirmisher");
             enemy.Initialize(config, skirmisher, player, playerCombat, this);
             aliveEnemies.Add(enemy);
+            Debug.Log($"Spawned {instance.name} at {spawnPosition}. Enemies remaining: {aliveEnemies.Count}", instance);
+        }
+
+        private bool ValidateReferences()
+        {
+            bool valid = true;
+            valid &= Require(config, "config");
+            valid &= Require(player, "player");
+            valid &= Require(playerCombat, "playerCombat");
+            valid &= Require(scoutPrefab, "scoutPrefab");
+            valid &= Require(skirmisherPrefab, "skirmisherPrefab");
+            if (spawnRoot == null)
+            {
+                spawnRoot = transform;
+            }
+            return valid;
+        }
+
+        private bool Require(UnityEngine.Object value, string fieldName)
+        {
+            if (value != null)
+            {
+                return true;
+            }
+
+            Debug.LogError($"EnemyWaveManager is missing '{fieldName}' on '{name}'. " +
+                           "Run Ember Blade > Build Combat Test Scene.", this);
+            return false;
         }
 
         public void EnemyDied(EnemyController enemy)

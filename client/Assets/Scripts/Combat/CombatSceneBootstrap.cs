@@ -18,6 +18,13 @@ namespace EmberBlade.Combat
 
         private void Start()
         {
+            config ??= GameConfig.LoadRuntime();
+            if (!ValidateReferences())
+            {
+                enabled = false;
+                return;
+            }
+
             Health playerHealth = player.GetComponent<Health>();
             EmberMeter emberMeter = player.GetComponent<EmberMeter>();
             PlayerCombat combat = player.GetComponent<PlayerCombat>();
@@ -36,6 +43,38 @@ namespace EmberBlade.Combat
                 null);
             combatHud.Initialize(playerHealth, emberMeter, enemyWaveManager);
             controller.enabled = true;
+        }
+
+        private bool ValidateReferences()
+        {
+            bool valid = true;
+            valid &= Require(config, "config");
+            valid &= Require(player, "player");
+            valid &= Require(followCamera, "followCamera");
+            valid &= Require(enemyWaveManager, "enemyWaveManager");
+            valid &= Require(combatHud, "combatHud");
+            valid &= Require(scoutPrefab, "scoutPrefab");
+            valid &= Require(skirmisherPrefab, "skirmisherPrefab");
+            if (player != null)
+            {
+                valid &= Require(player.GetComponent<Health>(), "player.Health component");
+                valid &= Require(player.GetComponent<EmberMeter>(), "player.EmberMeter component");
+                valid &= Require(player.GetComponent<PlayerCombat>(), "player.PlayerCombat component");
+                valid &= Require(player.GetComponent<PlayerController>(), "player.PlayerController component");
+            }
+            return valid;
+        }
+
+        private bool Require(Object value, string fieldName)
+        {
+            if (value != null)
+            {
+                return true;
+            }
+
+            Debug.LogError($"CombatSceneBootstrap is missing '{fieldName}' on '{name}'. " +
+                           "Run Ember Blade > Build Combat Test Scene.", this);
+            return false;
         }
     }
 }

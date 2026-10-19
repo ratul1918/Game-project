@@ -5,6 +5,11 @@ namespace EmberBlade.Config
     [CreateAssetMenu(fileName = "GameConfig", menuName = "Ember Blade/Game Config")]
     public class GameConfig : ScriptableObject
     {
+        public static GameConfig LoadRuntime()
+        {
+            return Resources.Load<GameConfig>("GameConfig");
+        }
+
         [Header("Player")]
         public float playerMoveSpeed = 5f;
         public float playerRotationSpeed = 12f;

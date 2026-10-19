@@ -21,7 +21,7 @@ public static class CombatTestBuilder
 {
     private const string ScenePath = "Assets/Scenes/CombatTest.unity";
     private const string PrefabFolder = "Assets/Prefabs/Combat";
-    private const string ConfigPath = "Assets/Config/GameConfig.asset";
+    private const string ConfigPath = "Assets/Resources/GameConfig.asset";
 
     [MenuItem("Ember Blade/Build Combat Test Scene")]
     public static void BuildFromMenu()
@@ -40,6 +40,7 @@ public static class CombatTestBuilder
         EnsureFolder("Assets/Prefabs");
         EnsureFolder(PrefabFolder);
         EnsureFolder("Assets/Config");
+        EnsureFolder("Assets/Resources");
 
         GameConfig config = GetOrCreateConfig();
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -83,6 +84,12 @@ public static class CombatTestBuilder
         AssignObject(bootstrap, "combatHud", hud);
         AssignObject(bootstrap, "scoutPrefab", scoutPrefab);
         AssignObject(bootstrap, "skirmisherPrefab", skirmisherPrefab);
+        VerifyObjectField(bootstrap, "player");
+        VerifyObjectField(bootstrap, "followCamera");
+        VerifyObjectField(bootstrap, "enemyWaveManager");
+        VerifyObjectField(bootstrap, "combatHud");
+        VerifyObjectField(bootstrap, "scoutPrefab");
+        VerifyObjectField(bootstrap, "skirmisherPrefab");
 
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
@@ -97,8 +104,21 @@ public static class CombatTestBuilder
         GameConfig config = AssetDatabase.LoadAssetAtPath<GameConfig>(ConfigPath);
         if (config == null)
         {
-            config = ScriptableObject.CreateInstance<GameConfig>();
-            AssetDatabase.CreateAsset(config, ConfigPath);
+            string legacyPath = "Assets/Config/GameConfig.asset";
+            config = AssetDatabase.LoadAssetAtPath<GameConfig>(legacyPath);
+            if (config != null)
+            {
+                AssetDatabase.MoveAsset(legacyPath, ConfigPath);
+                config = AssetDatabase.LoadAssetAtPath<GameConfig>(ConfigPath);
+            }
+        }
+        if (config == null)
+        {
+            GameConfig created = ScriptableObject.CreateInstance<GameConfig>();
+            AssetDatabase.CreateAsset(created, ConfigPath);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.ImportAsset(ConfigPath);
+            config = AssetDatabase.LoadAssetAtPath<GameConfig>(ConfigPath);
         }
         return config;
     }
@@ -143,6 +163,8 @@ public static class CombatTestBuilder
         AssignObject(ember, "config", config);
         AssignObject(movement, "config", config);
         AssignObject(combat, "config", config);
+        AssignObject(combat, "health", health);
+        AssignObject(combat, "emberMeter", ember);
         return player;
     }
 
@@ -309,37 +331,57 @@ public static class CombatTestBuilder
     private static void AssignObject(UnityEngine.Object target, string fieldName, UnityEngine.Object value)
     {
         SerializedObject serialized = new SerializedObject(target);
+        serialized.Update();
         SerializedProperty property = serialized.FindProperty(fieldName);
         if (property == null)
         {
             throw new InvalidOperationException($"Field '{fieldName}' was not found on {target.GetType().Name}.");
         }
         property.objectReferenceValue = value;
-        serialized.ApplyModifiedPropertiesWithoutUndo();
+        serialized.ApplyModifiedProperties();
+        EditorUtility.SetDirty(target);
     }
 
     private static void AssignInt(UnityEngine.Object target, string fieldName, int value)
     {
         SerializedObject serialized = new SerializedObject(target);
+        serialized.Update();
         SerializedProperty property = serialized.FindProperty(fieldName);
         if (property == null)
         {
             throw new InvalidOperationException($"Field '{fieldName}' was not found on {target.GetType().Name}.");
         }
         property.intValue = value;
-        serialized.ApplyModifiedPropertiesWithoutUndo();
+        serialized.ApplyModifiedProperties();
+        EditorUtility.SetDirty(target);
     }
 
     private static void AssignBool(UnityEngine.Object target, string fieldName, bool value)
     {
         SerializedObject serialized = new SerializedObject(target);
+        serialized.Update();
         SerializedProperty property = serialized.FindProperty(fieldName);
         if (property == null)
         {
             throw new InvalidOperationException($"Field '{fieldName}' was not found on {target.GetType().Name}.");
         }
         property.boolValue = value;
-        serialized.ApplyModifiedPropertiesWithoutUndo();
+        serialized.ApplyModifiedProperties();
+        EditorUtility.SetDirty(target);
+    }
+
+    private static void VerifyObjectField(UnityEngine.Object target, string fieldName)
+    {
+        SerializedObject serialized = new SerializedObject(target);
+        serialized.Update();
+        SerializedProperty property = serialized.FindProperty(fieldName);
+        if (property == null || property.objectReferenceValue == null)
+        {
+            Debug.LogError($"Builder assignment check: '{fieldName}' type={property?.propertyType} " +
+                           $"value={property?.objectReferenceValue} target={target.name}");
+            throw new InvalidOperationException(
+                $"Builder failed to assign '{fieldName}' on {target.GetType().Name}.");
+        }
     }
 
     private static void EnsureFolder(string path)

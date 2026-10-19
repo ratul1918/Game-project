@@ -20,11 +20,21 @@ namespace EmberBlade.Combat
 
         public bool IsInvulnerable => invulnerable;
 
+        private void Awake()
+        {
+            config ??= GameConfig.LoadRuntime();
+            health ??= GetComponent<Health>();
+            emberMeter ??= GetComponent<EmberMeter>();
+            ValidateReferences();
+        }
+
         public void Initialize(GameConfig gameConfig, Health playerHealth, EmberMeter playerEmber)
         {
             config = gameConfig;
+            config ??= GameConfig.LoadRuntime();
             health = playerHealth;
             emberMeter = playerEmber;
+            ValidateReferences();
         }
 
         private void Update()
@@ -68,6 +78,11 @@ namespace EmberBlade.Combat
 
         private void TryLightAttack()
         {
+            if (!ValidateReferences())
+            {
+                return;
+            }
+
             if (Time.time < nextAttackTime)
             {
                 return;
@@ -94,6 +109,12 @@ namespace EmberBlade.Combat
 
         private void TryDodge()
         {
+            if (config == null)
+            {
+                LogMissingReference("config");
+                return;
+            }
+
             if (Time.time < nextDodgeTime || !isActiveAndEnabled)
             {
                 return;
@@ -127,6 +148,12 @@ namespace EmberBlade.Combat
 
         private void TryParry()
         {
+            if (config == null)
+            {
+                LogMissingReference("config");
+                return;
+            }
+
             if (Time.time < nextParryTime)
             {
                 return;
@@ -141,6 +168,33 @@ namespace EmberBlade.Combat
             parryActive = true;
             yield return new WaitForSeconds(config.parryWindow);
             parryActive = false;
+        }
+
+        private bool ValidateReferences()
+        {
+            bool valid = true;
+            if (config == null)
+            {
+                LogMissingReference("config");
+                valid = false;
+            }
+            if (health == null)
+            {
+                LogMissingReference("health");
+                valid = false;
+            }
+            if (emberMeter == null)
+            {
+                LogMissingReference("emberMeter");
+                valid = false;
+            }
+            return valid;
+        }
+
+        private void LogMissingReference(string fieldName)
+        {
+            Debug.LogError($"PlayerCombat is missing serialized field '{fieldName}' on '{name}'. " +
+                           "Run Ember Blade > Build Combat Test Scene.", this);
         }
     }
 }
