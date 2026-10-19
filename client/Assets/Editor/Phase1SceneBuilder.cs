@@ -290,7 +290,7 @@ public static class Phase1SceneBuilder
 
     private static Transform FindDirectChild(Transform parent, string name)
     {
-        return parent.Cast<Transform>().FirstOrDefault(child => child.name == name);
+        return parent.Cast<Transform>().FirstOrDefault(child => child != null && child.name == name);
     }
 
     private static void SetAnchoredRect(RectTransform rect, Vector2 anchorMin, Vector2 anchorMax, Vector2 position)
