@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: ember-blade-postgres
+    environment:
+      POSTGRES_DB: emberblade
+      POSTGRES_USER: emberblade
+      POSTGRES_PASSWORD: emberblade
+    ports:
+      - "5432:5432"
+    volumes:
+      - ember-blade-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U emberblade -d emberblade"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  ember-blade-postgres-data:
