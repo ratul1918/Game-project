@@ -115,12 +115,12 @@ public static class Phase1SceneBuilder
         SetAnchoredRect(title.rectTransform, new Vector2(0.05f, 0.78f), new Vector2(0.95f, 0.98f), Vector2.zero);
 
         TMP_InputField username = GetOrCreateInputField(panel, "UsernameInput", "Username");
-        SetAnchoredRect(username.rectTransform, new Vector2(0.1f, 0.56f), new Vector2(0.9f, 0.7f), Vector2.zero);
+        SetAnchoredRect(username.GetComponent<RectTransform>(), new Vector2(0.1f, 0.56f), new Vector2(0.9f, 0.7f), Vector2.zero);
 
         TMP_InputField password = GetOrCreateInputField(panel, "PasswordInput", "Password");
         password.contentType = TMP_InputField.ContentType.Password;
         password.ForceLabelUpdate();
-        SetAnchoredRect(password.rectTransform, new Vector2(0.1f, 0.36f), new Vector2(0.9f, 0.5f), Vector2.zero);
+        SetAnchoredRect(password.GetComponent<RectTransform>(), new Vector2(0.1f, 0.36f), new Vector2(0.9f, 0.5f), Vector2.zero);
 
         Button loginButton = GetOrCreateButton(panel, "LoginButton", "Login");
         SetAnchoredRect(loginButton.GetComponent<RectTransform>(), new Vector2(0.25f, 0.18f), new Vector2(0.75f, 0.32f), Vector2.zero);
@@ -230,9 +230,9 @@ public static class Phase1SceneBuilder
         background.color = new Color(1f, 1f, 1f, 0.12f);
         TMP_InputField input = GetOrAddComponent<TMP_InputField>(inputObject);
 
-        TextMeshProUGUI text = GetOrCreateText(inputObject.transform, "Text", "", 22f, TextAlignmentOptions.Left);
+        TMP_Text text = GetOrCreateText(inputObject.transform, "Text", "", 22f, TextAlignmentOptions.Left);
         text.margin = new Vector4(12f, 0f, 12f, 0f);
-        TextMeshProUGUI placeholderText = GetOrCreateText(inputObject.transform, "Placeholder", placeholder, 22f, TextAlignmentOptions.Left);
+        TMP_Text placeholderText = GetOrCreateText(inputObject.transform, "Placeholder", placeholder, 22f, TextAlignmentOptions.Left);
         placeholderText.color = new Color(1f, 1f, 1f, 0.5f);
         placeholderText.margin = new Vector4(12f, 0f, 12f, 0f);
         input.textComponent = text;
