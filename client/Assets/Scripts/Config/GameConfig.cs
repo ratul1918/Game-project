@@ -49,5 +49,16 @@ namespace EmberBlade.Config
         [Header("Test Wave")]
         public int scoutCount = 3;
         public int skirmisherCount = 2;
+
+        [Header("Barricade")]
+        public float barricadeBuildTime = 30f;
+        public int maxBarricadeWalls = 8;
+        public int maxBarricadeTraps = 3;
+        public float barricadeGridSize = 2f;
+        public float barricadeWallWidth = 2f;
+        public float barricadeWallHeight = 1.5f;
+        public int barricadeTrapDamage = 25;
+        public float barricadeTrapCooldown = 1f;
+        public float barricadePlacementRange = 12f;
     }
 }

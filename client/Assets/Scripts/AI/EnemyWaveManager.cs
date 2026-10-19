@@ -29,7 +29,8 @@ namespace EmberBlade.AI
             PlayerCombat combat,
             GameObject scout,
             GameObject skirmisher,
-            Action<int> onCountChanged)
+            Action<int> onCountChanged,
+            bool spawnImmediately = true)
         {
             config = gameConfig;
             player = playerTarget;
@@ -41,6 +42,19 @@ namespace EmberBlade.AI
             {
                 return;
             }
+            if (spawnImmediately)
+            {
+                BeginWave();
+            }
+        }
+
+        public void BeginWave()
+        {
+            if (aliveEnemies.Count > 0)
+            {
+                return;
+            }
+
             SpawnWave();
         }
 
