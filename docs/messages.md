@@ -37,3 +37,20 @@ Every server-to-client message uses this envelope:
   }
 }
 ```
+
+## `STORY_BEAT`
+
+Story beats are sent to the authenticated user's WebSocket session when a
+Chapter 1 mission starts or completes.
+
+```json
+{
+  "type": "STORY_BEAT",
+  "seq": 14,
+  "payload": {
+    "chapter": 1,
+    "mission": "1.1",
+    "beat": "started"
+  }
+}
+```

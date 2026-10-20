@@ -19,6 +19,7 @@ namespace EmberBlade.Network
 
         public event Action<WarStateDelta> WarStateDeltaReceived;
         public event Action<RaidAlert> RaidAlertReceived;
+        public event Action<StoryBeat> StoryBeatReceived;
 
         private void Awake()
         {
@@ -88,6 +89,9 @@ namespace EmberBlade.Network
                     case "ALERT_RAID":
                         RaidAlertReceived?.Invoke(payload.ToObject<RaidAlert>());
                         break;
+                    case "STORY_BEAT":
+                        StoryBeatReceived?.Invoke(payload.ToObject<StoryBeat>());
+                        break;
                     default:
                         Debug.LogWarning($"Unknown Ember Blade message type: {type}");
                         break;
@@ -137,6 +141,14 @@ namespace EmberBlade.Network
         {
             public string front;
             public string message;
+        }
+
+        [Serializable]
+        public class StoryBeat
+        {
+            public int chapter;
+            public string mission;
+            public string beat;
         }
     }
 }

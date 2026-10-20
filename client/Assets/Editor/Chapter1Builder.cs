@@ -60,7 +60,8 @@ public static class Chapter1Builder
             out TMP_Text dialogue,
             out TMP_Text prompt,
             out TMP_Text objective,
-            out TMP_Text result);
+            out TMP_Text result,
+            out TMP_Text storyBeat);
 
         List<DialogueInteractable> targets = new();
         targets.Add(CreateNpc("Tomas", new Vector3(-6f, 1f, 0f), Color.blue,
@@ -270,7 +271,8 @@ public static class Chapter1Builder
         out TMP_Text dialogue,
         out TMP_Text prompt,
         out TMP_Text objective,
-        out TMP_Text result)
+        out TMP_Text result,
+        out TMP_Text storyBeat)
     {
         GameObject canvas = GameObject.Find("CombatHUD");
         objective = CreateText(canvas.transform, "ObjectiveText", string.Empty, new Vector2(0.28f, 0.93f), new Vector2(0.72f, 0.99f));
@@ -278,6 +280,8 @@ public static class Chapter1Builder
         speaker = CreateText(canvas.transform, "DialogueSpeaker", string.Empty, new Vector2(0.2f, 0.2f), new Vector2(0.8f, 0.25f));
         dialogue = CreateText(canvas.transform, "DialogueText", string.Empty, new Vector2(0.2f, 0.1f), new Vector2(0.8f, 0.2f));
         prompt = CreateText(canvas.transform, "DialoguePrompt", string.Empty, new Vector2(0.2f, 0.03f), new Vector2(0.8f, 0.08f));
+        storyBeat = CreateText(canvas.transform, "StoryBeatText", string.Empty, new Vector2(0.3f, 0.6f), new Vector2(0.7f, 0.68f));
+        storyBeat.gameObject.SetActive(false);
     }
 
     private static GameObject CreateCanvas(string name)

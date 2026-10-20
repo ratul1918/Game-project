@@ -37,6 +37,7 @@ namespace EmberBlade.UI
             statusText.text = "Connected.";
             loginPanel.SetActive(false);
             networkManager.Connect(token);
+            MissionApi.Ensure().Configure(token);
         }
 
         private void HandleLoginFailure(string error)

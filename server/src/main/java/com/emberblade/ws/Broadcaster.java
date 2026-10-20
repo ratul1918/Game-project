@@ -47,4 +47,32 @@ public class Broadcaster {
             }
         }
     }
+
+    public void broadcastToUser(String username, String type, Object payload) {
+        final String text;
+        try {
+            text = objectMapper.writeValueAsString(
+                    new MessageEnvelope(type, sequence.incrementAndGet(), payload));
+        } catch (JsonProcessingException exception) {
+            log.error("Could not serialize WebSocket message {}", type, exception);
+            return;
+        }
+        for (var session : registry.snapshot()) {
+            if (!username.equals(session.getAttributes().get("username"))) {
+                continue;
+            }
+            if (!session.isOpen()) {
+                registry.remove(session);
+                continue;
+            }
+            try {
+                synchronized (session) {
+                    session.sendMessage(new TextMessage(text));
+                }
+            } catch (IOException exception) {
+                log.warn("Removing WebSocket session {} after send failure", session.getId(), exception);
+                registry.remove(session);
+            }
+        }
+    }
 }
