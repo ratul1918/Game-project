@@ -14,6 +14,20 @@ namespace TheLightHouse
 
         private float nextNoiseTime;
         private bool isCranking;
+        [SerializeField] private StormSettings stormSettings;
+        [SerializeField] private PlayerStamina stamina;
+        [SerializeField] private Transform handle;
+        private float speed;
+        private float recoveryUntil;
+        public float Speed=>speed;
+        private void Update()
+        {
+            if(!lamp||!lamp.ChargeMode||!stormSettings)return;
+            if(!isCranking)speed=Mathf.MoveTowards(speed,0,stormSettings.crankDeceleration*Time.deltaTime);
+            if(handle)handle.Rotate(Vector3.forward,speed*stormSettings.handleDegreesPerSecond*Time.deltaTime);
+            if(isCranking)lamp.AddCharge(speed*stormSettings.chargeGain*Time.deltaTime);
+            if(speed>0&&Time.time>=nextNoiseTime){noiseEmitter.Emit(stormSettings.crankMaxNoise*stormSettings.crankNoiseCurve.Evaluate(speed));nextNoiseTime=Time.time+stormSettings.noiseInterval;}
+        }
 
         public string Prompt => prompt;
 
@@ -31,6 +45,17 @@ namespace TheLightHouse
         {
             if (lamp == null)
             {
+                return;
+            }
+            if(lamp.ChargeMode&&stormSettings)
+            {
+                if(!isCranking)GameEvents.RaiseCrankActiveChanged(true);
+                isCranking=true;
+                if(stamina&&stamina.Current<=0)recoveryUntil=Time.time+stormSettings.exhaustionRecovery;
+                float cap=Time.time<recoveryUntil?stormSettings.exhaustedSpeedCap:1f;
+                speed=Mathf.MoveTowards(speed,cap,stormSettings.crankAcceleration*Time.deltaTime);
+                if(stamina&&Time.time>=recoveryUntil)stamina.Spend(stormSettings.staminaDrain*Time.deltaTime,stormSettings.exhaustionRecovery);
+                if(speed>0f)GameEvents.RaiseStorySignal("first-crank");
                 return;
             }
 
@@ -58,6 +83,8 @@ namespace TheLightHouse
             }
 
             isCranking = false;
+            GameEvents.RaiseCrankActiveChanged(false);
+            if(lamp&&lamp.ChargeMode)return;
             lamp?.SetCranking(false);
         }
     }

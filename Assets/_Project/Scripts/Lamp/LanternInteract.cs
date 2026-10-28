@@ -8,7 +8,7 @@ public sealed class LanternInteract : MonoBehaviour,IInteractable {
 [SerializeField] string fuelObjective="Find fuel in the boat shed";
 bool held;bool inspected;
 public string Prompt=>"Inspect / fuel / light lamp";
-public void Interact(){if(held)return;held=true;if(!inspected){inspected=true;GameEvents.RequestDialogue(new("Daniel","Warm."));}if(inventory.Consume(fuelItem))lamp.AddFuel(fuelAmount);
+public void Interact(){if(held)return;held=true;if(lamp.ChargeMode){GameEvents.RequestDialogue(new("Daniel","Only the crank can keep it lit now."));return;}if(!inspected){inspected=true;GameEvents.RequestDialogue(new("Daniel","Warm."));}if(inventory.Consume(fuelItem))lamp.AddFuel(fuelAmount);
 if(!lamp.TryIgnite()){GameEvents.RequestDialogue(new("Daniel","Not enough fuel."));GameEvents.RaiseObjectiveChanged(fuelObjective);GameEvents.RaiseStorySignal("find-fuel");}}
 public void StopInteract()=>held=false;
 }}

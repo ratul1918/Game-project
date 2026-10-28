@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a81d9eb0342604682a3232a60d90675d, type: 3}
+  m_Name: StormSettings
+  m_EditorClassIdentifier: Assembly-CSharp::TheLightHouse.StormSettings
+  rampDuration: 30
+  rainRate: 140
+  windStrength: 1
+  lightningInterval: {x: 12, y: 22}
+  flashDuration: 0.15
+  flashIntensity: 3
+  safeFlashIntensity: 0.25
+  thunderDelay: 1.5
+  maskDuration: 3
+  maskReduction: 0.25
+  generatorDelay: 5
+  generatorNoise: 24
+  restartNoise: 10
+  generatorFlickers: 3
+  flickerInterval: 0.15
+  initialCharge: 0.65
+  chargeGain: 0.16
+  chargeDecay: 0.025
+  healthyThreshold: 0.35
+  extinguishedThreshold: 0.02
+  crankAcceleration: 0.45
+  crankDeceleration: 0.25
+  noiseInterval: 1
+  crankMaxNoise: 20
+  handleDegreesPerSecond: 300
+  crankNoiseCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.1
+      inSlope: 0
+      outSlope: 0.9
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0.9
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  staminaDrain: 6
+  exhaustionRecovery: 3
+  exhaustedSpeedCap: 0.25
+  beamDegreesPerSecond: 90
+  pulseThreshold: 0.85
+  pulseHold: 3
+  pulseCooldown: 15
+  stairPause: 3
+  stairY: 1.2
+  lanternY: 2.7
+  lanternSearchTime: 8
+  lanternHidingCheckChance: 0.4
+  failingAdvanceInterval: 5
+  extinguishedAdvanceInterval: 1.5
+  stormHealthyTime: 90
+  courtyardCount: 3
+  rainReduction: 0.2

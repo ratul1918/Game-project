@@ -18,8 +18,9 @@ namespace TheLightHouse
             controller=GetComponent<FirstPersonController>(); capsule=GetComponent<CharacterController>();
             interactor=GetComponent<Interactor>(); CheckpointPosition=checkpoint?checkpoint.position:transform.position;
         }
-        void OnEnable(){GameEvents.HidingEntered+=Enter;GameEvents.HidingExited+=Exit;}
-        void OnDisable(){GameEvents.HidingEntered-=Enter;GameEvents.HidingExited-=Exit;}
+        void OnEnable(){GameEvents.HidingEntered+=Enter;GameEvents.HidingExited+=Exit;GameEvents.GameStateChanged+=State;}
+        void OnDisable(){GameEvents.HidingEntered-=Enter;GameEvents.HidingExited-=Exit;GameEvents.GameStateChanged-=State;}
+        void State(GameStateChangedEvent e){if(e.Current==GameState.Storm)CheckpointPosition=transform.position;}
         void Enter(HidingEnteredEvent request)
         {
             var spot=request.Spot;

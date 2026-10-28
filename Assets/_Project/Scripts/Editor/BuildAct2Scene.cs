@@ -19,10 +19,14 @@ namespace TheLightHouse.Editor
         [MenuItem("TheLightHouse/Build Act 2 Scene")]
         public static void Build()
         {
+            BuildTo(ScenePath);
+        }
+        public static void BuildTo(string scenePath)
+        {
             if(EditorApplication.isPlayingOrWillChangePlaymode)return;
-            BuildAct1Scene.BuildTo(ScenePath);
+            BuildAct1Scene.BuildTo(scenePath);
             var scene=UnityEngine.SceneManagement.SceneManager.GetActiveScene();
-            if(scene.path!=ScenePath)return;
+            if(scene.path!=scenePath)return;
             Object.DestroyImmediate(GameObject.Find("Boatman"));
             var player=GameObject.Find("Player");
             player.transform.position=new(0,3.1f,5);
@@ -137,7 +141,7 @@ namespace TheLightHouse.Editor
             beats[6]=Beat("A2-B07","hide-success","You escaped notice. Keep the lamp fed.");
             var director=Object.FindAnyObjectByType<StoryDirector>();SetArray(director,"beats",beats);Set(director,"allowPendingActTwoSignals",true);
             stalker.SetActive(false);
-            EditorSceneManager.SaveScene(scene,ScenePath);AssetDatabase.SaveAssets();
+            EditorSceneManager.SaveScene(scene,scenePath);AssetDatabase.SaveAssets();
             Debug.Log("Act 2 saved at Night. Bake Navigation/NavMeshSurface, then Play. Crane spawns after A2-B03.");
         }
         static StoryBeat Beat(string id,string signal,string objective)

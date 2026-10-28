@@ -43,6 +43,21 @@ this slice does not implement or automatically start Act 3. A2-B07 signals can b
 | A3-B02 | Generator dies | Storm timer expires or the authored lightning strike occurs. | Generator disabled; lamp decay; crank interaction. |
 | A3-B03 | Hand-cranked light | Player completes the first effective crank stroke. | Crank-power loop; loud crank noise events. |
 | A3-B04 | Darkness advances them | Lamp reaches `Failing` or `Extinguished`, causing a Drowned advance. | Sustained lamp-versus-noise pressure; Act 4 clue access. |
+| A3-B05 | Restart fails | Generator restart is attempted after A3-B02. | Confirms generator is permanently flooded this act. |
+| A3-B06 | Crane on the stairs | Crane pauses during a climb after A3-B03. | Footstep warning; lantern-room hiding pressure. |
+| A3-B07 | First pulse | High charge is held long enough to pulse after A3-B03. | Demonstrates the lighthouse leash. |
+| A3-B08 | Courtyard filling | Configured number of figures reach courtyard path ends after A3-B04. | Courtyard warning. |
+| A3-B09 | Storm eases | Total healthy-lamp time is reached, with A3-B04 complete. | Safe Act 4 logbook placeholder; storm pressure stops. |
+
+Act 3 primary order is A3-B01 → B02 → B03 → B04. B05–B09 are optional/conditional assets,
+checked once by StoryDirector after their explicit prerequisiteId; they do not block the primary sequence.
+The test scene begins directly in Storm; StormBeats requests B01, and the generator fails after a delay.
+For an integrated Night sequence, StormBeats makes B01 eligible after A2-B05 and return to lantern height.
+The chosen end condition is accumulated healthy-lamp time (90 seconds by default), after the first darkness advance.
+This unlocks a placeholder rather than building Act 4. The game remains in Storm: the architecture permits
+Storm → Finale only at A4-B06. Rain, pursuit and figure pressure stop, and the lamp is stabilized.
+Figures still freeze while observed, even when extinguished. Pulse pushes back only unobserved figures,
+preserving the existing observation contract.
 
 ## Act 4 — Truth
 

@@ -14,7 +14,8 @@ namespace TheLightHouse
             Patrol,
             Hunt,
             CheckHidingSpot,
-            Retreat
+            Retreat,
+            Climb
         }
 
         [Header("Hearing")]
@@ -47,6 +48,14 @@ namespace TheLightHouse
         private Vector3 searchOrigin;
         private CraneHerding herding;
         private NavMeshAgent agent;
+        [SerializeField] private StormSettings stormSettings;
+        [SerializeField] private AudioClip stairFootsteps;
+        private bool stairWarned;
+        private float resumeClimbAt;
+        private bool playerCranking;
+        private bool stormComplete;
+        private void StormBeat(StoryBeatTriggeredEvent e){if(e.Id=="A3-B09"&&stormSettings){stormComplete=true;if(agent.isOnNavMesh){agent.ResetPath();agent.isStopped=true;}ChangeState(StalkerState.Idle);}}
+        private void CrankActive(bool active)=>playerCranking=active;
         private StalkerState currentState = StalkerState.Idle;
         private float searchTimeRemaining;
         private bool reportedMissingNavMesh;
@@ -62,9 +71,11 @@ namespace TheLightHouse
 
         private void OnEnable()
         {
-            GameEvents.NoiseEmitted += HandleNoiseEmitted;
+            GameEvents.NoiseHeard += HandleNoiseEmitted;
             GameEvents.PlayerHidden += Hidden;
             GameEvents.PlayerRespawned += ResetPatrol;
+            GameEvents.CrankActiveChanged += CrankActive;
+            GameEvents.StoryBeatTriggered += StormBeat;
         }
 
         private void Start()
@@ -75,13 +86,40 @@ namespace TheLightHouse
 
         private void OnDisable()
         {
-            GameEvents.NoiseEmitted -= HandleNoiseEmitted;
+            GameEvents.NoiseHeard -= HandleNoiseEmitted;
             GameEvents.PlayerHidden -= Hidden;
             GameEvents.PlayerRespawned -= ResetPatrol;
+            GameEvents.CrankActiveChanged -= CrankActive;
+            GameEvents.StoryBeatTriggered -= StormBeat;
         }
 
         private void Update()
         {
+            if(stormComplete)return;
+            if(stormSettings&&currentState==StalkerState.Climb)
+            {
+                if(!stairWarned&&transform.position.y>=stormSettings.stairY)
+                {
+                    stairWarned=true;resumeClimbAt=Time.time+stormSettings.stairPause;
+                    if(agent.isOnNavMesh)agent.isStopped=true;
+                    GameEvents.RequestDialogue(new("","(heavy footsteps on the stairs)"));
+                    if(stairFootsteps&&TryGetComponent<AudioSource>(out var audio))audio.PlayOneShot(stairFootsteps);
+                    GameEvents.RaiseNoiseEmitted(new(transform.position,6f,gameObject));
+                    GameEvents.RaiseStorySignal("stalker-stairs");
+                }
+                if(Time.time<resumeClimbAt)return;
+                if(agent.isOnNavMesh)agent.isStopped=false;
+                if(Arrived())
+                {
+                    if(playerCranking&&player&&!playerHidden)
+                    {
+                        GameEvents.RaisePlayerSpotted(new("crane-stalker",player.transform.position));
+                        GameEvents.RaiseCatchRequested();ChangeState(StalkerState.Retreat);
+                    }
+                    else BeginSearch();
+                }
+                return;
+            }
             if (actTwo && player && !player.IsCaught && !playerHidden &&
                 Vector3.Distance(transform.position, player.transform.position) <= closePresenceRadius)
             { searchOrigin=player.transform.position; ChangeState(StalkerState.Hunt); }
@@ -134,6 +172,7 @@ namespace TheLightHouse
 
         private void HandleNoiseEmitted(NoiseEmittedEvent eventData)
         {
+            if(stormComplete)return;
             if (eventData.Source == gameObject || (actTwo && (Time.time < nextHearingTime || currentState == StalkerState.Retreat))) return;
             float audibleRadius = Mathf.Min(hearingRange, eventData.Loudness);
             float distanceToNoise = Vector3.Distance(transform.position, eventData.Position);
@@ -145,6 +184,13 @@ namespace TheLightHouse
 
             nextHearingTime = Time.time + hearingCooldown;
             searchOrigin = eventData.Position;
+            if(stormSettings&&eventData.Source&&eventData.Source.GetComponent<CrankStation>()&&
+                eventData.Position.y>=stormSettings.lanternY&&transform.position.y<stormSettings.lanternY)
+            {
+                if(currentState==StalkerState.Climb&&Time.time<resumeClimbAt)return;
+                if(currentState!=StalkerState.Climb){stairWarned=false;resumeClimbAt=0;}
+                ChangeState(StalkerState.Climb);MoveTo(searchOrigin);return;
+            }
             if (actTwo && !announcedFirstNoise) { announcedFirstNoise=true; GameEvents.RaiseStorySignal("stalker-noise"); }
             ChangeState(actTwo && eventData.Source == (player ? player.gameObject : null) && !playerHidden
                 ? StalkerState.Hunt : StalkerState.Investigate);
@@ -207,7 +253,8 @@ namespace TheLightHouse
             {
                 foreach (var spot in hidingSpots)
                 {
-                    if (!spot || Vector3.Distance(transform.position,spot.transform.position)>searchRadius || Random.value>hidingCheckChance) continue;
+                    float chance=stormSettings&&transform.position.y>=stormSettings.lanternY?stormSettings.lanternHidingCheckChance:hidingCheckChance;
+                    if (!spot || Vector3.Distance(transform.position,spot.transform.position)>searchRadius || Random.value>chance) continue;
                     checkingSpot=spot; ChangeState(StalkerState.CheckHidingSpot); MoveTo(spot.transform.position); return;
                 }
                 ResetPatrol(); return;
@@ -218,7 +265,7 @@ namespace TheLightHouse
         void Hidden(PlayerHiddenEvent e) => playerHidden=e.IsHidden;
         void BeginSearch()
         {
-            searchTimeRemaining=searchDuration;searchedPoints=0;
+            searchTimeRemaining=stormSettings&&transform.position.y>=stormSettings.lanternY?stormSettings.lanternSearchTime:searchDuration;searchedPoints=0;
             if(agent.isOnNavMesh) agent.isStopped=true;
             ChangeState(StalkerState.Search);
         }
@@ -234,6 +281,11 @@ namespace TheLightHouse
         {
             if(waypoints==null||waypoints.Length==0)return;
             var waypoint=waypoints[waypointIndex++%waypoints.Length];
+            if(stormSettings&&waypoint&&waypoint.position.y>=stormSettings.lanternY&&transform.position.y<stormSettings.lanternY)
+            {
+                stairWarned=false;resumeClimbAt=0;searchOrigin=waypoint.position;
+                ChangeState(StalkerState.Climb);MoveTo(searchOrigin);return;
+            }
             if(waypoint)MoveTo(herding?herding.Bias(waypoint.position):waypoint.position);
         }
         void ResetPatrol()

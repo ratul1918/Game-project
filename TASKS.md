@@ -29,9 +29,10 @@ The cards below mirror `docs/roadmap.md`. A card is complete only when its accep
 
 ## Card 4 — Act 3: Storm and Crank
 
-- [ ] Implement the storm and generator failure.
-- [ ] Make hand-cranking restore lamp power while emitting dangerous noise.
-- [ ] Make darkness advance the Drowned threat.
+- [x] Implement the storm and generator failure.
+- [x] Make hand-cranking restore lamp power while emitting dangerous noise.
+- [x] Make darkness advance the Drowned threat.
+- [x] Add thunder masking, charge gauge/pulse, stamina pressure, stair warning, lantern hiding and an Act 4 placeholder.
 - [ ] Validate all Act 3 unlocks against `docs/story-beats.md`.
 - [ ] Produce a playable Acts 1–3 build.
 

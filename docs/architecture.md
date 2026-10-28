@@ -70,3 +70,8 @@ Save/load and pause remain deferred. Act 2 adds a checkpoint catch flow: Stalker
 then CatchRequested; CatchSequence locks the player and fades; PlayerHealthState restores the checkpoint
 and publishes PlayerRespawned so Crane returns to Patrol. StoryDirector owns beat prerequisites while
 GameStateMachine owns the current game state and publishes GameStateChanged.
+
+Act 3 routes producer NoiseEmitted through NoiseManager to NoiseHeard; NoiseMasking supplies the
+temporary thunder gain. Earlier scenes forward at gain 1. LampController owns charge and threshold states;
+CrankStation supplies charge only while held. Storm completion is a safe placeholder within Storm,
+not an early transition to Finale; the latter still requires A4-B06.

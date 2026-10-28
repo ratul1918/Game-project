@@ -1,5 +1,30 @@
 # Game Event Contracts
 
+## Act 3 additions
+
+- `NoiseHeard: Action<NoiseEmittedEvent>`: only NoiseManager publishes this routed, immutable payload.
+  NoiseEmitted remains the raw producer event and its fields/table are unchanged. StalkerAI now consumes NoiseHeard
+  in all slices. NoiseManager forwards unchanged when no NoiseMasking is installed.
+- `Thunder: Action`: StormController announces thunder after a lightning delay.
+  NoiseMasking opens a 3-second window, applying a 0.25 multiplier before NoiseManager forwards player and
+  player-operated crank sources to NoiseHeard. Generator, knocking and Crane's own sounds are not masked.
+  Example: a 20 m crank pulse becomes a 5 m hearing radius before Crane's hearing curve. Raw debug gizmos remain 20 m.
+- `LampChargeChanged: Action<float>`: LampController publishes normalized 0–1 charge for the gauge/end condition.
+- `LampPulse: Action`: LampController publishes after charge exceeds 0.85 for 3 seconds, with a 15-second cooldown.
+  DrownedManager pushes back unobserved figures by one path point.
+- `CrankActiveChanged: Action<bool>`: CrankStation publishes held/released state so arrival can use the existing catch flow.
+
+Storm crank noise = 20 m × serialized crankNoiseCurve(speed), emitted once per second while speed is positive.
+Default curve ranges from 0.1 at rest to 1 at maximum speed; zero speed emits nothing.
+Charge gain defaults to 0.16 × speed per second, and charge decays by 0.025 per second independently.
+Healthy charge ≥ 0.35 maps to CrankPowered; 0.02 < charge < 0.35 maps to Failing; charge ≤ 0.02 maps to Extinguished.
+LampStateChanged fields and existing states are preserved. Fuel pickups cannot power the lamp in charge mode.
+Generator failure stays at 24 m; restart attempts use 10 m; stair warning footsteps use 6 m.
+
+Storm signals: storm-start, generator-dies, first-crank, storm-darkness, generator-restart-fails,
+stalker-stairs, lamp-pulse, courtyard-filling, storm-end. StoryDirector alone publishes their beat IDs.
+The contract's watched-figure freeze rule takes precedence over the request to ignore sight when extinguished.
+
 ## Act 2 additions
 
 - `CatchRequested: Action`: StalkerAI requests a non-gory catch only after PlayerSpotted.
@@ -240,7 +265,7 @@ Initial greybox tuning values; change this table before changing implementation 
 | Door opened carefully | 5 m | Standard interaction. |
 | Door opened quickly | 10 m | Includes latch and impact. |
 | Door slammed | 18 m | Deliberate distraction or AI action. |
-| Lamp hand-crank pulse | 20 m | Emitted on each meaningful crank stroke. |
+| Lamp hand-crank pulse | 20 m | Earlier acts use a fixed pulse; Storm scales this maximum by the speed curve before masking. |
 | Dropped small item | 8 m | Metal/stone default. |
 | Dropped large item | 14 m | Fuel can or similar prop. |
 | Radio | 7 m | Active voice at its world position. |

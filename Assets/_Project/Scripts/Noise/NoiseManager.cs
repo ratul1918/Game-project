@@ -23,6 +23,7 @@ namespace TheLightHouse
         [SerializeField] private Color gizmoColor = new(1f, 0.55f, 0.1f, 0.8f);
 
         private readonly List<RecentNoise> recentNoises = new();
+        [SerializeField] private NoiseMasking masking;
 
         private void OnEnable()
         {
@@ -45,6 +46,11 @@ namespace TheLightHouse
         {
             recentNoises.Add(
                 new RecentNoise(eventData.Position, eventData.Loudness, Time.time + gizmoDuration));
+            bool playerNoise = eventData.Source &&
+                (eventData.Source.GetComponentInParent<FirstPersonController>() ||
+                 eventData.Source.GetComponent<CrankStation>());
+            float gain = playerNoise && masking ? masking.Reduction : 1f;
+            GameEvents.RaiseNoiseHeard(new(eventData.Position,eventData.Loudness*gain,eventData.Source));
         }
 
         private void OnDrawGizmos()

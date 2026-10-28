@@ -156,6 +156,49 @@ namespace TheLightHouse
 
     public static class GameEvents
     {
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetSessionEvents()
+        {
+            NoiseHeard = null;
+            Thunder = null;
+            LampChargeChanged = null;
+            LampPulse = null;
+            CrankActiveChanged = null;
+            StaminaChanged = null;
+            CatchRequested = null;
+            BreathChanged = null;
+            PlayerRespawned = null;
+            HidingEntered = null;
+            HidingExited = null;
+            FigureAtDoor = null;
+            FrontDoorTried = null;
+            StalkerStateChanged = null;
+            GameStateChanged = null;
+            LampNotLitInTime = null;
+            StorySignal = null;
+            ObjectiveChanged = null;
+            DialogueRequested = null;
+            NoiseEmitted = null;
+            LampStateChanged = null;
+            FuelChanged = null;
+            FigureAdvanced = null;
+            PlayerHidden = null;
+            PlayerSpotted = null;
+            StoryBeatTriggered = null;
+            ItemCollected = null;
+            DoorStateChanged = null;
+            DawnReached = null;
+        }
+        public static event Action<NoiseEmittedEvent> NoiseHeard;
+        public static event Action Thunder;
+        public static event Action<float> LampChargeChanged;
+        public static event Action LampPulse;
+        public static event Action<bool> CrankActiveChanged;
+        public static void RaiseCrankActiveChanged(bool active) => CrankActiveChanged?.Invoke(active);
+        public static void RaiseNoiseHeard(NoiseEmittedEvent e) => NoiseHeard?.Invoke(e);
+        public static void RaiseThunder() => Thunder?.Invoke();
+        public static void RaiseLampChargeChanged(float value) => LampChargeChanged?.Invoke(value);
+        public static void RaiseLampPulse() => LampPulse?.Invoke();
         public static event Action<StaminaChangedEvent> StaminaChanged;
         public static event Action CatchRequested;
         public static event Action<float> BreathChanged;
