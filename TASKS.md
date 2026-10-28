@@ -5,10 +5,10 @@ The cards below mirror `docs/roadmap.md`. A card is complete only when its accep
 ## Card 1 — Step 3: Thin Slice
 
 - [ ] Press Play into a greybox lighthouse tower.
-- [ ] Walk and look using the new Input System.
-- [ ] Interact with and crank the lamp.
-- [ ] Emit a crank noise through the event contract.
-- [ ] Make a placeholder cube stalker investigate that noise.
+- [x] Walk and look using the new Input System.
+- [x] Interact with and crank the lamp.
+- [x] Emit a crank noise through the event contract.
+- [x] Make a placeholder cube stalker investigate that noise.
 - [ ] Produce a playable build of the slice.
 
 ## Card 2 — Act 1: Arrival
