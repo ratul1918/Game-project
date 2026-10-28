@@ -156,6 +156,9 @@ namespace TheLightHouse
 
     public static class GameEvents
     {
+        public static event Action<StaminaChangedEvent> StaminaChanged;
+        public static void RaiseStaminaChanged(StaminaChangedEvent e) => StaminaChanged?.Invoke(e);
+        public static void RaisePlayerHidden(PlayerHiddenEvent e) => PlayerHidden?.Invoke(e);
         public static event Action<GameStateChangedEvent> GameStateChanged;
         public static event Action LampNotLitInTime;
         public static event Action<string> StorySignal;
@@ -200,5 +203,15 @@ namespace TheLightHouse
         public readonly GameState Previous;
         public readonly GameState Current;
         public GameStateChangedEvent(GameState previous, GameState current) { Previous=previous; Current=current; }
+    }
+    public readonly struct StaminaChangedEvent
+    {
+        public readonly float Current;
+        public readonly float Capacity;
+        public readonly bool Exhausted;
+        public StaminaChangedEvent(float current, float capacity, bool exhausted)
+        {
+            Current = current; Capacity = capacity; Exhausted = exhausted;
+        }
     }
 }

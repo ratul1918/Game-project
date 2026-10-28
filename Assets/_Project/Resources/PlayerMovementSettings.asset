@@ -1,0 +1,97 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7193290a8a984400990d619c980887fb, type: 3}
+  m_Name: PlayerMovementSettings
+  m_EditorClassIdentifier: Assembly-CSharp::TheLightHouse.PlayerMovementSettings
+  walkSpeed: 4
+  sprintSpeed: 7
+  crouchSpeed: 2
+  acceleration: 22
+  deceleration: 28
+  airControl: 0.15
+  movementThreshold: 0.05
+  jumpHeight: 1.2
+  gravityMultiplier: 2.5
+  terminalVelocity: 40
+  coyoteTime: 0.12
+  jumpBuffer: 0.15
+  groundedVelocity: -2
+  slopeLimit: 45
+  stepOffset: 0.3
+  skinWidth: 0.04
+  groundProbeDistance: 0.12
+  groundProbeInset: 0.04
+  standingHeight: 1.8
+  crouchingHeight: 1.1
+  crouchTransitionSpeed: 4
+  standingCameraHeight: 1.65
+  crouchingCameraHeight: 0.95
+  ceilingClearance: 0.03
+  lookSensitivity: 0.08
+  minimumPitch: -85
+  maximumPitch: 85
+  cameraNearClip: 0.05
+  staminaCapacity: 100
+  sprintDrain: 22
+  jumpCost: 18
+  staminaRegeneration: 16
+  exhaustionLockout: 1.5
+  lowStaminaThreshold: 0.25
+  crouchLoudness: 2
+  walkLoudness: 6
+  sprintLoudness: 12
+  jumpLoudness: 3
+  landingLoudness: 10
+  minimumLandingSpeed: 3
+  referenceLandingSpeed: 6
+  maximumLandingLoudness: 30
+  hardLandingSpeed: 10
+  disableBobAndFov: 0
+  bobAmplitude: 0.035
+  bobFrequency: 10
+  cameraSmoothing: 12
+  baseFov: 65
+  sprintFovIncrease: 4
+  landingDip: 0.08
+  hardLandingShake: 0.025
+  breathingAmplitude: 0.008
+  breathingFrequency: 1.8
+  leanDistance: 0.25
+  leanAngle: 10
+  leanProbeRadius: 0.12
+  killPlaneY: -20
+  safeGroundSeconds: 0.5
+  debugPanelRect:
+    serializedVersion: 2
+    x: 20
+    y: 150
+    width: 340
+    height: 180
+  staminaBarWidth: 0.15
+  staminaBarY: 0.92
+  staminaBarHeight: 8
+  surfaces:
+  - tag: Wood
+    multiplier: 1
+    clips: []
+  - tag: Stone
+    multiplier: 1.2
+    clips: []
+  - tag: Metal
+    multiplier: 1.5
+    clips: []
+  - tag: Water
+    multiplier: 1.3
+    clips: []
+  - tag: Sand
+    multiplier: 0.6
+    clips: []

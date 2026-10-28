@@ -211,7 +211,7 @@ Initial greybox tuning values; change this table before changing implementation 
 
 | Source | Loudness radius | Notes |
 |---|---:|---|
-| Crouch step | 2 m | Quiet baseline; surface modifiers may apply later. |
+| Crouch step | 2 m | Before surface multiplier. |
 | Walk step | 6 m | Normal indoor traversal. |
 | Sprint step | 12 m | Repeated impulse per footfall. |
 | Door opened carefully | 5 m | Standard interaction. |
@@ -223,3 +223,22 @@ Initial greybox tuning values; change this table before changing implementation 
 | Radio | 7 m | Active voice at its world position. |
 | Generator failure | 24 m | One-shot story noise. |
 | Player landing | 10 m | Default fall/step-down landing. |
+| Jump takeoff | 3 m | One impulse when a jump actually succeeds; before surface multiplier. |
+| Scaled landing | 10 × impact speed / 6 m | Only at impact speeds of at least 3 m/s; cap base radius at 30 m, then apply surface multiplier. No fall damage. |
+
+### Surface multipliers
+
+Wood/default: 1.0; Stone (wet stone baseline): 1.2; Metal: 1.5; Water: 1.3; Sand: 0.6.
+These multiply step, takeoff and landing radii. Unknown tags use 1.0. AudioClip arrays remain empty.
+Examples: sprint on Metal is 18 m; crouch on Sand is 1.2 m; landing at 6 m/s on Wood is 10 m.
+Standing still, leaning, intro-locked movement and jumping while hidden emit no movement noise.
+Footsteps follow half-cycle crossings of the head-bob phase only while actually moving on the ground.
+Disabling visual bob does not change audible gameplay events.
+
+### StaminaChanged
+
+PlayerStamina publishes `Action<StaminaChangedEvent>` via `GameEvents.StaminaChanged`.
+The immutable payload contains `float Current`, `float Capacity`, and `bool Exhausted`.
+`Exhausted` describes the temporary sprint/jump lockout after reaching zero.
+Example subscription: `GameEvents.StaminaChanged += HandleStamina;`; unsubscribe on disable.
+No changes were made to the NoiseEmitted payload or existing 2/6/12 m movement bases.

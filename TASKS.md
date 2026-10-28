@@ -51,6 +51,10 @@ The cards below mirror `docs/roadmap.md`. A card is complete only when its accep
 
 ## Card 7 — Polish
 
+- [x] Implement movement upgrade: jump, stamina, crouch clearance, phase-driven surface noise, camera accessibility, lean, safety and F3 diagnostics.
+- [x] Add the reusable MovementTest scene builder and shared PlayerMovementSettings asset.
+- [ ] Playtest the movement course and Act 1 intro/interaction regression in the Editor.
+
 - [ ] Replace only proven placeholders with final art and audio.
 - [ ] Tune stealth readability, noise values, lamp pressure, pacing, and accessibility.
 - [ ] Fix defects and performance regressions without expanding scope.

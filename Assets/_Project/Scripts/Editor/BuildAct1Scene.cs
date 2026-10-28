@@ -32,7 +32,10 @@ Cube("Boat Shed Back",new(10.5f,1.5f,-16),new(.3f,3,5));
 Cube("Boat Shed Roof",new(8,3,-16),new(5,.3f,5));
 var can=Cube("Fuel Can",new(8,.5f,-16),Vector3.one);can.AddComponent<FuelCan>();
 for(int i=0;i<StairCount;i++)Cube("Stair "+i,new(7,(i+1)*StairRise/2,-5+i*StairRun),new(2,(i+1)*StairRise,StairRun));
-Cube("Lantern Room Floor",new(0,2.85f,5.5f),new(18,.3f,7));
+// Keep the stairwell open until the final riser; a solid floor lip here blocks the capsule's head.
+Cube("Lantern Room Floor",new(-1.75f,2.85f,5.5f),new(14.5f,.3f,7));
+Cube("Lantern Room Floor Back",new(7.25f,2.85f,6),new(3.5f,.3f,6));
+Cube("Stair Top Landing",new(7,2.85f,2.625f),new(2,.3f,.75f));
 var lamp=Object.FindFirstObjectByType<LampController>();
 lamp.transform.position=new(0,4.5f,6);
 Set(lamp,"startWarmButUnlit",true);Set(lamp,"requireFuelCan",true);Set(lamp,"startingFuel",5f);

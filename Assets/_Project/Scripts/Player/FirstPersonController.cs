@@ -21,63 +21,80 @@ namespace TheLightHouse
         [SerializeField] private Transform cameraTransform;
         [SerializeField] private NoiseEmitter noiseEmitter;
 
-        [Header("Movement")]
-        [SerializeField, Min(0f)] private float walkSpeed = 4f;
-        [SerializeField, Min(0f)] private float sprintSpeed = 7f;
-        [SerializeField, Min(0f)] private float crouchSpeed = 2f;
-        [SerializeField] private float gravity = -20f;
-        [SerializeField] private float groundedVelocity = -2f;
-
-        [Header("Crouch")]
-        [SerializeField, Min(0.1f)] private float standingHeight = 1.8f;
-        [SerializeField, Min(0.1f)] private float crouchingHeight = 1.1f;
-        [SerializeField, Min(0f)] private float crouchTransitionSpeed = 10f;
-
-        [Header("Look")]
-        [SerializeField, Min(0f)] private float lookSensitivity = 0.08f;
-        [SerializeField] private float minimumPitch = -85f;
-        [SerializeField] private float maximumPitch = 85f;
-
-        [Header("Head Bob")]
-        [SerializeField, Min(0f)] private float headBobAmplitude = 0.045f;
-        [SerializeField, Min(0f)] private float headBobFrequency = 10f;
-        [SerializeField, Min(0f)] private float headBobReturnSpeed = 12f;
-
-        [Header("Footsteps")]
-        [SerializeField, Min(0.05f)] private float walkStepInterval = 0.5f;
-        [SerializeField, Min(0.05f)] private float sprintStepInterval = 0.34f;
-        [SerializeField, Min(0.05f)] private float crouchStepInterval = 0.7f;
-        [SerializeField, Min(0f)] private float crouchLoudness = 2f;
-        [SerializeField, Min(0f)] private float walkLoudness = 6f;
-        [SerializeField, Min(0f)] private float sprintLoudness = 12f;
-
+        [SerializeField] private PlayerMovementSettings settings;
+        [SerializeField] private string jumpActionName = "Jump";
+        [SerializeField] private string leanLeftActionName = "LeanLeft";
+        [SerializeField] private string leanRightActionName = "LeanRight";
+        [SerializeField] private string debugActionName = "MovementDebug";
+        private InputAction jumpAction, leanLeftAction, leanRightAction, debugAction;
+        private PlayerStamina stamina;
+        private HeadBob bob;
+        private CameraEffects effects;
+        private FootstepSystem footsteps;
+        private FootstepSurface surface;
+        private Lean lean;
+        private FallDamageSafety safety;
+        private PlayerDebugPanel debugPanel;
+        private Vector3 horizontalVelocity;
+        private float lastGroundedTime = float.NegativeInfinity;
+        private float lastJumpTime = float.NegativeInfinity;
+        private bool lookLocked;
+        private bool hidden;
+        private bool crouching;
+        private bool sprinting;
+        private bool movementEnabled = true;
+        public float Speed { get; private set; }
+        public bool Grounded { get; private set; }
+        public PlayerStamina Stamina => stamina;
+        public FootstepSurface Surface => surface;
+        public PlayerMovementSettings Settings => settings;
         private CharacterController characterController;
         private InputAction moveAction;
         private InputAction lookAction;
         private InputAction sprintAction;
         private InputAction crouchAction;
-        private Vector3 cameraRestLocalPosition;
         private float verticalVelocity;
         private float pitch;
-        private float headBobTime;
-        private float stepTimer;
-        public bool MovementEnabled { get; set; } = true;
+        public bool MovementEnabled
+        {
+            get => movementEnabled;
+            set { movementEnabled = value; if (!value) { horizontalVelocity = Vector3.zero; lastJumpTime = float.NegativeInfinity; } }
+        }
+        public void SetMovementLocked(bool locked) => MovementEnabled = !locked;
+        public void SetLookLocked(bool locked) => lookLocked = locked;
+        private void Hidden(PlayerHiddenEvent e) { hidden = e.IsHidden; if (hidden) horizontalVelocity = Vector3.zero; }
+        private T Ensure<T>() where T : Component => GetComponent<T>() ?? gameObject.AddComponent<T>();
 
         private void Awake()
         {
             characterController = GetComponent<CharacterController>();
             noiseEmitter ??= GetComponent<NoiseEmitter>();
 
-            if (cameraTransform != null)
-            {
-                cameraRestLocalPosition = cameraTransform.localPosition;
-            }
-
+            if (!settings) settings = Resources.Load<PlayerMovementSettings>("PlayerMovementSettings");
+            if (!settings) settings = ScriptableObject.CreateInstance<PlayerMovementSettings>();
+            stamina = Ensure<PlayerStamina>();
+            stamina.Initialize(settings);
+            surface = Ensure<FootstepSurface>();
+            footsteps = Ensure<FootstepSystem>();
+            footsteps.Initialize();
+            bob = Ensure<HeadBob>();
+            effects = Ensure<CameraEffects>();
+            lean = Ensure<Lean>();
+            safety = Ensure<FallDamageSafety>();
+            safety.Initialize();
+            debugPanel = Ensure<PlayerDebugPanel>();
+            debugPanel.Initialize(this);
+            Ensure<StaminaBar>();
+            if (cameraTransform && cameraTransform.TryGetComponent<Camera>(out var viewCamera))
+                viewCamera.nearClipPlane = settings.cameraNearClip;
+            characterController.slopeLimit = settings.slopeLimit;
+            characterController.skinWidth = settings.skinWidth;
             ResolveActions();
         }
 
         private void OnEnable()
         {
+            GameEvents.PlayerHidden += Hidden;
             EnableActions();
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
@@ -85,6 +102,7 @@ namespace TheLightHouse
 
         private void OnDisable()
         {
+            GameEvents.PlayerHidden -= Hidden;
             DisableActions();
         }
 
@@ -95,6 +113,7 @@ namespace TheLightHouse
                 return;
             }
 
+            if (debugAction != null && debugAction.WasPressedThisFrame()) debugPanel.Toggle();
             UpdateLook();
             UpdateMovement();
         }
@@ -112,6 +131,10 @@ namespace TheLightHouse
             lookAction = actionMap.FindAction(lookActionName, true);
             sprintAction = actionMap.FindAction(sprintActionName, true);
             crouchAction = actionMap.FindAction(crouchActionName, true);
+            jumpAction = actionMap.FindAction(jumpActionName, false);
+            leanLeftAction = actionMap.FindAction(leanLeftActionName, false);
+            leanRightAction = actionMap.FindAction(leanRightActionName, false);
+            debugAction = actionMap.FindAction(debugActionName, false);
         }
 
         private void EnableActions()
@@ -120,6 +143,10 @@ namespace TheLightHouse
             lookAction?.Enable();
             sprintAction?.Enable();
             crouchAction?.Enable();
+            jumpAction?.Enable();
+            leanLeftAction?.Enable();
+            leanRightAction?.Enable();
+            debugAction?.Enable();
         }
 
         private void DisableActions()
@@ -128,91 +155,118 @@ namespace TheLightHouse
             lookAction?.Disable();
             sprintAction?.Disable();
             crouchAction?.Disable();
+            jumpAction?.Disable();
+            leanLeftAction?.Disable();
+            leanRightAction?.Disable();
+            debugAction?.Disable();
         }
 
         private void UpdateLook()
         {
-            Vector2 lookInput = lookAction.ReadValue<Vector2>() * lookSensitivity;
-            pitch = Mathf.Clamp(pitch - lookInput.y, minimumPitch, maximumPitch);
+            Vector2 lookInput = lookLocked ? Vector2.zero : lookAction.ReadValue<Vector2>() * settings.lookSensitivity;
+            pitch = Mathf.Clamp(pitch - lookInput.y, settings.minimumPitch, settings.maximumPitch);
             cameraTransform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
             transform.Rotate(Vector3.up, lookInput.x, Space.Self);
         }
 
         private void UpdateMovement()
         {
-            Vector2 moveInput = MovementEnabled ? moveAction.ReadValue<Vector2>() : Vector2.zero;
-            bool isCrouching = crouchAction != null && crouchAction.IsPressed();
-            bool isSprinting = !isCrouching && sprintAction != null && sprintAction.IsPressed();
+            float dt = Time.deltaTime;
+            bool wasGrounded = Grounded;
+            float incomingFallSpeed = Mathf.Max(0f, -verticalVelocity);
+            bool canMove = MovementEnabled && !hidden;
+            Vector2 input = canMove ? Vector2.ClampMagnitude(moveAction.ReadValue<Vector2>(), 1f) : Vector2.zero;
+            if (canMove && jumpAction != null && jumpAction.WasPressedThisFrame()) lastJumpTime = Time.time;
+            if (!canMove) lastJumpTime = float.NegativeInfinity;
+            bool requestedCrouch = canMove && crouchAction != null && crouchAction.IsPressed();
+            UpdateCrouch(requestedCrouch);
 
-            UpdateCrouch(isCrouching);
-
-            float speed = isCrouching ? crouchSpeed : isSprinting ? sprintSpeed : walkSpeed;
-            Vector3 horizontalMovement =
-                (transform.right * moveInput.x + transform.forward * moveInput.y) * speed;
-
-            if (characterController.isGrounded && verticalVelocity < 0f)
+            bool groundBefore = ProbeGround(out RaycastHit groundHit) && verticalVelocity <= 0f;
+            surface.Detect(groundHit, settings);
+            if (groundBefore) lastGroundedTime = Time.time;
+            sprinting = canMove && !crouching && groundBefore && input.sqrMagnitude > MovementInputThreshold
+                && sprintAction != null && sprintAction.IsPressed() && stamina.CanSprint;
+            float speed = crouching ? settings.crouchSpeed : sprinting ? settings.sprintSpeed : settings.walkSpeed;
+            Vector3 target = (transform.right * input.x + transform.forward * input.y) * speed;
+            float rate = input.sqrMagnitude > MovementInputThreshold ? settings.acceleration : settings.deceleration;
+            horizontalVelocity = canMove ? Vector3.MoveTowards(horizontalVelocity, target,
+                rate * (groundBefore ? 1f : settings.airControl) * dt) : Vector3.zero;
+            if (groundBefore && verticalVelocity < 0f) verticalVelocity = settings.groundedVelocity;
+            if (canMove && !crouching && Time.time - lastGroundedTime <= settings.coyoteTime
+                && Time.time - lastJumpTime <= settings.jumpBuffer && stamina.TryJump())
             {
-                verticalVelocity = groundedVelocity;
+                verticalVelocity = Mathf.Sqrt(2f * Physics.gravity.magnitude * settings.gravityMultiplier * settings.jumpHeight);
+                lastJumpTime = lastGroundedTime = float.NegativeInfinity;
+                footsteps.Takeoff(settings);
+                groundBefore = false;
             }
 
-            verticalVelocity += gravity * Time.deltaTime;
-            Vector3 movement = horizontalMovement + Vector3.up * verticalVelocity;
-            characterController.Move(movement * Time.deltaTime);
+            verticalVelocity = Mathf.Max(verticalVelocity - Physics.gravity.magnitude * settings.gravityMultiplier * dt,
+                -settings.terminalVelocity);
+            float impactSpeed = Mathf.Max(incomingFallSpeed, -verticalVelocity);
+            characterController.stepOffset = groundBefore ? Mathf.Min(settings.stepOffset, characterController.height) : 0f;
+            Vector3 previousPosition = transform.position;
+            CollisionFlags flags = characterController.Move((horizontalVelocity + Vector3.up * verticalVelocity) * dt);
+            if ((flags & CollisionFlags.Above) != 0 && verticalVelocity > 0f) verticalVelocity = 0f;
+            Grounded = verticalVelocity <= 0f && ((flags & CollisionFlags.Below) != 0 || ProbeGround(out groundHit));
+            if (Grounded) surface.Detect(groundHit, settings);
+            if (Grounded && !wasGrounded && impactSpeed >= settings.minimumLandingSpeed)
+            {
+                footsteps.Land(impactSpeed, settings);
+                effects.Land(impactSpeed, settings);
+            }
+            Vector3 actual = transform.position - previousPosition;
+            actual.y = 0f;
+            Speed = dt > 0f ? actual.magnitude / dt : 0f;
+            stamina.Tick(sprinting && Speed > settings.movementThreshold, dt);
+            bool moving = Grounded && canMove && Speed > settings.movementThreshold;
+            if (bob.Tick(moving, Speed, settings, dt)) footsteps.Step(crouching, sprinting, settings);
 
-            bool isMoving = moveInput.sqrMagnitude > MovementInputThreshold;
-            UpdateHeadBob(isMoving && characterController.isGrounded, speed);
-            UpdateFootsteps(isMoving && characterController.isGrounded, isCrouching, isSprinting);
+            Vector3 neutralView = transform.TransformPoint(new Vector3(0f, cameraTransform.localPosition.y, 0f));
+            float leanInput = lookLocked || hidden ? 0f :
+                (leanRightAction != null && leanRightAction.IsPressed() ? 1f : 0f)
+                - (leanLeftAction != null && leanLeftAction.IsPressed() ? 1f : 0f);
+            lean.Tick(leanInput, transform, neutralView, settings, dt);
+            effects.Tick(cameraTransform, pitch, characterController.height, bob.Offset, sprinting,
+                stamina.Normalized, lean.Amount, settings, dt);
+            if (safety.Tick(characterController, Grounded, settings, dt))
+            {
+                verticalVelocity = 0f; horizontalVelocity = Vector3.zero; bob.ResetPhase();
+                lastJumpTime = lastGroundedTime = float.NegativeInfinity;
+            }
         }
 
-        private void UpdateCrouch(bool isCrouching)
+        private bool ProbeGround(out RaycastHit hit)
         {
-            float targetHeight = isCrouching ? crouchingHeight : standingHeight;
-            characterController.height = Mathf.MoveTowards(
-                characterController.height,
-                targetHeight,
-                crouchTransitionSpeed * Time.deltaTime);
-            characterController.center = Vector3.up * (characterController.height * 0.5f);
+            float radius = Mathf.Max(settings.groundProbeInset, characterController.radius - settings.groundProbeInset);
+            Vector3 origin = transform.position + Vector3.up * (characterController.radius + settings.groundProbeInset);
+            if (!Physics.SphereCast(origin, radius, Vector3.down, out hit,
+                settings.groundProbeDistance + settings.groundProbeInset * 2f,
+                Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) return false;
+            return Vector3.Angle(hit.normal, Vector3.up) <= settings.slopeLimit;
         }
 
-        private void UpdateHeadBob(bool isMoving, float movementSpeed)
+        private void UpdateCrouch(bool requested)
         {
-            Vector3 targetPosition = cameraRestLocalPosition;
-            if (isMoving)
+            bool blocked = false;
+            if (!requested && characterController.height < settings.standingHeight)
             {
-                float speedRatio = movementSpeed / Mathf.Max(walkSpeed, MovementInputThreshold);
-                headBobTime += Time.deltaTime * headBobFrequency * speedRatio;
-                targetPosition.y += Mathf.Sin(headBobTime) * headBobAmplitude;
+                Vector3 lower = transform.position + Vector3.up *
+                    (characterController.height - characterController.radius + settings.ceilingClearance);
+                Vector3 upper = transform.position + Vector3.up *
+                    (settings.standingHeight - characterController.radius + settings.ceilingClearance);
+                // Test only the additional headroom, excluding our own CharacterController.
+                foreach (Collider collider in Physics.OverlapCapsule(lower, upper,
+                    characterController.radius - settings.skinWidth, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+                    if (collider != characterController && !collider.transform.IsChildOf(transform)) { blocked = true; break; }
             }
-
-            cameraTransform.localPosition = Vector3.Lerp(
-                cameraTransform.localPosition,
-                targetPosition,
-                headBobReturnSpeed * Time.deltaTime);
-        }
-
-        private void UpdateFootsteps(bool isMoving, bool isCrouching, bool isSprinting)
-        {
-            if (!isMoving)
-            {
-                stepTimer = 0f;
-                return;
-            }
-
-            stepTimer -= Time.deltaTime;
-            if (stepTimer > 0f)
-            {
-                return;
-            }
-
-            float loudness = isCrouching ? crouchLoudness : isSprinting ? sprintLoudness : walkLoudness;
-            float interval = isCrouching
-                ? crouchStepInterval
-                : isSprinting
-                    ? sprintStepInterval
-                    : walkStepInterval;
-
-            noiseEmitter.Emit(loudness);
-            stepTimer = interval;
+            crouching = requested || blocked;
+            float target = crouching ? settings.crouchingHeight : settings.standingHeight;
+            characterController.height = Mathf.MoveTowards(characterController.height, target,
+                settings.crouchTransitionSpeed * Time.deltaTime);
+            characterController.center = Vector3.up * (characterController.height * .5f);
+            // Don't allow a jump until the capsule has completely stood up.
+            if (characterController.height < settings.standingHeight - settings.ceilingClearance) crouching = true;
         }
     }
 }
