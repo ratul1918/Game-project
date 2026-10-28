@@ -1,4 +1,4 @@
-# The Lighthouse Roadmap
+# The LightHouse Roadmap
 
 The project advances only through playable vertical slices. Each stage ends in a build that can be played from its beginning through its newest content. Scope is cut before a stage is allowed to break the build.
 

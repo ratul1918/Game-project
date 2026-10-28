@@ -5,7 +5,7 @@ This document is the source of truth for cross-system communication. Event paylo
 ## Shared types
 
 ```csharp
-namespace HarrowRock
+namespace TheLightHouse
 {
     public enum LampState { Unlit, FuelLit, CrankPowered, Failing, Extinguished }
     public enum DoorState { Closed, Open, Locked, Blocked }
@@ -19,7 +19,7 @@ Identifiers are stable serialized strings, not display text. Positions are world
 ```csharp
 using System;
 
-namespace HarrowRock
+namespace TheLightHouse
 {
     public static class GameEvents
     {

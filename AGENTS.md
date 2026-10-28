@@ -1,4 +1,4 @@
-# The Lighthouse
+# The LightHouse
 
 ## Story brief
 
@@ -12,7 +12,7 @@ In the finale, the courtyard floods with Drowned as the lamp's fuel nearly runs 
 
 ## Code rules
 
-- Write C# under the `HarrowRock` namespace.
+- Write C# under the `TheLightHouse` namespace.
 - Give each script one responsibility.
 - Place scripts in `Assets/_Project/Scripts/<System>/`.
 - Use Unity's new Input System; do not add legacy `Input` API usage.
