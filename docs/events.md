@@ -1,5 +1,17 @@
 # Game Event Contracts
 
+## Act 1 additions
+
+All existing payloads remain unchanged. Fuel is measured in authored units (capacity defaults to 100).
+
+- `GameStateChanged: Action<GameStateChangedEvent>`: GameStateMachine publishes immutable `Previous` and `Current` GameState fields after transition.
+- `LampNotLitInTime: Action`: DuskTimer publishes once when dusk expires without a lit lamp. For Act 1 it logs and requests a warning subtitle.
+- `StorySignal: Action<string>`: interaction/sequence components request evaluation using stable signal IDs (`arrival`, `dock`, `meal`, `radio`, `find-fuel`). Only StoryDirector commits beat IDs.
+- `DialogueRequested: Action<DialogueLine>`: queues speaker, text, optional AudioClip and fallback duration in SubtitleUI.
+- `ObjectiveChanged: Action<string>`: StoryDirector or an unsuccessful lamp interaction requests objective text.
+
+Example: `GameEvents.RaiseStorySignal("meal");` requests evaluation; it does not directly complete a story beat.
+
 This document is the source of truth for cross-system communication. Event payloads are immutable value types. Publishers raise events through a single event hub; subscribers subscribe and unsubscribe in matching Unity lifecycle methods. Scene objects do not discover one another to bypass these contracts.
 
 ## Shared types

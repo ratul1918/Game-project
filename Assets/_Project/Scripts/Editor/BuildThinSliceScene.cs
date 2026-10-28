@@ -38,6 +38,11 @@ namespace TheLightHouse.Editor
         [MenuItem("TheLightHouse/Build Thin Slice Scene")]
         public static void Build()
         {
+            BuildTo(ScenePath);
+        }
+
+        public static void BuildTo(string outputPath)
+        {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
             {
                 return;
@@ -66,7 +71,7 @@ namespace TheLightHouse.Editor
             GameObject player = CreatePlayer(inputActions, prompt);
 
             EditorSceneManager.MarkSceneDirty(scene);
-            bool saved = EditorSceneManager.SaveScene(scene, ScenePath);
+            bool saved = EditorSceneManager.SaveScene(scene, outputPath);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 

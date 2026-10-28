@@ -156,6 +156,19 @@ namespace TheLightHouse
 
     public static class GameEvents
     {
+        public static event Action<GameStateChangedEvent> GameStateChanged;
+        public static event Action LampNotLitInTime;
+        public static event Action<string> StorySignal;
+        public static event Action<string> ObjectiveChanged;
+        public static event Action<DialogueLine> DialogueRequested;
+        public static void RaiseGameStateChanged(GameStateChangedEvent e) => GameStateChanged?.Invoke(e);
+        public static void RaiseLampNotLitInTime() => LampNotLitInTime?.Invoke();
+        public static void RaiseStorySignal(string id) => StorySignal?.Invoke(id);
+        public static void RaiseObjectiveChanged(string text) => ObjectiveChanged?.Invoke(text);
+        public static void RequestDialogue(DialogueLine line) => DialogueRequested?.Invoke(line);
+        public static void RaiseStoryBeatTriggered(StoryBeatTriggeredEvent e) => StoryBeatTriggered?.Invoke(e);
+        public static void RaiseItemCollected(ItemCollectedEvent e) => ItemCollected?.Invoke(e);
+        public static void RaiseDoorStateChanged(DoorStateChangedEvent e) => DoorStateChanged?.Invoke(e);
         public static event Action<NoiseEmittedEvent> NoiseEmitted;
         public static event Action<LampStateChangedEvent> LampStateChanged;
         public static event Action<FuelChangedEvent> FuelChanged;
@@ -181,5 +194,11 @@ namespace TheLightHouse
         {
             FuelChanged?.Invoke(eventData);
         }
+    }
+    public readonly struct GameStateChangedEvent
+    {
+        public readonly GameState Previous;
+        public readonly GameState Current;
+        public GameStateChangedEvent(GameState previous, GameState current) { Previous=previous; Current=current; }
     }
 }

@@ -13,8 +13,8 @@ The cards below mirror `docs/roadmap.md`. A card is complete only when its accep
 
 ## Card 2 — Act 1: Arrival
 
-- [ ] Implement the approved Act 1 beats and interactions.
-- [ ] Add ferry arrival, boatman warning, tower entry, meal, radio greeting, and first lamp objective.
+- [x] Implement the approved Act 1 beats and interactions.
+- [x] Add ferry arrival, boatman warning, tower entry, meal, radio greeting, and first lamp objective.
 - [ ] Validate all Act 1 unlocks against `docs/story-beats.md`.
 - [ ] Produce a playable Act 1 build.
 

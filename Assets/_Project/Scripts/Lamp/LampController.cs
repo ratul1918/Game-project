@@ -17,6 +17,17 @@ namespace TheLightHouse
         private float currentFuel;
         private LampState currentState = LampState.Unlit;
         private bool isCranking;
+        [SerializeField] private bool startWarmButUnlit;
+        [SerializeField] private bool requireFuelCan;
+        [SerializeField] private float minimumIgnitionFuel = 30f;
+        private bool ignited;
+        public bool TryIgnite()
+        {
+            if (requireFuelCan && currentFuel < minimumIgnitionFuel) return false;
+            ignited=true;
+            RefreshState(false);
+            return true;
+        }
 
         public float CurrentFuel => currentFuel;
         public float FuelCapacity => fuelCapacity;
@@ -24,6 +35,7 @@ namespace TheLightHouse
 
         private void Start()
         {
+            ignited = !startWarmButUnlit;
             float previousFuel = currentFuel;
             currentFuel = Mathf.Clamp(startingFuel, 0f, fuelCapacity);
             PublishFuelChanged(previousFuel);
@@ -32,7 +44,7 @@ namespace TheLightHouse
 
         private void Update()
         {
-            if (currentFuel <= 0f || drainRatePerSecond <= 0f)
+            if (!ignited || currentFuel <= 0f || drainRatePerSecond <= 0f)
             {
                 RefreshState(false);
                 return;
@@ -59,6 +71,7 @@ namespace TheLightHouse
 
         public void SetCranking(bool cranking)
         {
+            if (requireFuelCan && !ignited) return;
             if (isCranking == cranking)
             {
                 return;
@@ -111,6 +124,7 @@ namespace TheLightHouse
 
         private LampState DetermineState()
         {
+            if (!ignited) return LampState.Unlit;
             if (currentFuel <= 0f)
             {
                 return LampState.Extinguished;

@@ -61,6 +61,7 @@ namespace TheLightHouse
         private float pitch;
         private float headBobTime;
         private float stepTimer;
+        public bool MovementEnabled { get; set; } = true;
 
         private void Awake()
         {
@@ -139,7 +140,7 @@ namespace TheLightHouse
 
         private void UpdateMovement()
         {
-            Vector2 moveInput = moveAction.ReadValue<Vector2>();
+            Vector2 moveInput = MovementEnabled ? moveAction.ReadValue<Vector2>() : Vector2.zero;
             bool isCrouching = crouchAction != null && crouchAction.IsPressed();
             bool isSprinting = !isCrouching && sprintAction != null && sprintAction.IsPressed();
 

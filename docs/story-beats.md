@@ -4,6 +4,8 @@
 
 ## Act 1 — Arrival
 
+Implementation clarification: the low-fuel inspection and boat-shed fuel trip are intermediate interactions before A1-B06, not new beat IDs. Marta's automatic greeting follows the meal inspection per chapter1-script.md. The cellar shanty and footprints remain Act 2 content and are disabled in the Act 1 scene. Only the first six beats are implemented in StoryDirector's Act 1 asset list.
+
 | ID | Beat | Trigger condition | Unlocks |
 |---|---|---|---|
 | A1-B01 | Ferry at dusk | New game begins and Intro completes. | Player look; boatman sequence. |
