@@ -1,4 +1,4 @@
-# Harrow Rock Task Board
+# The Lighthouse Task Board
 
 The cards below mirror `docs/roadmap.md`. A card is complete only when its acceptance checkboxes are complete and the build remains playable.
 

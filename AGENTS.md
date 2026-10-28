@@ -1,4 +1,4 @@
-# Harrow Rock
+# The Lighthouse
 
 ## Story brief
 
