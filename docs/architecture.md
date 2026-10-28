@@ -66,4 +66,7 @@ stateDiagram-v2
 - `Dawn`: hostile pursuit ends and the dock resolution runs.
 - `Ending`: gameplay input is disabled except approved UI actions.
 
-Save/load, pause, and failure handling are deliberately deferred until a vertical slice proves they are required.
+Save/load and pause remain deferred. Act 2 adds a checkpoint catch flow: StalkerAI publishes PlayerSpotted
+then CatchRequested; CatchSequence locks the player and fades; PlayerHealthState restores the checkpoint
+and publishes PlayerRespawned so Crane returns to Patrol. StoryDirector owns beat prerequisites while
+GameStateMachine owns the current game state and publishes GameStateChanged.

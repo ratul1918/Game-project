@@ -157,6 +157,24 @@ namespace TheLightHouse
     public static class GameEvents
     {
         public static event Action<StaminaChangedEvent> StaminaChanged;
+        public static event Action CatchRequested;
+        public static event Action<float> BreathChanged;
+        public static void RaiseBreathChanged(float normalized) => BreathChanged?.Invoke(normalized);
+        public static event Action PlayerRespawned;
+        public static event Action<HidingEnteredEvent> HidingEntered;
+        public static event Action HidingExited;
+        public static event Action<FigureAtDoorEvent> FigureAtDoor;
+        public static event Action FrontDoorTried;
+        public static event Action<StalkerAI.StalkerState> StalkerStateChanged;
+        public static void RaiseCatchRequested() => CatchRequested?.Invoke();
+        public static void RaisePlayerRespawned() => PlayerRespawned?.Invoke();
+        public static void RaiseHidingEntered(HidingSpot spot) => HidingEntered?.Invoke(new(spot));
+        public static void RaiseHidingExited() => HidingExited?.Invoke();
+        public static void RaiseFigureAtDoor(DrownedFigure figure) => FigureAtDoor?.Invoke(new(figure));
+        public static void RaiseFrontDoorTried() => FrontDoorTried?.Invoke();
+        public static void RaiseStalkerStateChanged(StalkerAI.StalkerState state) => StalkerStateChanged?.Invoke(state);
+        public static void RaisePlayerSpotted(PlayerSpottedEvent e) => PlayerSpotted?.Invoke(e);
+        public static void RaiseFigureAdvanced(FigureAdvancedEvent e) => FigureAdvanced?.Invoke(e);
         public static void RaiseStaminaChanged(StaminaChangedEvent e) => StaminaChanged?.Invoke(e);
         public static void RaisePlayerHidden(PlayerHiddenEvent e) => PlayerHidden?.Invoke(e);
         public static event Action<GameStateChangedEvent> GameStateChanged;
@@ -213,5 +231,15 @@ namespace TheLightHouse
         {
             Current = current; Capacity = capacity; Exhausted = exhausted;
         }
+    }
+    public readonly struct HidingEnteredEvent
+    {
+        public readonly HidingSpot Spot;
+        public HidingEnteredEvent(HidingSpot spot) { Spot=spot; }
+    }
+    public readonly struct FigureAtDoorEvent
+    {
+        public readonly DrownedFigure Figure;
+        public FigureAtDoorEvent(DrownedFigure figure) { Figure=figure; }
     }
 }

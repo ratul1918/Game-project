@@ -20,8 +20,10 @@ The cards below mirror `docs/roadmap.md`. A card is complete only when its accep
 
 ## Card 3 — Act 2: Cellar and Stalker
 
-- [ ] Implement fuel pressure, cellar shanty, impossible footprints, and the sound-hunting stalker.
-- [ ] Introduce Drowned figures advancing when unobserved.
+- [x] Implement fuel pressure, cellar shanty, impossible footprints, and the sound-hunting stalker.
+- [x] Introduce Drowned figures advancing when unobserved.
+- [x] Add hiding/hold-breath, checkpoint catch sequence, knocking and singing-lure hooks.
+- [x] Add a reusable Act 2 scene builder starting directly at Night.
 - [ ] Validate all Act 2 unlocks against `docs/story-beats.md`.
 - [ ] Produce a playable Acts 1–2 build.
 

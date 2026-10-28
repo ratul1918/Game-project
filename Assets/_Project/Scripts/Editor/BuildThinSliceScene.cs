@@ -16,7 +16,7 @@ namespace TheLightHouse.Editor
         private const string ScenePath = SceneDirectory + "/ThinSlice.unity";
         private const string InputActionsPath = "Assets/InputSystem_Actions.inputactions";
         private const string NavMeshSurfaceTypeName = "Unity.AI.Navigation.NavMeshSurface";
-        private const string NavigationPackageId = "com.unity.ai.navigation@2.0.9";
+        private const string NavigationPackageId = "com.unity.ai.navigation@2.0.16";
 
         private const float TowerWidth = 20f;
         private const float TowerDepth = 20f;

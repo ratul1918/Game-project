@@ -24,6 +24,16 @@ Implementation clarification: the low-fuel inspection and boat-shed fuel trip ar
 | A2-B03 | Footprints with no return | Player inspects the final wet footprint marker. | First stalker setup; shallows observation point. |
 | A2-B04 | Hunted by sound | Player emits qualifying noise after A2-B03 and the stalker investigates it. | Full stalker patrol/investigation loop. |
 | A2-B05 | Figures in the shallows | Player observes a Drowned figure and then looks away long enough for one advance. | `DrownedManager`; Act 3 storm trigger. |
+| A2-B06 | Knocking | A figure reaches the front door after A2-B05. | Escalating door-knock sequence; objective not to open the door. |
+| A2-B07 | Hide success | Player has remained hidden through a breathing interval without being caught, after A2-B06. | Act 2 completion objective. |
+
+Act 2 test scene starts directly at Night, with the Act 1 chain already bypassed for testing.
+A2-B01 uses a serialized low-fuel threshold (30 units by default) and reveals the reserve can.
+A2-B02 requires the player to approach the cellar/storeroom zone; A2-B03 requires inspecting the wet trail.
+A2-B04 completes on Crane's first audible investigation. A2-B05 requires prior observation of the advancing figure;
+there is no separate first-seen beat. Figures freeze while observed and while the lamp is FuelLit or CrankPowered.
+They advance only during a failing/unlit lamp, after A2-B04. A2-B05 makes a future storm eligible;
+this slice does not implement or automatically start Act 3. A2-B07 signals can be remembered until their prerequisites finish.
 
 ## Act 3 — Storm and Crank
 

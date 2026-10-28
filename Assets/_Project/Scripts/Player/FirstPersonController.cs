@@ -39,6 +39,11 @@ namespace TheLightHouse
         private float lastGroundedTime = float.NegativeInfinity;
         private float lastJumpTime = float.NegativeInfinity;
         private bool lookLocked;
+        private float peekYawLimit, peekPitchLimit, peekYaw;
+        public void SetPeekLimits(float yaw, float pitchLimit)
+        {
+            peekYawLimit=yaw;peekPitchLimit=pitchLimit;peekYaw=0f;pitch=0f;
+        }
         private bool hidden;
         private bool crouching;
         private bool sprinting;
@@ -165,6 +170,12 @@ namespace TheLightHouse
         {
             Vector2 lookInput = lookLocked ? Vector2.zero : lookAction.ReadValue<Vector2>() * settings.lookSensitivity;
             pitch = Mathf.Clamp(pitch - lookInput.y, settings.minimumPitch, settings.maximumPitch);
+            if (peekPitchLimit > 0f) pitch = Mathf.Clamp(pitch, -peekPitchLimit, peekPitchLimit);
+            if (peekYawLimit > 0f)
+            {
+                float nextYaw = Mathf.Clamp(peekYaw + lookInput.x, -peekYawLimit, peekYawLimit);
+                lookInput.x = nextYaw - peekYaw; peekYaw = nextYaw;
+            }
             cameraTransform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
             transform.Rotate(Vector3.up, lookInput.x, Space.Self);
         }
@@ -172,6 +183,15 @@ namespace TheLightHouse
         private void UpdateMovement()
         {
             float dt = Time.deltaTime;
+            if (hidden)
+            {
+                horizontalVelocity=Vector3.zero;verticalVelocity=0f;Speed=0f;Grounded=false;
+                lastJumpTime=float.NegativeInfinity;
+                stamina.Tick(false,dt);bob.Tick(false,0f,settings,dt);
+                effects.Tick(cameraTransform,pitch,characterController.height,0f,false,
+                    stamina.Normalized,0f,settings,dt);
+                return;
+            }
             bool wasGrounded = Grounded;
             float incomingFallSpeed = Mathf.Max(0f, -verticalVelocity);
             bool canMove = MovementEnabled && !hidden;
@@ -181,7 +201,10 @@ namespace TheLightHouse
             bool requestedCrouch = canMove && crouchAction != null && crouchAction.IsPressed();
             UpdateCrouch(requestedCrouch);
 
-            bool groundBefore = ProbeGround(out RaycastHit groundHit) && verticalVelocity <= 0f;
+            bool walkableProbe = ProbeGround(out RaycastHit groundHit);
+            // At a riser the sphere can hit its vertical face before the floor. Preserve the
+            // controller's below-contact so that stepOffset stays enabled for stair climbing.
+            bool groundBefore = (characterController.isGrounded || walkableProbe) && verticalVelocity <= 0f;
             surface.Detect(groundHit, settings);
             if (groundBefore) lastGroundedTime = Time.time;
             sprinting = canMove && !crouching && groundBefore && input.sqrMagnitude > MovementInputThreshold

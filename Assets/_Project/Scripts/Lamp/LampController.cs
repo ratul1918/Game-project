@@ -21,6 +21,14 @@ namespace TheLightHouse
         [SerializeField] private bool requireFuelCan;
         [SerializeField] private float minimumIgnitionFuel = 30f;
         private bool ignited;
+        [SerializeField] private bool enableNightDrain;
+        [SerializeField] private float nightDrainRate = .7f;
+        [SerializeField] private float reserveFuelThreshold = 30f;
+        private bool nightActive;
+        private bool requestedReserve;
+        private void OnEnable() => GameEvents.GameStateChanged += HandleGameState;
+        private void OnDisable() => GameEvents.GameStateChanged -= HandleGameState;
+        private void HandleGameState(GameStateChangedEvent e) => nightActive = e.Current == GameState.Night;
         public bool TryIgnite()
         {
             if (requireFuelCan && currentFuel < minimumIgnitionFuel) return false;
@@ -51,7 +59,13 @@ namespace TheLightHouse
             }
 
             float previousFuel = currentFuel;
-            currentFuel = Mathf.Max(0f, currentFuel - drainRatePerSecond * Time.deltaTime);
+            float drain = enableNightDrain && nightActive ? nightDrainRate : drainRatePerSecond;
+            currentFuel = Mathf.Max(0f, currentFuel - drain * Time.deltaTime);
+            if (enableNightDrain && nightActive && !requestedReserve && currentFuel <= reserveFuelThreshold)
+            {
+                requestedReserve = true;
+                GameEvents.RaiseStorySignal("fuel-low");
+            }
             PublishFuelChanged(previousFuel);
             RefreshState(false);
         }

@@ -2,7 +2,9 @@ using UnityEngine;
 namespace TheLightHouse {
 public enum GameState { Intro, Dusk, Night, Storm, Finale, Dawn, Ending }
 public sealed class GameStateMachine : MonoBehaviour {
+[SerializeField] bool startAtNight;
 public GameState Current { get; private set; } = GameState.Intro;
+void Start(){if(startAtNight){Change(GameState.Night);GameEvents.RaiseObjectiveChanged("Keep the lamp fed");}}
 void OnEnable()=>GameEvents.StoryBeatTriggered+=Beat;
 void OnDisable()=>GameEvents.StoryBeatTriggered-=Beat;
 void Beat(StoryBeatTriggeredEvent e) { if(e.Id=="A1-B01") Change(GameState.Dusk); if(e.Id=="A1-B06") Change(GameState.Night); }

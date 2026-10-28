@@ -1,5 +1,28 @@
 # Game Event Contracts
 
+## Act 2 additions
+
+- `CatchRequested: Action`: StalkerAI requests a non-gory catch only after PlayerSpotted.
+- `PlayerRespawned: Action`: PlayerHealthState announces checkpoint recovery; StalkerAI returns to Patrol.
+- `HidingEntered: Action<HidingEnteredEvent>`: immutable payload with readonly `HidingSpot Spot`. PlayerHealthState owns the hidden state and publishes the existing PlayerHidden payload.
+- `HidingExited: Action`: request to leave hiding, from the player or Crane's hiding-spot check.
+- `BreathChanged: Action<float>`: normalized hold-breath reserve for HideBreathBar.
+- `FigureAtDoor: Action<FigureAtDoorEvent>`: immutable payload with readonly `DrownedFigure Figure` identifying the figure at its last path point.
+- `FrontDoorTried: Action`: blocked front-door interaction during Act 2; requests a warning and one figure step back.
+- `StalkerStateChanged: Action<StalkerAI.StalkerState>`: state transition notification; logs contain no herding bias information.
+
+New StorySignal IDs: `fuel-low`, `cellar-hum`, `footprints`, `stalker-noise`, `figure-advanced`, `knocking`, `hide-success`.
+StoryDirector remains the only publisher of StoryBeatTriggered. Existing payloads are unchanged.
+FigureAtDoor and HidingEntered carry identity references for a local interaction handoff; no receivers discover scene objects.
+
+Act 2 noise defaults (radius in metres): calm hidden breathing 1; nearby-Crane breathing 5; held breath 0.1;
+front-door knock 10; singing-lure alert 18; locked handle/rattle 5. These use the existing NoiseEmitted payload.
+Hold R to reduce breathing for a finite reserve, then recover after a lockout. Hidden footsteps/jumps remain silent.
+Crank pulses stay at the existing 20 m; hard landings may be louder. Sound travels by radius and hearing curve,
+without wall attenuation in this greybox slice. Crane has no sight and pursues a last-heard position, not an unseen moving player.
+Close-presence sensing and confirmed hiding-spot checks can still expose a quiet player.
+An extra lure advance obeys observation and healthy-lamp freezing; the lure alert noise can still fire when movement is blocked.
+
 ## Act 1 additions
 
 All existing payloads remain unchanged. Fuel is measured in authored units (capacity defaults to 100).
@@ -225,6 +248,11 @@ Initial greybox tuning values; change this table before changing implementation 
 | Player landing | 10 m | Default fall/step-down landing. |
 | Jump takeoff | 3 m | One impulse when a jump actually succeeds; before surface multiplier. |
 | Scaled landing | 10 × impact speed / 6 m | Only at impact speeds of at least 3 m/s; cap base radius at 30 m, then apply surface multiplier. No fall damage. |
+| Calm hidden breathing | 1 m | Repeated only while hidden. |
+| Scared hidden breathing | 5 m | Crane is within the configured danger radius. |
+| Held breath | 0.1 m | While R is held and breath reserve remains. |
+| Front door knock | 10 m | Each knock is a separate event. |
+| Singing lure alert | 18 m | Only when the player approaches after singing. |
 
 ### Surface multipliers
 
