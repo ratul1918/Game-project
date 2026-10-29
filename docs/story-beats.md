@@ -70,6 +70,21 @@ preserving the existing observation contract.
 | A4-B05 | Father and son | Player inspects the photograph of Crane holding young Daniel. | Stalker reinterpretation; final diary interaction. |
 | A4-B06 | Crane's bargain | Player reads Crane's final entry. | Finale state and courtyard route. |
 
+Act 4 retains these six stable IDs. Cellar unlocking, signal tuning, hidden-room discovery, key pickup,
+and Crane-room unlocking are interaction signals and objective changes inside the chain, not additional beats.
+This resolves the implementation request for more granular milestones without renumbering the source-of-truth act.
+
+The direct Act 4 scene starts in `Storm` immediately after its Act 3 pressure test, with the lamp already in
+charge mode. Reading the *Marguerite* and leash pages commits A4-B01 then A4-B02; two unique pages also satisfy
+the serialized cellar gate. The recorder commits A4-B03, the ledger commits A4-B04, the photograph commits
+A4-B05 and unlocks Crane's sealed final entry, and that entry commits A4-B06. `GameStateMachine` transitions
+to `Finale` only for A4-B06. The Act 5 content is still a safe subtitle/objective placeholder.
+
+At least six journal pages are placed across the keeper's room, stair landing, storeroom, boat shed, cellar,
+and Crane's desk. Their exact facts are: the *Marguerite* was deliberately wrecked by island wreckers; the
+lighthouse is a leash holding the Drowned in the water; keepers are chosen for guilt; Crane offered himself
+to the sea for his son and was taken but not allowed to rest. The final entry is unavailable before A4-B05.
+
 ## Act 5 — Dawn
 
 | ID | Beat | Trigger condition | Unlocks |

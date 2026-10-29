@@ -38,10 +38,10 @@ The cards below mirror `docs/roadmap.md`. A card is complete only when its accep
 
 ## Card 5 — Act 4: Truth
 
-- [ ] Implement the *Marguerite* and lighthouse-leash revelations.
-- [ ] Reveal the hidden room, Marta recording, ledger, family photograph, and Crane's final entry.
-- [ ] Reframe the stalker's behavior as Crane protecting Daniel.
-- [ ] Validate all Act 4 unlocks against `docs/story-beats.md`.
+- [x] Implement the *Marguerite* and lighthouse-leash revelations.
+- [x] Reveal the hidden room, Marta recording, ledger, family photograph, and Crane's final entry.
+- [x] Reframe the stalker's behavior as Crane protecting Daniel.
+- [x] Validate all Act 4 unlocks against `docs/story-beats.md`.
 - [ ] Produce a playable Acts 1–4 build.
 
 ## Card 6 — Act 5: Dawn

@@ -1,5 +1,21 @@
 # Game Event Contracts
 
+## Act 4 additions
+
+- `PageRead: Action<PageReadEvent>`: `LogbookJournal` publishes the immutable page `Id` and `StoryFlag` when a collected page is opened. `ActFourBeats` translates approved flags into story signals; `StoryDirector` remains the only beat publisher.
+- `LedgerRead: Action<LedgerReadEvent>`: the ledger publishes its stable `EntryId` once. The guilt flashback is a presentation subscriber and does not own progression.
+- `ReadingStateChanged: Action<ReadingStateChangedEvent>`: reader and journal UI publish `IsReading`, `ThreatSpeed`, and `LampDecayFactor`. Player movement/look are locked so movement noise is zero; time, Crane, Drowned, and lamp simulation continue. Crane locomotion and Drowned advance cadence use the threat multiplier. Lamp charge decay uses the decay factor.
+
+Act 4 story signals are `marguerite`, `lighthouse-leash`, `cellar-unlocked`, `signal-tuned`,
+`hidden-room-found`, `marta-recording`, `daniel-chosen`, `crane-key-found`,
+`crane-room-unlocked`, `father-son`, and `crane-bargain`. Intermediate signals update gates and objectives;
+only the six canonical `A4-B01`–`A4-B06` IDs in `story-beats.md` are committed as beats.
+
+`PageReadEvent` fields are readonly `string Id` and `string StoryFlag`. `LedgerReadEvent` contains readonly
+`string EntryId`. `ReadingStateChangedEvent` contains readonly `bool IsReading`, `float ThreatSpeed`, and
+`float LampDecayFactor`. Default reading threat speed is 0.35, reading lamp decay is 0.30, and each newly
+read page grants 0.08 normalized charge once. These are authored in `ActFourSettings`.
+
 ## Act 3 additions
 
 - `NoiseHeard: Action<NoiseEmittedEvent>`: only NoiseManager publishes this routed, immutable payload.
@@ -278,6 +294,7 @@ Initial greybox tuning values; change this table before changing implementation 
 | Held breath | 0.1 m | While R is held and breath reserve remains. |
 | Front door knock | 10 m | Each knock is a separate event. |
 | Singing lure alert | 18 m | Only when the player approaches after singing. |
+| Sliding false shelf | 10 m | One-shot hidden-room reveal noise. |
 
 ### Surface multipliers
 

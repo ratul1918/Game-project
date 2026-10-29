@@ -75,3 +75,10 @@ Act 3 routes producer NoiseEmitted through NoiseManager to NoiseHeard; NoiseMask
 temporary thunder gain. Earlier scenes forward at gain 1. LampController owns charge and threshold states;
 CrankStation supplies charge only while held. Storm completion is a safe placeholder within Storm,
 not an early transition to Finale; the latter still requires A4-B06.
+
+Act 4 adds LogbookJournal as the owner of collected pages and read state. Reader/Journal UI announce a
+ReadingStateChanged grace window without pausing simulation. StoryDirector still owns the six canonical
+revelation beats; gates consume page and beat events rather than discovering the journal. RadioSignalTracker
+computes tuning and distance presentation, while its signals unlock authored story progression. Post-reveal
+Crane keeps the existing sound-driven navigation and CraneHerding route bias, but replaces catch requests with
+a stop/hum/retreat response after A4-B05. A4-B06 is the sole Storm-to-Finale transition.

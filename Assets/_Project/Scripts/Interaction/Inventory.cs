@@ -7,4 +7,5 @@ void OnEnable()=>GameEvents.ItemCollected+=Collect;
 void OnDisable()=>GameEvents.ItemCollected-=Collect;
 void Collect(ItemCollectedEvent e)=>items.Add(e.Id);
 public bool Consume(string id)=>items.Remove(id);
+public bool Contains(string id)=>items.Contains(id);
 }}

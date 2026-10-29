@@ -27,14 +27,18 @@ namespace TheLightHouse
         private bool nightActive;
         private bool requestedReserve;
         [SerializeField] private StormSettings stormSettings;
+        [SerializeField] private bool startInChargeMode;
         [SerializeField] private Transform beam;
         private bool storm;
         private bool stormComplete;
         private float charge,pulseTime,nextPulse;
+        [SerializeField] private ActFourSettings actFourSettings;
+        private float readingDecayFactor = 1f;
         public bool ChargeMode=>storm;
         public float Charge=>charge;
-        private void OnEnable(){GameEvents.GameStateChanged+=HandleState;GameEvents.StoryBeatTriggered+=StormBeat;}
-        private void OnDisable(){GameEvents.GameStateChanged-=HandleState;GameEvents.StoryBeatTriggered-=StormBeat;}
+        private void OnEnable(){GameEvents.GameStateChanged+=HandleState;GameEvents.StoryBeatTriggered+=StormBeat;GameEvents.ReadingStateChanged+=Reading;}
+        private void OnDisable(){GameEvents.GameStateChanged-=HandleState;GameEvents.StoryBeatTriggered-=StormBeat;GameEvents.ReadingStateChanged-=Reading;}
+        private void Reading(ReadingStateChangedEvent e)=>readingDecayFactor=e.IsReading?e.LampDecayFactor:1f;
         private void HandleState(GameStateChangedEvent e){HandleGameState(e);if(e.Current==GameState.Storm&&stormSettings){charge=stormSettings.initialCharge;GameEvents.RaiseLampChargeChanged(charge);}}
         private void StormBeat(StoryBeatTriggeredEvent e)
         {
@@ -58,6 +62,7 @@ namespace TheLightHouse
 
         private void Start()
         {
+            if(startInChargeMode&&stormSettings){storm=true;charge=stormSettings.initialCharge;GameEvents.RaiseLampChargeChanged(charge);}
             ignited = !startWarmButUnlit;
             float previousFuel = currentFuel;
             currentFuel = Mathf.Clamp(startingFuel, 0f, fuelCapacity);
@@ -69,7 +74,7 @@ namespace TheLightHouse
         {
             if(storm)
             {
-                if(!stormComplete)charge=Mathf.Max(0,charge-stormSettings.chargeDecay*Time.deltaTime);
+                if(!stormComplete)charge=Mathf.Max(0,charge-stormSettings.chargeDecay*readingDecayFactor*Time.deltaTime);
                 RefreshState(false);GameEvents.RaiseLampChargeChanged(charge);
                 if(beam)beam.Rotate(Vector3.up,stormSettings.beamDegreesPerSecond*charge*Time.deltaTime);
                 pulseTime=charge>=stormSettings.pulseThreshold?pulseTime+Time.deltaTime:0f;

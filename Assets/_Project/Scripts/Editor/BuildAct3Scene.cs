@@ -12,11 +12,15 @@ namespace TheLightHouse.Editor
   [MenuItem("TheLightHouse/Build Act 3 Scene")]
   public static void Build()
   {
+   BuildTo(ScenePath);
+  }
+  public static void BuildTo(string scenePath)
+  {
    if(EditorApplication.isPlayingOrWillChangePlaymode)return;
    var settings=AssetDatabase.LoadAssetAtPath<StormSettings>(SettingsPath);
    if(!settings){Directory.CreateDirectory("Assets/_Project/Settings");AssetDatabase.Refresh();settings=ScriptableObject.CreateInstance<StormSettings>();AssetDatabase.CreateAsset(settings,SettingsPath);}
-   BuildAct2Scene.BuildTo(ScenePath);
-   var scene=UnityEngine.SceneManagement.SceneManager.GetActiveScene();if(scene.path!=ScenePath)return;
+   BuildAct2Scene.BuildTo(scenePath);
+   var scene=UnityEngine.SceneManagement.SceneManager.GetActiveScene();if(scene.path!=scenePath)return;
    // NewScene can unload assets referenced only by the calling stack; reload before wiring.
    settings=AssetDatabase.LoadAssetAtPath<StormSettings>(SettingsPath);
    var state=Object.FindAnyObjectByType<GameStateMachine>();Set(state,"startAtNight",false);Set(state,"startAtStorm",true);
@@ -87,7 +91,7 @@ namespace TheLightHouse.Editor
     Beat("A3-B07","lamp-pulse","","A3-B03"),
     Beat("A3-B08","courtyard-filling","","A3-B04"),
     Beat("A3-B09","storm-end","Act 3 complete — Crane's logbook is available (Act 4 pending)","A3-B04")});
-   EditorSceneManager.SaveScene(scene,ScenePath);AssetDatabase.SaveAssets();
+   EditorSceneManager.SaveScene(scene,scenePath);AssetDatabase.SaveAssets();
    Debug.Log("Act 3 built. Bake Navigation/NavMeshSurface, save, then Play. Reduced storm visuals are enabled by default.");
   }
   static StoryBeat Beat(string id,string signal,string objective,string prerequisite="")

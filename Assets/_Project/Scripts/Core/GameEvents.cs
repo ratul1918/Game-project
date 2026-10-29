@@ -154,6 +154,28 @@ namespace TheLightHouse
         }
     }
 
+    public readonly struct PageReadEvent
+    {
+        public readonly string Id;
+        public readonly string StoryFlag;
+        public PageReadEvent(string id, string storyFlag) { Id = id; StoryFlag = storyFlag; }
+    }
+
+    public readonly struct LedgerReadEvent
+    {
+        public readonly string EntryId;
+        public LedgerReadEvent(string entryId) { EntryId = entryId; }
+    }
+
+    public readonly struct ReadingStateChangedEvent
+    {
+        public readonly bool IsReading;
+        public readonly float ThreatSpeed;
+        public readonly float LampDecayFactor;
+        public ReadingStateChangedEvent(bool isReading, float threatSpeed, float lampDecayFactor)
+        { IsReading = isReading; ThreatSpeed = threatSpeed; LampDecayFactor = lampDecayFactor; }
+    }
+
     public static class GameEvents
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -188,6 +210,9 @@ namespace TheLightHouse
             ItemCollected = null;
             DoorStateChanged = null;
             DawnReached = null;
+            PageRead = null;
+            LedgerRead = null;
+            ReadingStateChanged = null;
         }
         public static event Action<NoiseEmittedEvent> NoiseHeard;
         public static event Action Thunder;
@@ -243,6 +268,12 @@ namespace TheLightHouse
         public static event Action<ItemCollectedEvent> ItemCollected;
         public static event Action<DoorStateChangedEvent> DoorStateChanged;
         public static event Action<DawnReachedEvent> DawnReached;
+        public static event Action<PageReadEvent> PageRead;
+        public static event Action<LedgerReadEvent> LedgerRead;
+        public static event Action<ReadingStateChangedEvent> ReadingStateChanged;
+        public static void RaisePageRead(PageReadEvent e) => PageRead?.Invoke(e);
+        public static void RaiseLedgerRead(LedgerReadEvent e) => LedgerRead?.Invoke(e);
+        public static void RaiseReadingStateChanged(ReadingStateChangedEvent e) => ReadingStateChanged?.Invoke(e);
 
         public static void RaiseNoiseEmitted(NoiseEmittedEvent eventData)
         {

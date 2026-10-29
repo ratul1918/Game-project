@@ -54,7 +54,20 @@ namespace TheLightHouse
         private float resumeClimbAt;
         private bool playerCranking;
         private bool stormComplete;
-        private void StormBeat(StoryBeatTriggeredEvent e){if(e.Id=="A3-B09"&&stormSettings){stormComplete=true;if(agent.isOnNavMesh){agent.ResetPath();agent.isStopped=true;}ChangeState(StalkerState.Idle);}}
+        [Header("Act 4")]
+        [SerializeField] private bool postRevealMode;
+        [SerializeField] private ActFourSettings actFourSettings;
+        [SerializeField] private AudioClip lullabyHum;
+        private float baseSpeed;
+        private float retreatUntil;
+        private bool hummed;
+        private float readingSpeed=1f;
+        private void StormBeat(StoryBeatTriggeredEvent e)
+        {
+            if(e.Id=="A3-B09"&&stormSettings){stormComplete=true;if(agent.isOnNavMesh){agent.ResetPath();agent.isStopped=true;}ChangeState(StalkerState.Idle);}
+            if(e.Id=="A4-B01"){stormComplete=false;ResetPatrol();}
+            if(e.Id=="A4-B05")postRevealMode=true;
+        }
         private void CrankActive(bool active)=>playerCranking=active;
         private StalkerState currentState = StalkerState.Idle;
         private float searchTimeRemaining;
@@ -62,11 +75,13 @@ namespace TheLightHouse
 
         public StalkerState CurrentState => currentState;
         public string StateName => currentState.ToString();
+        public bool PostRevealMode => postRevealMode;
 
         private void Awake()
         {
             agent = GetComponent<NavMeshAgent>();
             herding = GetComponent<CraneHerding>();
+            baseSpeed=agent.speed;
         }
 
         private void OnEnable()
@@ -76,6 +91,7 @@ namespace TheLightHouse
             GameEvents.PlayerRespawned += ResetPatrol;
             GameEvents.CrankActiveChanged += CrankActive;
             GameEvents.StoryBeatTriggered += StormBeat;
+            GameEvents.ReadingStateChanged += Reading;
         }
 
         private void Start()
@@ -91,11 +107,20 @@ namespace TheLightHouse
             GameEvents.PlayerRespawned -= ResetPatrol;
             GameEvents.CrankActiveChanged -= CrankActive;
             GameEvents.StoryBeatTriggered -= StormBeat;
+            GameEvents.ReadingStateChanged -= Reading;
         }
+
+        private void Reading(ReadingStateChangedEvent e){readingSpeed=e.IsReading?e.ThreatSpeed:1f;if(agent)agent.speed=baseSpeed*readingSpeed;}
 
         private void Update()
         {
             if(stormComplete)return;
+            if(postRevealMode&&currentState==StalkerState.Retreat&&Time.time>=retreatUntil){ResetPatrol();return;}
+            if(postRevealMode&&player&&!hummed&&Vector3.Distance(transform.position,player.transform.position)<= (actFourSettings?actFourSettings.lullabyRange:9f))
+            {
+                hummed=true;GameEvents.RequestDialogue(new("","(Crane hums a broken lullaby)"));
+                if(lullabyHum&&TryGetComponent<AudioSource>(out var hum)){hum.loop=true;hum.volume=actFourSettings?actFourSettings.lullabyVolume:.45f;hum.clip=lullabyHum;hum.Play();}
+            }
             if(stormSettings&&currentState==StalkerState.Climb)
             {
                 if(!stairWarned&&transform.position.y>=stormSettings.stairY)
@@ -113,8 +138,7 @@ namespace TheLightHouse
                 {
                     if(playerCranking&&player&&!playerHidden)
                     {
-                        GameEvents.RaisePlayerSpotted(new("crane-stalker",player.transform.position));
-                        GameEvents.RaiseCatchRequested();ChangeState(StalkerState.Retreat);
+                        ReachPlayer();
                     }
                     else BeginSearch();
                 }
@@ -129,11 +153,10 @@ namespace TheLightHouse
                 if (player && !player.IsCaught)
                 {
                     MoveTo(searchOrigin);
-                    if (Vector3.Distance(transform.position, player.transform.position) <= catchDistance)
+                    float contact=postRevealMode&&actFourSettings?actFourSettings.postRevealStopDistance:catchDistance;
+                    if (Vector3.Distance(transform.position, player.transform.position) <= contact)
                     {
-                        GameEvents.RaisePlayerSpotted(new("crane-stalker", player.transform.position));
-                        GameEvents.RaiseCatchRequested();
-                        ChangeState(StalkerState.Retreat);
+                        ReachPlayer();
                     }
                     else if (Arrived()) BeginSearch();
                 }
@@ -151,9 +174,8 @@ namespace TheLightHouse
                 {
                     if (checkingSpot && checkingSpot.Occupied)
                     {
-                        GameEvents.RaiseHidingExited();
-                        GameEvents.RaisePlayerSpotted(new("crane-stalker", player.transform.position));
-                        GameEvents.RaiseCatchRequested(); ChangeState(StalkerState.Retreat);
+                        if(postRevealMode){GameEvents.RaiseHidingExited();ReachPlayer();}
+                        else {GameEvents.RaiseHidingExited();GameEvents.RaisePlayerSpotted(new("crane-stalker", player.transform.position));GameEvents.RaiseCatchRequested();ChangeState(StalkerState.Retreat);}
                     }
                     else ResetPatrol();
                 }
@@ -294,6 +316,16 @@ namespace TheLightHouse
             playerHidden=player&&player.IsHidden;
             nextHearingTime=Time.time+hearingCooldown;
             ChangeState(StalkerState.Patrol);NextPatrolPoint();
+        }
+        void ReachPlayer()
+        {
+            if(postRevealMode)
+            {
+                if(agent.isOnNavMesh){agent.ResetPath();agent.isStopped=true;}
+                GameEvents.RequestDialogue(new("","(he stops, humming)"));
+                retreatUntil=Time.time+(actFourSettings?actFourSettings.postRevealPause:2.5f);ChangeState(StalkerState.Retreat);return;
+            }
+            GameEvents.RaisePlayerSpotted(new("crane-stalker",player.transform.position));GameEvents.RaiseCatchRequested();ChangeState(StalkerState.Retreat);
         }
         private void ChangeState(StalkerState nextState)
         {

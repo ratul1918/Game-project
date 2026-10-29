@@ -98,6 +98,10 @@ namespace TheLightHouse
             MonoBehaviour[] behaviours = hit.collider.GetComponentsInParent<MonoBehaviour>();
             foreach (MonoBehaviour behaviour in behaviours)
             {
+                if (!behaviour.isActiveAndEnabled)
+                {
+                    continue;
+                }
                 if (behaviour is IInteractable interactable)
                 {
                     return interactable;
