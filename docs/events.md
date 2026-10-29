@@ -1,5 +1,18 @@
 # Game Event Contracts
 
+## Act 5 additions
+
+- `FinalePhaseChanged: Action<FinalePhaseChangedEvent>` publishes the current `FinalePhase` (`Flood`, `Hold`, `CraneIntervenes`, `DawnCountdown`, `Escape`) and normalized phase progress. `DrownedManager` uses Hold progress only to raise its serialized pressure multiplier.
+- `DrownedLureRequested: Action<DrownedLureEvent>` carries immutable world `Position` and `Radius`. Crane's protective slams and courtyard route publish it; DrownedManager redirects only unobserved figures in range.
+- `CheckpointReached: Action<CheckpointReachedEvent>` carries stable checkpoint `Id` and world `Position`. SaveSystem writes JSON at Finale entry and Dawn-countdown entry.
+- `DawnThresholdReached: Action<float>` is published by DawnController after its authored duration. StoryDirector consumes it, commits `A5-B04`, and then remains the sole gameplay publisher of `DawnReached` with the elapsed duration.
+- `LedgerEndingRead: Action` announces that the boat ledger epilogue was opened. BoatEnding also requests the `next-keeper` story signal; StoryDirector alone commits `A5-B06`.
+
+`SaveSystem` serializes act/scene, checkpoint ID and position, collected item IDs, journal page IDs,
+completed beat flags, and accessibility/sensitivity/volume options to `Application.persistentDataPath`.
+`DawnReached` stops pressure and starts every active Drowned figure's water-return/sink routine.
+The watched-figure freeze contract remains in force during Finale pressure and Crane lures.
+
 ## Act 4 additions
 
 - `PageRead: Action<PageReadEvent>`: `LogbookJournal` publishes the immutable page `Id` and `StoryFlag` when a collected page is opened. `ActFourBeats` translates approved flags into story signals; `StoryDirector` remains the only beat publisher.
@@ -295,6 +308,7 @@ Initial greybox tuning values; change this table before changing implementation 
 | Front door knock | 10 m | Each knock is a separate event. |
 | Singing lure alert | 18 m | Only when the player approaches after singing. |
 | Sliding false shelf | 10 m | One-shot hidden-room reveal noise. |
+| Crane protective door slam | 28 m | Very loud cover noise; also requests a Drowned lure around the slammed door. |
 
 ### Surface multipliers
 

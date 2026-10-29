@@ -9,6 +9,7 @@ namespace TheLightHouse
   InputAction toggle;
   [SerializeField] Rect area=new(20,650,300,30);
   public bool Reduced=>reduceStormVisuals;
+  public void SetReduced(bool value)=>reduceStormVisuals=value;
   void Awake(){if(inputActions)toggle=inputActions.FindAction("Player/StormAccessibility");}
   void OnEnable()=>toggle?.Enable();
   void OnDisable()=>toggle?.Disable();

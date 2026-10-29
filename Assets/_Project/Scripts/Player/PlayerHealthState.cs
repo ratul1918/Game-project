@@ -20,7 +20,8 @@ namespace TheLightHouse
         }
         void OnEnable(){GameEvents.HidingEntered+=Enter;GameEvents.HidingExited+=Exit;GameEvents.GameStateChanged+=State;}
         void OnDisable(){GameEvents.HidingEntered-=Enter;GameEvents.HidingExited-=Exit;GameEvents.GameStateChanged-=State;}
-        void State(GameStateChangedEvent e){if(e.Current==GameState.Storm)CheckpointPosition=transform.position;}
+        void State(GameStateChangedEvent e){if(e.Current==GameState.Storm||e.Current==GameState.Finale||e.Current==GameState.Dawn){CheckpointPosition=transform.position;GameEvents.RaiseCheckpointReached(new(e.Current.ToString(),CheckpointPosition));}}
+        public void SetCheckpoint(Vector3 position){CheckpointPosition=position;}
         void Enter(HidingEnteredEvent request)
         {
             var spot=request.Spot;

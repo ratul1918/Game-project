@@ -82,3 +82,13 @@ revelation beats; gates consume page and beat events rather than discovering the
 computes tuning and distance presentation, while its signals unlock authored story progression. Post-reveal
 Crane keeps the existing sound-driven navigation and CraneHerding route bias, but replaces catch requests with
 a stop/hum/retreat response after A4-B05. A4-B06 is the sole Storm-to-Finale transition.
+
+Act 5 keeps StoryDirector as beat/DawnReached authority. FinaleDirector owns phase timing and failure recovery;
+DawnController owns environmental interpolation and reports its threshold; DrownedManager owns pressure,
+observation protection and water retreat; CraneFinale is a non-hostile navigation extension beside the disabled
+StalkerAI. SaveSystem is a persistent JSON snapshot service. ActFlowController is present only in the full-game
+flow: it loads the next authored scene at the previous act's terminal beat, then restores inventory IDs, journal
+page IDs, checkpoint and flags. Direct act scenes retain their existing isolated test starts.
+
+`TheLightHouse/Build Full Game Scenes` rebuilds MainMenu plus Acts 1–5 and places them in Build Settings in that
+order. MainMenu owns Start/Continue/options; its persistent ActFlow/Save/Debug object survives scene loads.

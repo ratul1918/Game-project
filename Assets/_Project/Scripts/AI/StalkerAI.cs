@@ -72,6 +72,7 @@ namespace TheLightHouse
         private StalkerState currentState = StalkerState.Idle;
         private float searchTimeRemaining;
         private bool reportedMissingNavMesh;
+        public bool HearingEnabled { get; set; } = true;
 
         public StalkerState CurrentState => currentState;
         public string StateName => currentState.ToString();
@@ -194,6 +195,7 @@ namespace TheLightHouse
 
         private void HandleNoiseEmitted(NoiseEmittedEvent eventData)
         {
+            if(!HearingEnabled)return;
             if(stormComplete)return;
             if (eventData.Source == gameObject || (actTwo && (Time.time < nextHearingTime || currentState == StalkerState.Retreat))) return;
             float audibleRadius = Mathf.Min(hearingRange, eventData.Loudness);

@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b0e1bc063c754d20b72a022b6ac5040, type: 3}
+  m_Name: FinaleSettings
+  m_EditorClassIdentifier: Assembly-CSharp::TheLightHouse.FinaleSettings
+  floodDelay: 2
+  holdDuration: 75
+  interventionDelay: 4
+  dawnDuration: 45
+  initialCharge: 0.18
+  chargeDecayFactor: 1.8
+  extinguishedGrace: 5
+  pulseStaminaCost: 18
+  figuresAtDoorForFailure: 2
+  figureCount: 14
+  maximumPressureMultiplier: 3
+  lureStepDistance: 2
+  returnDuration: 6
+  sinkDepth: 2.5
+  slamInterval: 8
+  slamLoudness: 28
+  lureRadius: 12
+  craneSpeed: 4
+  controlStutter: 1.2
+  nearHumRange: 6
+  farHumRange: 18
+  dawnLightIntensity: 1.25
+  finalFogDensity: 0.005
+  doorwayBlockDuration: 4
+  shorelineSequenceDuration: 9
+  boatTravelDuration: 8
+  shorelineLookYaw: 30
+  shorelineLookPitch: 15
+  finalBeamSweepDegrees: 360

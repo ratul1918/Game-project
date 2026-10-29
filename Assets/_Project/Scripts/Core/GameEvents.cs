@@ -176,6 +176,26 @@ namespace TheLightHouse
         { IsReading = isReading; ThreatSpeed = threatSpeed; LampDecayFactor = lampDecayFactor; }
     }
 
+    public enum FinalePhase { Flood, Hold, CraneIntervenes, DawnCountdown, Escape }
+    public readonly struct FinalePhaseChangedEvent
+    {
+        public readonly FinalePhase Phase;
+        public readonly float Progress;
+        public FinalePhaseChangedEvent(FinalePhase phase,float progress){Phase=phase;Progress=progress;}
+    }
+    public readonly struct DrownedLureEvent
+    {
+        public readonly Vector3 Position;
+        public readonly float Radius;
+        public DrownedLureEvent(Vector3 position,float radius){Position=position;Radius=radius;}
+    }
+    public readonly struct CheckpointReachedEvent
+    {
+        public readonly string Id;
+        public readonly Vector3 Position;
+        public CheckpointReachedEvent(string id,Vector3 position){Id=id;Position=position;}
+    }
+
     public static class GameEvents
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -213,6 +233,11 @@ namespace TheLightHouse
             PageRead = null;
             LedgerRead = null;
             ReadingStateChanged = null;
+            FinalePhaseChanged = null;
+            DrownedLureRequested = null;
+            CheckpointReached = null;
+            LedgerEndingRead = null;
+            DawnThresholdReached = null;
         }
         public static event Action<NoiseEmittedEvent> NoiseHeard;
         public static event Action Thunder;
@@ -271,9 +296,20 @@ namespace TheLightHouse
         public static event Action<PageReadEvent> PageRead;
         public static event Action<LedgerReadEvent> LedgerRead;
         public static event Action<ReadingStateChangedEvent> ReadingStateChanged;
+        public static event Action<FinalePhaseChangedEvent> FinalePhaseChanged;
+        public static event Action<DrownedLureEvent> DrownedLureRequested;
+        public static event Action<CheckpointReachedEvent> CheckpointReached;
+        public static event Action LedgerEndingRead;
+        public static event Action<float> DawnThresholdReached;
         public static void RaisePageRead(PageReadEvent e) => PageRead?.Invoke(e);
         public static void RaiseLedgerRead(LedgerReadEvent e) => LedgerRead?.Invoke(e);
         public static void RaiseReadingStateChanged(ReadingStateChangedEvent e) => ReadingStateChanged?.Invoke(e);
+        public static void RaiseFinalePhaseChanged(FinalePhaseChangedEvent e)=>FinalePhaseChanged?.Invoke(e);
+        public static void RaiseDrownedLureRequested(DrownedLureEvent e)=>DrownedLureRequested?.Invoke(e);
+        public static void RaiseCheckpointReached(CheckpointReachedEvent e)=>CheckpointReached?.Invoke(e);
+        public static void RaiseLedgerEndingRead()=>LedgerEndingRead?.Invoke();
+        public static void RaiseDawnThresholdReached(float elapsed)=>DawnThresholdReached?.Invoke(elapsed);
+        public static void RaiseDawnReached(DawnReachedEvent e)=>DawnReached?.Invoke(e);
 
         public static void RaiseNoiseEmitted(NoiseEmittedEvent eventData)
         {

@@ -46,10 +46,10 @@ The cards below mirror `docs/roadmap.md`. A card is complete only when its accep
 
 ## Card 6 — Act 5: Dawn
 
-- [ ] Implement the flooded courtyard and failing-lamp finale.
-- [ ] Implement Crane's protective route and noise-covering actions.
-- [ ] Resolve the dawn escape, lullaby, Crane's rest, and morning-boat epilogue.
-- [ ] Show Daniel crossed out and the next keeper entered in the ledger.
+- [x] Implement the flooded courtyard and failing-lamp finale.
+- [x] Implement Crane's protective route and noise-covering actions.
+- [x] Resolve the dawn escape, lullaby, Crane's rest, and morning-boat epilogue.
+- [x] Show Daniel crossed out and the next keeper entered in the ledger.
 - [ ] Produce a complete playable build.
 
 ## Card 7 — Polish

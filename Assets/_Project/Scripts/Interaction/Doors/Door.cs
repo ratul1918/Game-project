@@ -9,6 +9,7 @@ public sealed class Door : MonoBehaviour,IInteractable {
 [SerializeField] float loudness=5;
 [SerializeField] bool blockDuringActTwo;
 [SerializeField] AudioClip rattle;
+[SerializeField] float slamLoudness=28f;
 bool held; bool open;
 Quaternion closedRotation;
 public string Prompt=>locked?"Locked — try handle":open?"Close door":"Open door";
@@ -24,4 +25,9 @@ void Awake()=>closedRotation=transform.localRotation;
 void Update()=>transform.localRotation=Quaternion.RotateTowards(transform.localRotation,closedRotation*Quaternion.Euler(0,open?openAngle:0,0),turnSpeed*Time.deltaTime);
 public void Interact(){if(held)return;held=true;if(blockDuringActTwo){GameEvents.RaiseFrontDoorTried();return;}GetComponent<NoiseEmitter>().Emit(loudness);if(locked){if(rattle&&TryGetComponent<AudioSource>(out var source))source.PlayOneShot(rattle);GameEvents.RequestDialogue(new("","(door rattles softly)"));return;}var previous=open?DoorState.Open:DoorState.Closed;open=!open;GameEvents.RaiseDoorStateChanged(new(doorId,previous,open?DoorState.Open:DoorState.Closed));}
 public void StopInteract()=>held=false;
+public void SlamForce()
+{
+ var previous=open?DoorState.Open:DoorState.Closed;open=false;GetComponent<NoiseEmitter>().Emit(slamLoudness);
+ GameEvents.RaiseDoorStateChanged(new(doorId,previous,DoorState.Closed));
+}
 }}

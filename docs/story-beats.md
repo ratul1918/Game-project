@@ -95,3 +95,13 @@ to the sea for his son and was taken but not allowed to rest. The final entry is
 | A5-B04 | First light | Finale objective completes and dawn threshold is reached. | `DawnReached`; Drowned retreat; Crane doorway block. |
 | A5-B05 | Last line | Daniel reaches the dock trigger and Crane completes the lullaby. | Crane's rest; morning boat transition. |
 | A5-B06 | The next keeper | Player views the ledger epilogue with Daniel crossed out and a new name entered. | Ending and credits. |
+
+These six IDs already cover every requested Finale phase, so no additional IDs were added. `FinaleDirector`
+maps Flood to A5-B01, completion of the authored Hold duration to A5-B02, Crane's intervention/lullaby to
+A5-B03, DawnController's completed threshold to A5-B04, the shoreline sequence to A5-B05, and the boat-ledger
+epilogue to A5-B06. `StoryDirector` publishes `DawnReached` only after committing A5-B04.
+
+The direct Act 5 scene starts in `Finale` with charge mode active at 0.18. Fourteen Drowned figures press the
+courtyard while Hold progress raises their advance cadence; observed figures still freeze. Crane is no longer
+hostile, and his slams/lures pay off `CraneHerding` and `PostRevealMode`. A5-B04 disables catch pressure and
+opens the dock route. A5-B05 resolves Crane at the shoreline, and A5-B06 transitions `Dawn` to `Ending`.

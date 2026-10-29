@@ -17,21 +17,25 @@ namespace TheLightHouse.Editor
         [MenuItem("TheLightHouse/Build Act 4 Scene")]
         public static void Build()
         {
+            BuildTo(ScenePath);
+        }
+        public static void BuildTo(string scenePath)
+        {
             if(EditorApplication.isPlayingOrWillChangePlaymode)return;
             Directory.CreateDirectory("Assets/_Project/Settings");Directory.CreateDirectory(PageFolder);AssetDatabase.Refresh();
             var settings=AssetDatabase.LoadAssetAtPath<ActFourSettings>(SettingsPath);
             if(!settings){settings=ScriptableObject.CreateInstance<ActFourSettings>();AssetDatabase.CreateAsset(settings,SettingsPath);}
-            BuildAct3Scene.BuildTo(ScenePath);
-            var scene=UnityEngine.SceneManagement.SceneManager.GetActiveScene();if(scene.path!=ScenePath)return;
+            BuildAct3Scene.BuildTo(scenePath);
+            var scene=UnityEngine.SceneManagement.SceneManager.GetActiveScene();if(scene.path!=scenePath)return;
             settings=AssetDatabase.LoadAssetAtPath<ActFourSettings>(SettingsPath);
             var actions=AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
             var player=GameObject.Find("Player");var controller=player.GetComponent<FirstPersonController>();var health=player.GetComponent<PlayerHealthState>();var interactor=player.GetComponent<Interactor>();var inventory=player.GetComponent<Inventory>();var view=player.GetComponentInChildren<Camera>();
             player.transform.position=new Vector3(0,3.1f,5);
 
-            foreach(var component in Object.FindObjectsByType<StormBeats>(FindObjectsSortMode.None))component.enabled=false;
-            foreach(var component in Object.FindObjectsByType<StormEndCondition>(FindObjectsSortMode.None))component.enabled=false;
-            foreach(var component in Object.FindObjectsByType<StormController>(FindObjectsSortMode.None))component.enabled=false;
-            foreach(var component in Object.FindObjectsByType<Generator>(FindObjectsSortMode.None))component.enabled=false;
+            foreach(var component in Object.FindObjectsByType<StormBeats>())component.enabled=false;
+            foreach(var component in Object.FindObjectsByType<StormEndCondition>())component.enabled=false;
+            foreach(var component in Object.FindObjectsByType<StormController>())component.enabled=false;
+            foreach(var component in Object.FindObjectsByType<Generator>())component.enabled=false;
 
             var lamp=Object.FindAnyObjectByType<LampController>();Set(lamp,"actFourSettings",settings);Set(lamp,"startInChargeMode",true);
             var crane=GameObject.Find("Stalker");crane.SetActive(true);var ai=crane.GetComponent<StalkerAI>();Set(ai,"postRevealMode",false);Set(ai,"actFourSettings",settings);
@@ -57,6 +61,7 @@ namespace TheLightHouse.Editor
                 Page("keeper-selection","Keeper Selection","The harbor board does not choose keepers for skill alone. It sends people burdened by guilt—people the island can call and hold.","",false),
                 Page("crane-observation","Crane's Observation","The thing wearing the keeper's coat blocks the water path and leaves the way toward the boat shed open. It is herding, not hunting alone.","",false),
                 Page("crane-final-entry","Crane's Last Entry","I went into the sea to offer myself in place of my son. The sea took me, but it would not let me rest.","crane-bargain",true)};
+            SetArray(journal,"allPages",pages);
             PlacePage("Marguerite page — keeper's room",new(-5,3.35f,6.8f),pages[0],journal);
             PlacePage("Wrecker tally — stair landing",new(6.2f,3.25f,3.3f),pages[1],journal);
             PlacePage("Leash page — storeroom",new(-7,.45f,5.5f),pages[2],journal);
@@ -91,7 +96,7 @@ namespace TheLightHouse.Editor
                 Beat("A4-B06","crane-bargain","Hold the light until dawn")});
             SetArray(director,"optionalBeats",System.Array.Empty<StoryBeat>());Set(director,"allowPendingActTwoSignals",true);
             GameObject.Find("Front Door Knocking")?.SetActive(false);GameObject.Find("Singing From Shore")?.SetActive(false);
-            EditorSceneManager.SaveScene(scene,ScenePath);AssetDatabase.SaveAssets();
+            EditorSceneManager.SaveScene(scene,scenePath);AssetDatabase.SaveAssets();
             Debug.Log("Act 4 built after the storm. Bake Navigation/NavMeshSurface, save, then Play. Tune with Q/T or the mouse wheel; J opens the journal.");
         }
 

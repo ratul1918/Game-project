@@ -33,19 +33,22 @@ namespace TheLightHouse
         private bool stormComplete;
         private float charge,pulseTime,nextPulse;
         [SerializeField] private ActFourSettings actFourSettings;
+        [SerializeField] private FinaleSettings finaleSettings;
         private float readingDecayFactor = 1f;
+        private bool finale;
         public bool ChargeMode=>storm;
         public float Charge=>charge;
         private void OnEnable(){GameEvents.GameStateChanged+=HandleState;GameEvents.StoryBeatTriggered+=StormBeat;GameEvents.ReadingStateChanged+=Reading;}
         private void OnDisable(){GameEvents.GameStateChanged-=HandleState;GameEvents.StoryBeatTriggered-=StormBeat;GameEvents.ReadingStateChanged-=Reading;}
         private void Reading(ReadingStateChangedEvent e)=>readingDecayFactor=e.IsReading?e.LampDecayFactor:1f;
-        private void HandleState(GameStateChangedEvent e){HandleGameState(e);if(e.Current==GameState.Storm&&stormSettings){charge=stormSettings.initialCharge;GameEvents.RaiseLampChargeChanged(charge);}}
+        private void HandleState(GameStateChangedEvent e){HandleGameState(e);if(e.Current==GameState.Storm&&stormSettings){charge=stormSettings.initialCharge;GameEvents.RaiseLampChargeChanged(charge);}if(e.Current==GameState.Finale&&finaleSettings){storm=true;finale=true;stormComplete=false;charge=finaleSettings.initialCharge;RefreshState(true);GameEvents.RaiseLampChargeChanged(charge);}if(e.Current==GameState.Dawn)finale=false;}
         private void StormBeat(StoryBeatTriggeredEvent e)
         {
             if(e.Id=="A3-B09"&&storm){stormComplete=true;charge=Mathf.Max(charge,stormSettings.healthyThreshold);RefreshState(true);}
             if(e.Id=="A3-B02"&&stormSettings){storm=true;charge=stormSettings.initialCharge;RefreshState(true);}
         }
         public void AddCharge(float amount){if(!storm)return;charge=Mathf.Clamp01(charge+amount);}
+        public void SetCharge(float value){if(!storm)return;charge=Mathf.Clamp01(value);RefreshState(true);GameEvents.RaiseLampChargeChanged(charge);}
         private void HandleGameState(GameStateChangedEvent e) => nightActive = e.Current == GameState.Night;
         public bool TryIgnite()
         {
@@ -62,7 +65,7 @@ namespace TheLightHouse
 
         private void Start()
         {
-            if(startInChargeMode&&stormSettings){storm=true;charge=stormSettings.initialCharge;GameEvents.RaiseLampChargeChanged(charge);}
+            if(startInChargeMode&&stormSettings&&!finale){storm=true;charge=stormSettings.initialCharge;GameEvents.RaiseLampChargeChanged(charge);}
             ignited = !startWarmButUnlit;
             float previousFuel = currentFuel;
             currentFuel = Mathf.Clamp(startingFuel, 0f, fuelCapacity);
@@ -74,7 +77,8 @@ namespace TheLightHouse
         {
             if(storm)
             {
-                if(!stormComplete)charge=Mathf.Max(0,charge-stormSettings.chargeDecay*readingDecayFactor*Time.deltaTime);
+                float finaleFactor=finale&&finaleSettings?finaleSettings.chargeDecayFactor:1f;
+                if(!stormComplete)charge=Mathf.Max(0,charge-stormSettings.chargeDecay*readingDecayFactor*finaleFactor*Time.deltaTime);
                 RefreshState(false);GameEvents.RaiseLampChargeChanged(charge);
                 if(beam)beam.Rotate(Vector3.up,stormSettings.beamDegreesPerSecond*charge*Time.deltaTime);
                 pulseTime=charge>=stormSettings.pulseThreshold?pulseTime+Time.deltaTime:0f;

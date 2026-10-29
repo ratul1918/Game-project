@@ -60,6 +60,8 @@ namespace TheLightHouse
         private InputAction crouchAction;
         private float verticalVelocity;
         private float pitch;
+        private float lookSensitivityMultiplier=1f;
+        public void ApplyOptions(float sensitivityMultiplier,bool disableBobAndFov){lookSensitivityMultiplier=Mathf.Max(.01f,sensitivityMultiplier);settings.disableBobAndFov=disableBobAndFov;}
         public bool MovementEnabled
         {
             get => movementEnabled;
@@ -168,7 +170,7 @@ namespace TheLightHouse
 
         private void UpdateLook()
         {
-            Vector2 lookInput = lookLocked ? Vector2.zero : lookAction.ReadValue<Vector2>() * settings.lookSensitivity;
+            Vector2 lookInput = lookLocked ? Vector2.zero : lookAction.ReadValue<Vector2>() * settings.lookSensitivity * lookSensitivityMultiplier;
             pitch = Mathf.Clamp(pitch - lookInput.y, settings.minimumPitch, settings.maximumPitch);
             if (peekPitchLimit > 0f) pitch = Mathf.Clamp(pitch, -peekPitchLimit, peekPitchLimit);
             if (peekYawLimit > 0f)

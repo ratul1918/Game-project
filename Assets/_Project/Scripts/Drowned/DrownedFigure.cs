@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 namespace TheLightHouse
 {
@@ -31,5 +32,18 @@ namespace TheLightHouse
             return true;
         }
         public void StepBack(){if(path==null||step<=0)return;step--;transform.position=path[step];}
+        public void Divert(Vector3 target,float distance){if(Seen)return;Vector3 flat=target-transform.position;flat.y=0;if(flat.sqrMagnitude>.01f)transform.position+=flat.normalized*Mathf.Min(distance,flat.magnitude);}
+        public void ReturnToWater(float duration,float sinkDepth)
+        {
+            StopAllCoroutines();StartCoroutine(ReturnRoutine(duration,sinkDepth));
+        }
+        IEnumerator ReturnRoutine(float duration,float sinkDepth)
+        {
+            Vector3 from=transform.position;Vector3 shore=path!=null&&path.Length>0?path[0]:from;float t=0;
+            while(t<duration){t+=Time.deltaTime;transform.position=Vector3.Lerp(from,shore,t/duration);yield return null;}
+            from=transform.position;t=0;
+            while(t<duration*.5f){t+=Time.deltaTime;transform.position=Vector3.Lerp(from,from+Vector3.down*sinkDepth,t/(duration*.5f));yield return null;}
+            gameObject.SetActive(false);
+        }
     }
 }

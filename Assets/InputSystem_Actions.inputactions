@@ -157,6 +157,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "GameDebug",
+                    "type": "Button",
+                    "id": "2543ad9a-2e4a-46a3-8f12-0404f6e00104",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -630,6 +639,17 @@
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "TuneRight",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "2543ad9a-2e4a-46a3-8f12-0404f6e00204",
+                    "path": "<Keyboard>/f1",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "GameDebug",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

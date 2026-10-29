@@ -39,7 +39,7 @@ for(int i=0;i<StairCount;i++)Cube("Stair "+i,new(7,(i+1)*StairRise/2,-5+i*StairR
 Cube("Lantern Room Floor",new(-1.75f,2.85f,5.5f),new(14.5f,.3f,7));
 Cube("Lantern Room Floor Back",new(7.25f,2.85f,6),new(3.5f,.3f,6));
 Cube("Stair Top Landing",new(7,2.85f,2.625f),new(2,.3f,.75f));
-var lamp=Object.FindFirstObjectByType<LampController>();
+var lamp=Object.FindAnyObjectByType<LampController>();
 lamp.transform.position=new(0,4.5f,6);
 Set(lamp,"startWarmButUnlit",true);Set(lamp,"requireFuelCan",true);Set(lamp,"startingFuel",5f);
 var lantern=lamp.gameObject.AddComponent<LanternInteract>();Set(lantern,"lamp",lamp);Set(lantern,"inventory",inventory);
