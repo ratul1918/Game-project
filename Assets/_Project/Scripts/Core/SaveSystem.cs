@@ -11,6 +11,7 @@ namespace TheLightHouse
         public bool disableBobAndFov;
         public float sensitivity=1f;
         public float volume=1f;
+        [Range(.7f,1f)] public float renderScale=1f;
     }
     [Serializable] public sealed class GameSaveData
     {
@@ -59,6 +60,7 @@ namespace TheLightHouse
             var controller=FindAnyObjectByType<FirstPersonController>();controller?.ApplyOptions(data.options.sensitivity,data.options.disableBobAndFov);
             var accessibility=FindAnyObjectByType<AccessibilityOptions>();accessibility?.SetReduced(data.options.reducedStorm);
             AudioListener.volume=data.options.volume;
+            if(UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline is UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset pipeline)pipeline.renderScale=Mathf.Clamp(data.options.renderScale,.7f,1f);
         }
     }
 }

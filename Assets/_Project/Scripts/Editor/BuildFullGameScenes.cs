@@ -25,9 +25,10 @@ namespace TheLightHouse.Editor
             Button("Continue",canvasObject.transform,new(.35f,.48f),new(.65f,.56f),menu.ContinueGame);
             Toggle("Reduced storm visuals",canvasObject.transform,new(.3f,.38f),new(.7f,.44f),menu.SetReducedStorm,true);
             Toggle("Disable bob and FOV",canvasObject.transform,new(.3f,.31f),new(.7f,.37f),menu.SetDisableBob,false);
-            Slider("Sensitivity",canvasObject.transform,new(.3f,.23f),new(.7f,.28f),menu.SetSensitivity,.1f,2f,1f);
-            Slider("Volume placeholder",canvasObject.transform,new(.3f,.15f),new(.7f,.2f),menu.SetVolume,0f,1f,1f);
-            Button("Quit",canvasObject.transform,new(.35f,.05f),new(.65f,.12f),menu.Quit);
+            Slider("Sensitivity",canvasObject.transform,new(.3f,.24f),new(.7f,.29f),menu.SetSensitivity,.1f,2f,1f);
+            Slider("Render scale",canvasObject.transform,new(.3f,.17f),new(.7f,.22f),menu.SetRenderScale,.7f,1f,1f);
+            Slider("Volume placeholder",canvasObject.transform,new(.3f,.10f),new(.7f,.15f),menu.SetVolume,0f,1f,1f);
+            Button("Quit",canvasObject.transform,new(.35f,.02f),new(.65f,.08f),menu.Quit);
             new GameObject("EventSystem",typeof(UnityEngine.EventSystems.EventSystem),typeof(UnityEngine.InputSystem.UI.InputSystemUIInputModule));EditorSceneManager.SaveScene(scene,MenuPath);
         }
         static void Button(string label,Transform parent,Vector2 min,Vector2 max,UnityEngine.Events.UnityAction action){var go=new GameObject(label,typeof(RectTransform),typeof(CanvasRenderer),typeof(Image),typeof(Button));go.transform.SetParent(parent,false);var rect=go.GetComponent<RectTransform>();rect.anchorMin=min;rect.anchorMax=max;rect.offsetMin=rect.offsetMax=Vector2.zero;var button=go.GetComponent<Button>();UnityEventTools.AddPersistentListener(button.onClick,action);Label(label,go.transform,Vector2.zero,Vector2.one,28);}

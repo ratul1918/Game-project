@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace TheLightHouse
 {
@@ -13,6 +15,7 @@ namespace TheLightHouse
         public void SetDisableBob(bool value){options.disableBobAndFov=value;flow?.ApplyOptions(options);}
         public void SetSensitivity(float value){options.sensitivity=value;flow?.ApplyOptions(options);}
         public void SetVolume(float value){options.volume=value;AudioListener.volume=value;flow?.ApplyOptions(options);}
+        public void SetRenderScale(float value){options.renderScale=Mathf.Clamp(value,.7f,1f);if(GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset pipeline)pipeline.renderScale=options.renderScale;flow?.ApplyOptions(options);}
         public void Quit(){Application.Quit();}
     }
 }

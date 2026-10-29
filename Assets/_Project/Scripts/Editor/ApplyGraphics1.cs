@@ -45,11 +45,11 @@ namespace TheLightHouse.Editor
             PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.StandaloneOSX,false);
             PlayerSettings.SetGraphicsAPIs(BuildTarget.StandaloneOSX,new[]{GraphicsDeviceType.Metal});
             var source=AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>("Assets/Settings/PC_RPAsset.asset");
-            var mac=ClonePipeline(source,SettingsFolder+"/URP_Mac.asset",1f,28f,2);
-            var low=ClonePipeline(source,SettingsFolder+"/URP_Low.asset",.75f,20f,1);
+            var mac=ClonePipeline(source,SettingsFolder+"/URP_Mac.asset",1f,24f,4);
+            var low=ClonePipeline(source,SettingsFolder+"/URP_Low.asset",.75f,16f,4);
             Object qualityAsset=AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/QualitySettings.asset")[0];
             var quality=new SerializedObject(qualityAsset);SerializedProperty levels=quality.FindProperty("m_QualitySettings");
-            int macIndex=EnsureQuality(levels,"Mac",mac,2,28f);EnsureQuality(levels,"Low",low,1,20f);
+            int macIndex=EnsureQuality(levels,"Mac",mac,2,24f);EnsureQuality(levels,"Low",low,1,16f);
             quality.FindProperty("m_CurrentQuality").intValue=macIndex;quality.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -108,6 +108,7 @@ namespace TheLightHouse.Editor
         {
             var old=GameObject.Find(RootName);if(old)Object.DestroyImmediate(old);
             var root=new GameObject(RootName);Light sun=Object.FindAnyObjectByType<DuskTimer>()?.GetComponentInChildren<Light>();if(!sun)sun=Object.FindAnyObjectByType<StormController>()?.GetComponentInChildren<Light>();if(!sun)sun=Object.FindObjectsByType<Light>().FirstOrDefault(l=>l.type==LightType.Directional);
+            root.AddComponent<PerformanceHud>();
             var controller=root.AddComponent<AtmosphereController>();Set(controller,"settings",settings);Set(controller,"directionalLight",sun);Set(controller,"duskTimer",Object.FindAnyObjectByType<DuskTimer>());Set(controller,"stormController",Object.FindAnyObjectByType<StormController>());Set(controller,"dawnController",Object.FindAnyObjectByType<DawnController>());
             string[] names={"Dusk","Night","Storm","Finale","Dawn"};string[] fields={"duskVolume","nightVolume","stormVolume","finaleVolume","dawnVolume"};for(int i=0;i<profiles.Length;i++){var volumeObject=new GameObject(names[i]+" Volume");volumeObject.transform.SetParent(root.transform);var volume=volumeObject.AddComponent<Volume>();volume.isGlobal=true;volume.priority=i;volume.profile=profiles[i];volume.weight=i==0?1f:0f;Set(controller,fields[i],volume);}
             AddFog(root.transform,fogMaterial);

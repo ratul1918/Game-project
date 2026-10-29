@@ -61,6 +61,8 @@ The cards below mirror `docs/roadmap.md`. A card is complete only when its accep
 - [x] Add Graphics 1 atmosphere presets, URP post-processing, lamp beam, fog cards, wetness and lightweight lighting helpers.
 - [x] Add Mac and Low URP quality tiers plus the reusable MoodTest and Graphics 1 applicator.
 - [ ] Bake lighting and profile Acts 1–5 on the target MacBook Air M3.
+- [x] Define and enforce the 8 GB asset/runtime budget with an asset checker, F4 HUD, act unloading, quality limits and Drowned LOD cap.
+- [ ] Record a sustained target-hardware memory and frame-time profile for each act.
 
 - [ ] Replace only proven placeholders with final art and audio.
 - [ ] Tune stealth readability, noise values, lamp pressure, pacing, and accessibility.

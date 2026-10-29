@@ -10,7 +10,10 @@ namespace TheLightHouse
         [SerializeField] float failingMultiplier=1.5f;
         [SerializeField] float extinguishedMultiplier=2;
         [SerializeField] float missedDuskMultiplier=1.5f;
-        float nextCheck,nextAdvance;bool threat;bool missedDusk;bool night;float readingSpeed=1f;
+        [SerializeField,Min(1)] int maxFullDetailFigures=4;
+        [SerializeField,Min(.05f)] float detailRefreshInterval=.5f;
+        [SerializeField] Transform detailTarget;
+        float nextCheck,nextAdvance,nextDetailRefresh;bool threat;bool missedDusk;bool night;float readingSpeed=1f;
         LampState lamp=LampState.FuelLit;
         [SerializeField] StormSettings stormSettings;
         bool storm;int courtyard;
@@ -37,6 +40,7 @@ namespace TheLightHouse
         bool CanAdvance=>night&&threat&&(lamp==LampState.Failing||lamp==LampState.Extinguished||lamp==LampState.Unlit);
         void LateUpdate()
         {
+            RefreshDetailLevels();
             if(frozen||dawnActive||Time.time<nextCheck)return;nextCheck=Time.time+checkRate;
             foreach(var figure in figures)figure.CheckVisibility(view);
             if(!CanAdvance||Time.time<nextAdvance)return;
@@ -46,6 +50,13 @@ namespace TheLightHouse
             nextAdvance=Time.time+((storm&&stormSettings?(lamp==LampState.Failing?stormSettings.failingAdvanceInterval:stormSettings.extinguishedAdvanceInterval):advanceInterval/Mathf.Max(.01f,rate))/Mathf.Max(.05f,readingSpeed))/finalePressure;
             foreach(var figure in figures)if(figure.Advance()&&storm){GameEvents.RaiseStorySignal("storm-darkness");if(figure.AtDoor)courtyard++;if(courtyard>=stormSettings.courtyardCount)GameEvents.RaiseStorySignal("courtyard-filling");}
         }
+        void RefreshDetailLevels()
+        {
+            if(Time.time<nextDetailRefresh||figures==null)return;nextDetailRefresh=Time.time+detailRefreshInterval;Transform target=detailTarget?detailTarget:(view?view.transform:null);if(!target)return;
+            System.Array.Sort(figures,(a,b)=>Distance(a,target).CompareTo(Distance(b,target)));
+            int full=0;foreach(var figure in figures){if(!figure||!figure.gameObject.activeSelf)continue;figure.SetFullDetail(full<maxFullDetailFigures);full++;}
+        }
+        static float Distance(DrownedFigure figure,Transform target)=>figure?(figure.transform.position-target.position).sqrMagnitude:float.MaxValue;
         public void LureNearest(Vector3 position)
         {
             if(!CanAdvance)return;DrownedFigure nearest=null;float distance=float.MaxValue;

@@ -11,10 +11,11 @@ Do not use non-commercial, no-derivatives, unclear, scraped, or attribution-free
 
 ## Budgets
 
-- Environment and hero textures: maximum 2K per texture.
-- Small props and repeated set dressing: 1K or lower.
+- The strict limits live in `docs/performance-budget.md` and apply to every imported asset.
+- Environment and hero textures: maximum 1K; never 4K.
+- Small props and repeated set dressing: 512 or lower. Skyboxes/HDRIs may use up to 2K.
 - Prefer packed masks, shared trim sheets, material instances, mipmaps, and texture compression.
-- The 14+ Drowned must share materials and rigs where possible. Target roughly 8–15k triangles per nearby figure and 2–5k for distance variants; use LODs and avoid unique 2K maps per figure.
+- The 14+ Drowned share an instanced material, stay under 5k triangles at LOD0, provide two LODs, and keep only about four full-detail figures near the player.
 - Transparent fog and beam geometry must remain sparse and layered deliberately to control overdraw on Apple Silicon.
 
 Validate licenses before download and profile representative scenes on the target MacBook Air M3 before increasing any budget.

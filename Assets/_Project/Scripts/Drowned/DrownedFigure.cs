@@ -8,11 +8,20 @@ namespace TheLightHouse
         [SerializeField] Vector3[] path;
         [SerializeField] Vector3 visibilityOffset=new(0,1,0);
         [SerializeField] float visibilityAngle=100;
+        [SerializeField] LODGroup lodGroup;
+        [SerializeField] Renderer fullDetailRenderer;
+        [SerializeField] Renderer silhouetteRenderer;
         int step;
         bool everSeen;
         public bool Seen { get; private set; }
         public bool HasBeenSeen=>everSeen;
         public bool AtDoor=>path!=null&&step>=path.Length-1;
+        void Awake(){if(!lodGroup)lodGroup=GetComponent<LODGroup>();if(!fullDetailRenderer)fullDetailRenderer=GetComponentInChildren<Renderer>();}
+        public void SetFullDetail(bool fullDetail)
+        {
+            if(lodGroup){lodGroup.ForceLOD(fullDetail?0:1);return;}
+            if(silhouetteRenderer){if(fullDetailRenderer)fullDetailRenderer.enabled=fullDetail;silhouetteRenderer.enabled=!fullDetail;}
+        }
         public void CheckVisibility(Camera view)
         {
             Vector3 point=transform.position+visibilityOffset;Vector3 delta=point-view.transform.position;
