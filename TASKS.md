@@ -58,6 +58,10 @@ The cards below mirror `docs/roadmap.md`. A card is complete only when its accep
 - [x] Add the reusable MovementTest scene builder and shared PlayerMovementSettings asset.
 - [ ] Playtest the movement course and Act 1 intro/interaction regression in the Editor.
 
+- [x] Add Graphics 1 atmosphere presets, URP post-processing, lamp beam, fog cards, wetness and lightweight lighting helpers.
+- [x] Add Mac and Low URP quality tiers plus the reusable MoodTest and Graphics 1 applicator.
+- [ ] Bake lighting and profile Acts 1–5 on the target MacBook Air M3.
+
 - [ ] Replace only proven placeholders with final art and audio.
 - [ ] Tune stealth readability, noise values, lamp pressure, pacing, and accessibility.
 - [ ] Fix defects and performance regressions without expanding scope.

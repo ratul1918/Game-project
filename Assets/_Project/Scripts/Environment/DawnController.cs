@@ -10,6 +10,8 @@ namespace TheLightHouse
         [SerializeField] WindZone wind;
         [SerializeField] Transform player;
         float elapsed,startLight,startFog,startRain,startWind;bool active,done;
+        public bool IsActive=>active&&!done;
+        public float Progress=>!settings?0f:Mathf.Clamp01(elapsed/Mathf.Max(.01f,settings.dawnDuration));
         void OnEnable()=>GameEvents.StoryBeatTriggered+=Beat;
         void OnDisable()=>GameEvents.StoryBeatTriggered-=Beat;
         void Beat(StoryBeatTriggeredEvent e){if(e.Id=="A5-B03")Begin();}

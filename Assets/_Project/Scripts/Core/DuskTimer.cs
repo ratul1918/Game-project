@@ -8,6 +8,8 @@ public sealed class DuskTimer : MonoBehaviour {
 [SerializeField] float duskIntensity=1f;
 [SerializeField] float darkIntensity=.1f;
 float elapsed; bool active; bool lit; bool expired;
+public bool IsActive=>active&&!expired;
+public float Progress=>Mathf.Clamp01(elapsed/Mathf.Max(1f,duskSeconds));
 void OnEnable(){GameEvents.GameStateChanged+=State;GameEvents.LampStateChanged+=Lamp;}
 void OnDisable(){GameEvents.GameStateChanged-=State;GameEvents.LampStateChanged-=Lamp;}
 void State(GameStateChangedEvent e)=>active=e.Current==GameState.Dusk;
