@@ -64,6 +64,7 @@ The cards below mirror `docs/roadmap.md`. A card is complete only when its accep
 - [x] Define and enforce the 8 GB asset/runtime budget with an asset checker, F4 HUD, act unloading, quality limits and Drowned LOD cap.
 - [ ] Record a sustained target-hardware memory and frame-time profile for each act.
 - [x] Add the Backend 1 authenticated REST/WebSocket thin slice with isolated session ticks, bounded queues and offline Unity fallback.
+- [x] Add Backend 2 cloud saves and run tracking with optimistic locking and offline-first Unity integration.
 - [ ] Playtest online reconnect and offline fallback in a standalone Unity build.
 
 - [ ] Replace only proven placeholders with final art and audio.

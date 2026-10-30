@@ -1,6 +1,8 @@
+using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.UI;
 
 namespace TheLightHouse
 {
@@ -9,7 +11,24 @@ namespace TheLightHouse
         [SerializeField] ActFlowController flow;
         [SerializeField] GameObject root;
         [SerializeField] GameOptionsData options=new();
+        [SerializeField] GameObject loginPanel;
+        [SerializeField] NetworkConfig networkConfig;
+        [SerializeField] InputField usernameInput;
+        [SerializeField] InputField passwordInput;
+        [SerializeField] Text connectionStatus;
         public void StartGame(){root?.SetActive(false);flow?.StartNew();}
+        public void PlayOffline(){root?.SetActive(false);flow?.StartNew();}
+        public void ShowLogin(){loginPanel?.SetActive(true);}
+        public void Login(){Authenticate(false);}
+        public void Register(){Authenticate(true);}
+        void Authenticate(bool register)
+        {
+            var auth=FindAnyObjectByType<AuthClient>();
+            if(!auth||!networkConfig){if(connectionStatus)connectionStatus.text="Offline";return;}
+            Action<bool> completed=success=>{if(connectionStatus)connectionStatus.text=success?"Connected":"Offline";};
+            if(register)auth.Register(networkConfig,usernameInput?.text,passwordInput?.text,completed);
+            else auth.Login(networkConfig,usernameInput?.text,passwordInput?.text,completed);
+        }
         public void ContinueGame(){root?.SetActive(false);flow?.Continue();}
         public void SetReducedStorm(bool value){options.reducedStorm=value;flow?.ApplyOptions(options);}
         public void SetDisableBob(bool value){options.disableBobAndFov=value;flow?.ApplyOptions(options);}

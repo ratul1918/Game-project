@@ -21,7 +21,7 @@ namespace TheLightHouse
             string next=e.Id switch {"A1-B06"=>act2Scene,"A2-B07"=>act3Scene,"A3-B09"=>act4Scene,"A4-B06"=>act5Scene,_=>""};
             if(string.IsNullOrEmpty(next))return;saves.Save();BeginTransition(next);
         }
-        public void StartNew(){saves.NewGame();BeginTransition(act1Scene);}
+        public void StartNew(){saves.NewGame();FindAnyObjectByType<RunTracker>()?.StartRun();BeginTransition(act1Scene);}
         public void Continue(){if(saves.Load())BeginTransition(string.IsNullOrEmpty(saves.Data.act)?act1Scene:saves.Data.act);else StartNew();}
         public void SkipToAct(int act){string[] scenes={act1Scene,act2Scene,act3Scene,act4Scene,act5Scene};BeginTransition(scenes[Mathf.Clamp(act-1,0,scenes.Length-1)]);}
         public void ApplyOptions(GameOptionsData options)=>saves?.SetOptions(options);

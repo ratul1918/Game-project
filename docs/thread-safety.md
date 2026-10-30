@@ -9,3 +9,8 @@ Outgoing envelopes enter a bounded queue. A dedicated virtual sender task drains
 Disconnect, transport error and sender failure remove the session idempotently from the registry and close the socket. Sequence numbers are atomic and private to one session.
 
 Unity socket tasks only enqueue actions into `MainThreadDispatcher`. JSON-to-event translation and every `GameEvents` publication occur on Unity's main thread. Networking is optional: failure publishes Offline and never stops local gameplay.
+
+Cloud saves are written on request threads and repositories are transaction-scoped.
+They contain no shared mutable state. Unity always writes its local JSON save first;
+cloud PUTs and retries run asynchronously and never block gameplay. A failed request
+leaves the local save authoritative until a later Continue merge.

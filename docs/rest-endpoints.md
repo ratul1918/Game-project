@@ -25,3 +25,17 @@ Uses the same request body. Valid credentials return HTTP 200 and `{ "token": "<
 ## GET /actuator/health
 
 Unauthenticated local health check. All other endpoints are denied unless explicitly configured.
+
+## Cloud saves and runs
+
+Authenticated requests use `Authorization: Bearer <JWT>`. `GET /save` returns 404 when
+the player has no cloud save. `PUT /save` accepts `act`, `checkpoint`, JSON strings
+`itemsJson`, `pagesJson`, `flagsJson`, `optionsJson`, and the client version. The first
+write uses version 0; later writes must send the returned version. The server increments
+the version and returns 409 with `error: SAVE_CONFLICT` and `serverCopy` when it is stale.
+Field lengths and JSON payload strings are bounded.
+
+`POST /runs/start` creates an owned run and returns its UUID. The owner ends it with
+`POST /runs/{id}/end` and `{ "outcome": "completed", "deaths": 0, "durationSeconds": 120 }`.
+Run and save ownership is derived from the JWT principal; unknown owners cannot access
+another player's records.
