@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/lighthouse}
+    username: ${DATABASE_USER:lighthouse}
+    password: ${DATABASE_PASSWORD:lighthouse}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+server:
+  port: ${PORT:8080}
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-secret-change-before-production-0123456789}
+    expiration-seconds: ${JWT_EXPIRATION_SECONDS:86400}
+  websocket:
+    outbound-capacity: ${WS_OUTBOUND_CAPACITY:64}
+    inbound-capacity: ${WS_INBOUND_CAPACITY:32}

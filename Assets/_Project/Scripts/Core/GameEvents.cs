@@ -238,6 +238,8 @@ namespace TheLightHouse
             CheckpointReached = null;
             LedgerEndingRead = null;
             DawnThresholdReached = null;
+            ServerStormState = null;
+            ServerConnectionChanged = null;
         }
         public static event Action<NoiseEmittedEvent> NoiseHeard;
         public static event Action Thunder;
@@ -301,6 +303,8 @@ namespace TheLightHouse
         public static event Action<CheckpointReachedEvent> CheckpointReached;
         public static event Action LedgerEndingRead;
         public static event Action<float> DawnThresholdReached;
+        public static event Action<ServerStormStateEvent> ServerStormState;
+        public static event Action<ServerConnectionChangedEvent> ServerConnectionChanged;
         public static void RaisePageRead(PageReadEvent e) => PageRead?.Invoke(e);
         public static void RaiseLedgerRead(LedgerReadEvent e) => LedgerRead?.Invoke(e);
         public static void RaiseReadingStateChanged(ReadingStateChangedEvent e) => ReadingStateChanged?.Invoke(e);
@@ -309,6 +313,8 @@ namespace TheLightHouse
         public static void RaiseCheckpointReached(CheckpointReachedEvent e)=>CheckpointReached?.Invoke(e);
         public static void RaiseLedgerEndingRead()=>LedgerEndingRead?.Invoke();
         public static void RaiseDawnThresholdReached(float elapsed)=>DawnThresholdReached?.Invoke(elapsed);
+        public static void RaiseServerStormState(ServerStormStateEvent e)=>ServerStormState?.Invoke(e);
+        public static void RaiseServerConnectionChanged(ServerConnectionChangedEvent e)=>ServerConnectionChanged?.Invoke(e);
         public static void RaiseDawnReached(DawnReachedEvent e)=>DawnReached?.Invoke(e);
 
         public static void RaiseNoiseEmitted(NoiseEmittedEvent eventData)
@@ -351,5 +357,17 @@ namespace TheLightHouse
     {
         public readonly DrownedFigure Figure;
         public FigureAtDoorEvent(DrownedFigure figure) { Figure=figure; }
+    }
+    public readonly struct ServerStormStateEvent
+    {
+        public readonly float Intensity;
+        public readonly long Sequence;
+        public ServerStormStateEvent(float intensity,long sequence){Intensity=intensity;Sequence=sequence;}
+    }
+    public readonly struct ServerConnectionChangedEvent
+    {
+        public readonly string Status;
+        public readonly bool Connected;
+        public ServerConnectionChangedEvent(string status,bool connected){Status=status;Connected=connected;}
     }
 }

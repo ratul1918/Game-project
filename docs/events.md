@@ -319,6 +319,14 @@ Standing still, leaning, intro-locked movement and jumping while hidden emit no 
 Footsteps follow half-cycle crossings of the head-bob phase only while actually moving on the ground.
 Disabling visual bob does not change audible gameplay events.
 
+### ServerStormState
+
+`NetworkClient` publishes `Action<ServerStormStateEvent>` via `GameEvents.ServerStormState` on Unity's main thread after receiving `STORM_STATE`. The immutable payload contains normalized `float Intensity` and per-session `long Sequence`. Backend 1 uses it for diagnostics only; it does not replace or mutate `StormController`.
+
+### ServerConnectionChanged
+
+`NetworkClient` publishes `Action<ServerConnectionChangedEvent>` via `GameEvents.ServerConnectionChanged` on Unity's main thread. The payload contains display-safe `string Status` and `bool Connected`. Expected statuses are Logging in, Connecting, Online and Offline. Offline mode preserves all local gameplay.
+
 ### StaminaChanged
 
 PlayerStamina publishes `Action<StaminaChangedEvent>` via `GameEvents.StaminaChanged`.
