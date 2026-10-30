@@ -321,7 +321,7 @@ Disabling visual bob does not change audible gameplay events.
 
 ### ServerStormState
 
-`NetworkClient` publishes `Action<ServerStormStateEvent>` via `GameEvents.ServerStormState` on Unity's main thread after receiving `STORM_STATE`. The immutable payload contains normalized `float Intensity` and per-session `long Sequence`. Backend 1 uses it for diagnostics only; it does not replace or mutate `StormController`.
+`NetworkClient` publishes `Action<ServerStormStateEvent>` via `GameEvents.ServerStormState` on Unity's main thread after receiving `STORM_STATE`. The immutable payload contains normalized `float Intensity` and per-session `long Sequence`. `ServerDirectorApplier` also applies the server intensity to `StormController` while server influence is active; `StormController` falls back to its local intensity when that influence is cleared.
 
 ### ServerConnectionChanged
 

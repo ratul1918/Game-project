@@ -68,7 +68,8 @@ The cards below mirror `docs/roadmap.md`. A card is complete only when its accep
 - [x] Add Backend 3 world director, adaptive pressure, server event bridge, and smooth offline fallback.
 - [ ] Playtest online reconnect and offline fallback in a standalone Unity build.
 - [x] Add Backend 4 telemetry queue, Micrometer metrics, admin dashboard, bot client, and load-test harness.
-- [ ] Run the sustained Backend 4 load test on the target MacBook Air M3 and record measured CSV results.
+- [x] Run the bounded Backend 4 load test on the target MacBook Air M3 and record measured CSV results.
+- [x] Complete Backend 5 documentation: contracts, architecture overview, demo script, traceability, README, thread-safety, and Mermaid UML.
 
 - [ ] Replace only proven placeholders with final art and audio.
 - [ ] Tune stealth readability, noise values, lamp pressure, pacing, and accessibility.
