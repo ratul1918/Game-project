@@ -54,12 +54,13 @@ namespace TheLightHouse
                 return;
             }
 
-            if (interactAction.IsPressed())
+            if (interactAction.WasPressedThisFrame() ||
+                (focusedInteractable.RequiresHold && interactAction.IsPressed()))
             {
                 isInteracting = true;
                 focusedInteractable.Interact();
             }
-            else if (isInteracting)
+            else if (isInteracting && !interactAction.IsPressed())
             {
                 StopInteraction();
             }

@@ -30,6 +30,7 @@ namespace TheLightHouse
         }
 
         public string Prompt => prompt;
+        public bool RequiresHold => true;
 
         private void Awake()
         {

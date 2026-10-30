@@ -13,6 +13,7 @@ public sealed class Door : MonoBehaviour,IInteractable {
 bool held; bool open;
 Quaternion closedRotation;
 public string Prompt=>locked?"Locked — try handle":open?"Close door":"Open door";
+public bool RequiresHold=>false;
 public bool IsLocked=>locked;
 public void SetLocked(bool value)
 {

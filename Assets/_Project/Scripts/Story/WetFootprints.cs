@@ -3,6 +3,7 @@ namespace TheLightHouse {
 public sealed class WetFootprints : MonoBehaviour, IInteractable {
 [SerializeField] string prompt="Inspect footprints";
 public string Prompt=>prompt;
+public bool RequiresHold=>false;
 public void Interact(){GameEvents.RaiseStorySignal("footprints");}
 public void StopInteract(){}
 [SerializeField] int count=8;

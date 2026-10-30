@@ -11,6 +11,7 @@ namespace TheLightHouse
         Vector3 closed,open;
         bool held,revealed;
         public string Prompt=>revealed?"Hidden room revealed":prompt;
+        public bool RequiresHold=>false;
         void Awake(){shelf??=transform;closed=shelf.localPosition;open=closed+Vector3.right*(settings?settings.shelfTravel:1.8f);}
         void Update(){if(revealed)shelf.localPosition=Vector3.MoveTowards(shelf.localPosition,open,(settings?settings.shelfSpeed:1.2f)*Time.deltaTime);}
         public void Interact(){if(held||revealed)return;held=true;revealed=true;GetComponent<NoiseEmitter>().Emit(settings?settings.shelfNoise:10f);GameEvents.RaiseStorySignal("hidden-room-found");GameEvents.RaiseObjectiveChanged("Find the source of Marta's voice");}

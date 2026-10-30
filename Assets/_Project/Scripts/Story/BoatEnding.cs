@@ -10,6 +10,7 @@ namespace TheLightHouse
         [SerializeField] string ledgerTitle="Harbor Board Keeper Ledger";
         bool available,held,finished;
         public string Prompt=>available?"Board the morning boat":"The boat has not arrived";
+        public bool RequiresHold=>false;
         void OnEnable()=>GameEvents.StoryBeatTriggered+=Beat;
         void OnDisable()=>GameEvents.StoryBeatTriggered-=Beat;
         void Beat(StoryBeatTriggeredEvent e){if(e.Id=="A5-B05")available=true;}

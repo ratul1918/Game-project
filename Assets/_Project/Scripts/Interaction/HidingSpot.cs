@@ -30,6 +30,7 @@ namespace TheLightHouse
         public float PeekPitch=>peekPitch;
         public string Id=>spotId;
         public string Prompt=>prompt;
+        public bool RequiresHold=>false;
         public bool Occupied=>occupied;
         void Awake(){breath=breathCapacity;if(inputActions){interact=inputActions.FindAction("Player/Interact");hold=inputActions.FindAction("Player/HoldBreath");}}
         void OnEnable(){GameEvents.HidingExited+=Exited;interact?.Enable();hold?.Enable();}

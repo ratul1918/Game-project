@@ -11,6 +11,7 @@ namespace TheLightHouse
   bool dead,held;
   void Awake(){GetComponent<AudioSource>().spatialBlend=1;GetComponent<AudioSource>().playOnAwake=false;}
   public string Prompt=>dead?"Try generator restart":"Inspect generator";
+  public bool RequiresHold=>false;
   void OnEnable()=>GameEvents.StoryBeatTriggered+=Beat;
   void OnDisable()=>GameEvents.StoryBeatTriggered-=Beat;
   void Beat(StoryBeatTriggeredEvent e){if(e.Id=="A3-B01")StartCoroutine(Fail());}

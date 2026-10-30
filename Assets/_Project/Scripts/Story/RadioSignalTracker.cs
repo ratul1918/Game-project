@@ -23,6 +23,7 @@ namespace TheLightHouse
         float frequency;
         bool active,held,reported;
         public string Prompt=>active?"Stop tuning":"Tune Marta's radio";
+        public bool RequiresHold=>false;
 
         void Awake()
         {
