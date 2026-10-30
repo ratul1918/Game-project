@@ -1,39 +1,57 @@
 # WebSocket Message Contract
 
-Connect to `/ws?token=<JWT>`. Every frame uses this envelope:
+Connect to `/ws?token=<JWT>`. Every frame uses:
 
 ```json
-{ "type": "STORM_STATE", "seq": 12, "payload": { "intensity": 0.62, "serverTime": "2026-10-30T06:00:00Z" } }
+{ "type": "STORM_STATE", "seq": 12, "payload": { "intensity": 0.62, "thunderIn": 0.4 } }
 ```
 
-`seq` is incremented independently for each authenticated session. Unknown message types must be ignored so clients and servers can roll forward independently.
+`seq` is incremented independently for each authenticated session. Unknown or
+malformed message types are ignored. Unity keeps its local directors authoritative
+when the server is offline or silent.
 
-## Implemented
-
-### STORM_STATE (server → client)
-
-Sent once per second. `intensity` is normalized from 0 to 1. It is diagnostic in Backend 1 and does not replace the offline `StormController`.
-
-### PING (client → server)
+## Client to server
 
 ```json
-{ "type": "PING", "seq": 0, "payload": { "clientTime": "2026-10-30T06:00:00Z" } }
+{ "type": "NOISE_EMITTED", "seq": 0, "payload": { "loudness": 4.5 } }
+{ "type": "PLAYER_HID", "seq": 0, "payload": { "hiding": true } }
+{ "type": "LAMP_STATE", "seq": 0, "payload": { "state": "Failing", "charge": 0.2 } }
+{ "type": "BEAT_REACHED", "seq": 0, "payload": { "id": "A2-B04" } }
+{ "type": "CHECKPOINT", "seq": 0, "payload": { "act": "Act2", "checkpoint": "Cellar" } }
+{ "type": "DEATH", "seq": 0, "payload": {} }
+{ "type": "PING", "seq": 0, "payload": {} }
 ```
 
-### PONG (server → client)
+Noise is batched by the Unity bridge. The server bounds payload size and inbound
+messages per session; invalid fields do not close the connection.
+
+## Server to client
+
+`STORM_STATE` is sent at the configured world send interval. Its curve changes
+with the current act:
 
 ```json
-{ "type": "PONG", "seq": 13, "payload": { "clientTime": "2026-10-30T06:00:00Z" } }
+{ "type": "STORM_STATE", "seq": 12, "payload": { "intensity": 0.62, "thunderIn": 0.38 } }
 ```
 
-## Reserved placeholders
+Adaptive pressure is throttled to the same interval and clamped by server config:
 
 ```json
-{ "type": "ALERT", "seq": 20, "payload": { "source": "stalker", "level": 0.7 } }
-{ "type": "PRESSURE_DELTA", "seq": 21, "payload": { "delta": 0.1 } }
-{ "type": "RADIO_MESSAGE", "seq": 22, "payload": { "id": "marta-01" } }
-{ "type": "STORY_BEAT", "seq": 23, "payload": { "id": "A1-B05" } }
-{ "type": "CHECKPOINT_SAVED", "seq": 24, "payload": { "id": "DawnCountdown" } }
+{ "type": "PRESSURE_DELTA", "seq": 13, "payload": { "multiplier": 1.24 } }
 ```
 
-Reserved messages have no gameplay implementation yet.
+Scheduled Marta lines and narrative hints:
+
+```json
+{ "type": "RADIO_MESSAGE", "seq": 14, "payload": { "id": "marta-act4-foreshadow", "text": "Daniel, the light remembers what you did." } }
+{ "type": "ALERT", "seq": 15, "payload": { "kind": "stalker", "text": "Something heard you." } }
+{ "type": "STORY_BEAT", "seq": 16, "payload": { "id": "A4-B05" } }
+{ "type": "CHECKPOINT_SAVED", "seq": 17, "payload": { "checkpoint": "DawnCountdown" } }
+```
+
+Act 4 radio messages intentionally repeat identically as foreshadowing.
+`PONG` echoes a client ping payload.
+
+Accepted gameplay messages are also queued as telemetry (`NOISE_BATCH`,
+`PLAYER_HID`, `LAMP_STATE`, `BEAT_REACHED`, `DEATH`, and `CHECKPOINT`) and
+persisted asynchronously; telemetry persistence never delays a session tick.

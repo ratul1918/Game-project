@@ -13,7 +13,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics,prometheus
 server:
   port: ${PORT:8080}
 app:
@@ -23,3 +23,21 @@ app:
   websocket:
     outbound-capacity: ${WS_OUTBOUND_CAPACITY:64}
     inbound-capacity: ${WS_INBOUND_CAPACITY:32}
+  world:
+    storm-rate: ${WORLD_STORM_RATE:0.45}
+    act-rate-step: ${WORLD_ACT_RATE_STEP:0.12}
+    pressure-min: ${WORLD_PRESSURE_MIN:0.75}
+    pressure-max: ${WORLD_PRESSURE_MAX:2.0}
+    hide-threshold: ${WORLD_HIDE_THRESHOLD:8.0}
+    weak-lamp-threshold: ${WORLD_WEAK_LAMP_THRESHOLD:6.0}
+    pressure-step: ${WORLD_PRESSURE_STEP:0.03}
+    death-relaxation: ${WORLD_DEATH_RELAXATION:0.08}
+    send-interval: ${WORLD_SEND_INTERVAL:1.0}
+    radio-interval: ${WORLD_RADIO_INTERVAL:12.0}
+  telemetry:
+    queue-capacity: ${TELEMETRY_QUEUE_CAPACITY:4096}
+    batch-size: ${TELEMETRY_BATCH_SIZE:128}
+    batch-interval-ms: ${TELEMETRY_BATCH_INTERVAL_MS:500}
+    retention-days: ${TELEMETRY_RETENTION_DAYS:30}
+  admin:
+    dev-token: ${ADMIN_DEV_TOKEN:dev-admin-token}

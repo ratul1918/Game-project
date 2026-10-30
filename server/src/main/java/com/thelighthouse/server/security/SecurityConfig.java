@@ -16,6 +16,6 @@ public class SecurityConfig {
         return http.csrf(csrf -> csrf.disable()).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .addFilterBefore(new JwtAuthenticationFilter(jwt), UsernamePasswordAuthenticationFilter.class)
             .exceptionHandling(errors -> errors.authenticationEntryPoint((request,response,exception) -> response.sendError(401)))
-            .authorizeHttpRequests(auth -> auth.requestMatchers("/auth/**", "/ws/**", "/actuator/health").permitAll().anyRequest().authenticated()).build();
+            .authorizeHttpRequests(auth -> auth.requestMatchers("/auth/**", "/ws/**", "/actuator/health", "/admin/stats", "/admin/dashboard.html").permitAll().anyRequest().authenticated()).build();
     }
 }

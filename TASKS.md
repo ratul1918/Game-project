@@ -65,7 +65,10 @@ The cards below mirror `docs/roadmap.md`. A card is complete only when its accep
 - [ ] Record a sustained target-hardware memory and frame-time profile for each act.
 - [x] Add the Backend 1 authenticated REST/WebSocket thin slice with isolated session ticks, bounded queues and offline Unity fallback.
 - [x] Add Backend 2 cloud saves and run tracking with optimistic locking and offline-first Unity integration.
+- [x] Add Backend 3 world director, adaptive pressure, server event bridge, and smooth offline fallback.
 - [ ] Playtest online reconnect and offline fallback in a standalone Unity build.
+- [x] Add Backend 4 telemetry queue, Micrometer metrics, admin dashboard, bot client, and load-test harness.
+- [ ] Run the sustained Backend 4 load test on the target MacBook Air M3 and record measured CSV results.
 
 - [ ] Replace only proven placeholders with final art and audio.
 - [ ] Tune stealth readability, noise values, lamp pressure, pacing, and accessibility.

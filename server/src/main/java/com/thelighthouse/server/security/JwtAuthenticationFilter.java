@@ -5,7 +5,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
  private final JwtService jwt; public JwtAuthenticationFilter(JwtService jwt){this.jwt=jwt;}
  @Override protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain chain)throws ServletException,IOException{
   String header=request.getHeader("Authorization");
-  if(header!=null&&header.startsWith("Bearer ")){try{String username=jwt.validateAndGetUsername(header.substring(7));SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(username,null,AuthorityUtils.NO_AUTHORITIES));}catch(RuntimeException ignored){SecurityContextHolder.clearContext();}}
+  if(header!=null&&header.startsWith("Bearer ")){try{String username=jwt.validateAndGetUsername(header.substring(7));var authorities = "admin".equals(username) ? AuthorityUtils.createAuthorityList("ROLE_ADMIN") : AuthorityUtils.NO_AUTHORITIES;SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(username,null,authorities));}catch(RuntimeException ignored){SecurityContextHolder.clearContext();}}
   chain.doFilter(request,response);
  }
 }

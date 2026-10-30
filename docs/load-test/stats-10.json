@@ -1,0 +1,1 @@
+{"activeSessions":0.0,"messagesInPerSecond":660.0,"messagesOutPerSecond":0.0,"tickP95Seconds":0.001767424,"outboundQueueDepth":7.0,"droppedMessages":0.0,"telemetryQueueDepth":0.0,"droppedEvents":0.0,"dbBatchWriteP95Seconds":0.0,"reconnects":0.0,"averagesPerAct":{"all":{"secondsHidden":0.0,"deaths":0.0,"timeToFinishSeconds":0.0}}}

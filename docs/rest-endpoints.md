@@ -39,3 +39,10 @@ Field lengths and JSON payload strings are bounded.
 `POST /runs/{id}/end` and `{ "outcome": "completed", "deaths": 0, "durationSeconds": 120 }`.
 Run and save ownership is derived from the JWT principal; unknown owners cannot access
 another player's records.
+
+## Operations
+
+`GET /actuator/metrics` and `GET /actuator/prometheus` expose server metrics.
+`GET /admin/stats` requires an authenticated admin principal or
+`Authorization: Bearer <ADMIN_DEV_TOKEN>`. `/admin/dashboard.html` polls the
+snapshot every two seconds.

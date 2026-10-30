@@ -14,3 +14,18 @@ Cloud saves are written on request threads and repositories are transaction-scop
 They contain no shared mutable state. Unity always writes its local JSON save first;
 cloud PUTs and retries run asynchronously and never block gameplay. A failed request
 leaves the local save authoritative until a later Continue merge.
+
+The world director is owned by one `GameSession` and runs only from that session's
+scheduled tick. WebSocket receiver threads validate size/rate limits and enqueue
+inbound envelopes; they do not mutate director state. The tick drains the bounded
+queue, updates act/hidden/lamp/noise/death state, and enqueues bounded outbound
+envelopes. The sender task remains the only task that calls `sendMessage`, so a
+slow client cannot delay another session's tick. Unity receives frames off-thread
+but enqueues all parsing and gameplay/event application on `MainThreadDispatcher`.
+
+Telemetry events use a separate bounded queue sized by `app.telemetry.queue-capacity`.
+The tick only offers an event to that queue; a dedicated telemetry executor drains
+events in batches using `app.telemetry.batch-size` and
+`app.telemetry.batch-interval-ms`. If full, it drops the oldest event and increments
+the dropped-events counter. Database writes and retention cleanup therefore never
+block the world-clock thread.

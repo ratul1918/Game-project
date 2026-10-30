@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>Lighthouse admin</title>
+<body><h1>Lighthouse metrics</h1><pre id="stats">Loading...</pre>
+<script>
+async function refresh() {
+  const response = await fetch('/admin/stats');
+  document.getElementById('stats').textContent = response.ok
+    ? JSON.stringify(await response.json(), null, 2) : `HTTP ${response.status}`;
+}
+refresh(); setInterval(refresh, 2000);
+</script></body></html>
