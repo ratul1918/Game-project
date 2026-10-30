@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/lighthouse}
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5433/lighthouse}
     username: ${DATABASE_USER:lighthouse}
     password: ${DATABASE_PASSWORD:lighthouse}
   jpa:
