@@ -15,7 +15,7 @@ namespace TheLightHouse
         void Begin(){if(active||player.IsHidden||player.IsCaught)return;StartCoroutine(Catch());}
         IEnumerator Catch()
         {
-            active=true;player.IsCaught=true;
+            active=true;player.IsCaught=true;GameEvents.RaisePlayerDeath();
             var movement=player.GetComponent<FirstPersonController>();movement.SetMovementLocked(true);movement.SetPeekLimits(0,0);movement.SetLookLocked(true);
             GameEvents.RequestDialogue(line);float elapsed=0;
             while(elapsed<duration){elapsed+=Time.deltaTime;fade=Mathf.Clamp01(elapsed/duration);

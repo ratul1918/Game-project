@@ -12,6 +12,7 @@ namespace TheLightHouse
         public float sensitivity=1f;
         public float volume=1f;
         [Range(.7f,1f)] public float renderScale=1f;
+        public bool telemetryEnabled=true;
     }
     [Serializable] public sealed class GameSaveData
     {

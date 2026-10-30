@@ -16,6 +16,8 @@ namespace TheLightHouse
         [SerializeField] InputField usernameInput;
         [SerializeField] InputField passwordInput;
         [SerializeField] Text connectionStatus;
+        [SerializeField] Text telemetryNote;
+        void Awake(){if(telemetryNote)telemetryNote.text="Telemetry collects gameplay events only; no personal data beyond your username.";}
         public void StartGame(){root?.SetActive(false);flow?.StartNew();}
         public void PlayOffline(){root?.SetActive(false);flow?.StartNew();}
         public void ShowLogin(){loginPanel?.SetActive(true);}
@@ -35,6 +37,7 @@ namespace TheLightHouse
         public void SetSensitivity(float value){options.sensitivity=value;flow?.ApplyOptions(options);}
         public void SetVolume(float value){options.volume=value;AudioListener.volume=value;flow?.ApplyOptions(options);}
         public void SetRenderScale(float value){options.renderScale=Mathf.Clamp(value,.7f,1f);if(GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset pipeline)pipeline.renderScale=options.renderScale;flow?.ApplyOptions(options);}
+        public void SetTelemetryEnabled(bool value){options.telemetryEnabled=value;flow?.ApplyOptions(options);}
         public void Quit(){Application.Quit();}
     }
 }

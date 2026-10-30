@@ -56,6 +56,9 @@ The contract's watched-figure freeze rule takes precedence over the request to i
 
 ## Act 2 additions
 
+- `PlayerDeath: Action`: CatchSequence announces a catch/death for telemetry. It does not replace
+  `CatchRequested`, which remains the gameplay request event.
+
 - `CatchRequested: Action`: StalkerAI requests a non-gory catch only after PlayerSpotted.
 - `PlayerRespawned: Action`: PlayerHealthState announces checkpoint recovery; StalkerAI returns to Patrol.
 - `HidingEntered: Action<HidingEnteredEvent>`: immutable payload with readonly `HidingSpot Spot`. PlayerHealthState owns the hidden state and publishes the existing PlayerHidden payload.

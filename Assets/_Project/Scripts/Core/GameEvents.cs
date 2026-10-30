@@ -208,6 +208,7 @@ namespace TheLightHouse
             CrankActiveChanged = null;
             StaminaChanged = null;
             CatchRequested = null;
+            PlayerDeath = null;
             BreathChanged = null;
             PlayerRespawned = null;
             HidingEntered = null;
@@ -253,6 +254,7 @@ namespace TheLightHouse
         public static void RaiseLampPulse() => LampPulse?.Invoke();
         public static event Action<StaminaChangedEvent> StaminaChanged;
         public static event Action CatchRequested;
+        public static event Action PlayerDeath;
         public static event Action<float> BreathChanged;
         public static void RaiseBreathChanged(float normalized) => BreathChanged?.Invoke(normalized);
         public static event Action PlayerRespawned;
@@ -262,6 +264,7 @@ namespace TheLightHouse
         public static event Action FrontDoorTried;
         public static event Action<StalkerAI.StalkerState> StalkerStateChanged;
         public static void RaiseCatchRequested() => CatchRequested?.Invoke();
+        public static void RaisePlayerDeath() => PlayerDeath?.Invoke();
         public static void RaisePlayerRespawned() => PlayerRespawned?.Invoke();
         public static void RaiseHidingEntered(HidingSpot spot) => HidingEntered?.Invoke(new(spot));
         public static void RaiseHidingExited() => HidingExited?.Invoke();

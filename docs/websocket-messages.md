@@ -21,7 +21,7 @@ It sends `seq: 0`; the server does not use the client sequence.
 | Type | Payload | Constraints | Example |
 |---|---|---|---|
 | `NOISE_EMITTED` | `loudness` number | `0 <= loudness <= 100`; Unity batches local noise but sends this type | `{ "type":"NOISE_EMITTED", "seq":0, "payload":{"loudness":4.5} }` |
-| `PLAYER_HID` | `hiding` boolean | Required boolean | `{ "type":"PLAYER_HID", "seq":0, "payload":{"hiding":true} }` |
+| `PLAYER_HID` | `hiding` boolean, `durationSeconds` number | Required boolean; duration is non-negative and describes the completed hidden interval | `{ "type":"PLAYER_HID", "seq":0, "payload":{"hiding":false,"durationSeconds":3.2} }` |
 | `LAMP_STATE` | `state` string, `charge` number | Non-blank state, max 32 chars; `0 <= charge <= 1` | `{ "type":"LAMP_STATE", "seq":0, "payload":{"state":"Failing","charge":0.2} }` |
 | `BEAT_REACHED` | `id` string | Non-blank, max 64 chars; an ID beginning with `A` changes the server act | `{ "type":"BEAT_REACHED", "seq":0, "payload":{"id":"A2-B04"} }` |
 | `CHECKPOINT` | `act` string, `checkpoint` string | Both non-blank, max 128 chars | `{ "type":"CHECKPOINT", "seq":0, "payload":{"act":"Act2","checkpoint":"Cellar"} }` |
@@ -30,7 +30,9 @@ It sends `seq: 0`; the server does not use the client sequence.
 
 `NOISE_BATCH` is accepted by the telemetry allow-list but is not handled by
 [`WorldDirector.java`](../server/src/main/java/com/thelighthouse/server/ws/WorldDirector.java)
-and is not sent by the current Unity bridge.
+for gameplay pressure. Unity sends it as a telemetry summary using the same
+batch interval as `ServerEventBridge`; its payload is
+`{ "loudness": number, "durationSeconds": number }`.
 
 ## Server to client
 

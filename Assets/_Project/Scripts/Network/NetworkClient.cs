@@ -14,7 +14,20 @@ namespace TheLightHouse
         [Serializable] sealed class SocketEnvelope{public string type;public long seq;public StormPayload payload;}
         MainThreadDispatcher dispatcher;CancellationTokenSource lifetime;ClientWebSocket socket;bool loggedOffline,offlineFallback;string webSocketUrl;float reconnectInitialSeconds,reconnectMaximumSeconds,pingIntervalSeconds;
         public void Configure(NetworkConfig value,MainThreadDispatcher mainThread){dispatcher=mainThread;offlineFallback=value.OfflineFallback;webSocketUrl=value.WebSocketUrl;reconnectInitialSeconds=value.ReconnectInitialSeconds;reconnectMaximumSeconds=value.ReconnectMaximumSeconds;pingIntervalSeconds=value.PingIntervalSeconds;lifetime=new CancellationTokenSource();}
+        public bool IsConnected=>socket!=null&&socket.State==WebSocketState.Open;
         public void Connect(string token)=>_ = ConnectLoop(token,lifetime.Token);
+        public bool Send(string type,string payloadJson)
+        {
+            if(!IsConnected)return false;
+            string message="{\"type\":\""+type+"\",\"seq\":0,\"payload\":"+(string.IsNullOrEmpty(payloadJson)?"{}":payloadJson)+"}";
+            _=SendMessage(message,socket,lifetime.Token);
+            return true;
+        }
+        async Task SendMessage(string message,ClientWebSocket active,CancellationToken cancellation)
+        {
+            try{byte[] bytes=Encoding.UTF8.GetBytes(message);await active.SendAsync(new ArraySegment<byte>(bytes),WebSocketMessageType.Text,true,cancellation);}
+            catch(Exception error) when(error is OperationCanceledException||error is WebSocketException){UseOfflineFallback("send-failed");}
+        }
         public void UseOfflineFallback(string reason)
         {
             dispatcher.Enqueue(()=>{NetworkRuntimeState.SetStatus("Offline",false);if(offlineFallback&&!loggedOffline){loggedOffline=true;Debug.LogWarning("Network unavailable ("+reason+"). Continuing with offline gameplay.");}});
@@ -45,8 +58,11 @@ namespace TheLightHouse
         }
         void HandleMessage(string json)
         {
-            SocketEnvelope envelope=JsonUtility.FromJson<SocketEnvelope>(json);if(envelope==null)return;if(envelope.type=="STORM_STATE"&&envelope.payload!=null)NetworkRuntimeState.SetStorm(Mathf.Clamp01(envelope.payload.intensity),envelope.seq);
+            SocketEnvelope envelope=JsonUtility.FromJson<SocketEnvelope>(json);if(envelope==null)return;
+            string payload=ExtractPayload(json);NetworkRuntimeState.RaiseDirectorMessage(envelope.type,payload,envelope.seq);
+            if(envelope.type=="STORM_STATE"&&envelope.payload!=null)NetworkRuntimeState.SetStorm(Mathf.Clamp01(envelope.payload.intensity),envelope.seq);
         }
+        static string ExtractPayload(string value){int start=value.IndexOf("\"payload\":",StringComparison.Ordinal);if(start<0)return "{}";start=value.IndexOf('{',start);return start<0?"{}":value.Substring(start,value.LastIndexOf('}')-start+1);}
         async void OnDestroy(){if(lifetime==null)return;lifetime.Cancel();if(socket!=null&&socket.State==WebSocketState.Open)try{await socket.CloseAsync(WebSocketCloseStatus.NormalClosure,"shutdown",CancellationToken.None);}catch(Exception){}lifetime.Dispose();}
     }
 }

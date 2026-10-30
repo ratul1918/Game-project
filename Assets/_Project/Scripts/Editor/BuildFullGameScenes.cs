@@ -42,11 +42,13 @@ namespace TheLightHouse.Editor
             Button("CONTINUE",panel.transform,new Vector2(0f,115f),menu.ContinueGame);
             Toggle("Reduced storm visuals",panel.transform,new Vector2(0f,35f),menu.SetReducedStorm,true);
             Toggle("Disable camera bob and FOV shift",panel.transform,new Vector2(0f,-20f),menu.SetDisableBob,false);
-            Slider("LOOK SENSITIVITY",panel.transform,new Vector2(0f,-110f),menu.SetSensitivity,.1f,2f,1f);
-            Slider("RENDER SCALE",panel.transform,new Vector2(0f,-205f),menu.SetRenderScale,.7f,1f,1f);
-            Slider("MASTER VOLUME",panel.transform,new Vector2(0f,-300f),menu.SetVolume,0f,1f,1f);
-            Button("QUIT",panel.transform,new Vector2(0f,-395f),menu.Quit,new Vector2(300f,54f));
-            Label("F1 debug tools • F4 performance",panel.transform,new Vector2(0f,-448f),new Vector2(520f,24f),13,TextAnchor.MiddleCenter).color=new Color(TextColor.r,TextColor.g,TextColor.b,.4f);
+            Toggle("Telemetry",panel.transform,new Vector2(0f,-65f),menu.SetTelemetryEnabled,true);
+            Label("Gameplay events only; no personal data beyond your username.",panel.transform,new Vector2(0f,-96f),new Vector2(520f,24f),12,TextAnchor.MiddleCenter).color=new Color(TextColor.r,TextColor.g,TextColor.b,.55f);
+            Slider("LOOK SENSITIVITY",panel.transform,new Vector2(0f,-155f),menu.SetSensitivity,.1f,2f,1f);
+            Slider("RENDER SCALE",panel.transform,new Vector2(0f,-250f),menu.SetRenderScale,.7f,1f,1f);
+            Slider("MASTER VOLUME",panel.transform,new Vector2(0f,-345f),menu.SetVolume,0f,1f,1f);
+            Button("QUIT",panel.transform,new Vector2(0f,-425f),menu.Quit,new Vector2(300f,54f));
+            Label("F1 debug tools • F4 performance",panel.transform,new Vector2(0f,-468f),new Vector2(520f,24f),13,TextAnchor.MiddleCenter).color=new Color(TextColor.r,TextColor.g,TextColor.b,.4f);
             new GameObject("EventSystem",typeof(UnityEngine.EventSystems.EventSystem),typeof(UnityEngine.InputSystem.UI.InputSystemUIInputModule));EditorSceneManager.SaveScene(scene,MenuPath);AssetDatabase.SaveAssets();Debug.Log("Main menu rebuilt with camera and responsive controls.");
         }
 
