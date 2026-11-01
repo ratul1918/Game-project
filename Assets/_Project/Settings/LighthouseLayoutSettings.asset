@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a8edee0acbb345bfb2ae4ceb1215760, type: 3}
+  m_Name: LighthouseLayoutSettings
+  m_EditorClassIdentifier: Assembly-CSharp::TheLightHouse.LighthouseLayoutSettings
+  towerHeight: 28
+  towerBaseDiameter: 8
+  towerGalleryDiameter: 5
+  towerBaseWallThickness: 0.8
+  towerGalleryWallThickness: 0.45
+  towerWallSegments: 24
+  floorHeight: 3.2
+  towerLevelCount: 8
+  ringCorniceHeight: 0.22
+  ringCorniceDepth: 0.22
+  lanternPaneCount: 16
+  lanternPaneWidth: 0.22
+  galleryWidth: 1.5
+  railingHeight: 1.1
+  stairStepHeight: 0.18
+  stairStepDepth: 0.28
+  stairWidth: 1.1
+  houseSize: {x: 14, y: 2.8, z: 8}
+  houseWallThickness: 0.3
+  houseDoorWidth: 1.8
+  houseDoorHeight: 2.4
+  towerDoorWidth: 1.4
+  towerDoorHeight: 2.2
+  roofPitch: 2.2
+  basementDepth: 3.2
+  cliffRockCount: 9
+  outsideStairSteps: 32
+  occlusionFloors: 10

@@ -54,6 +54,10 @@ The cards below mirror `docs/roadmap.md`. A card is complete only when its accep
 
 ## Card 7 — Polish
 
+- [x] Replace the short solid tower with the tall tapered hollow tower, keeper house, real door openings, spiral and outside stairs, cellar route, and serialized layout dimensions.
+- [x] Export greybox layout previews for the courtyard, dock, front door, and tower floors.
+- [ ] Run a player-controlled dock-to-lantern-to-cellar traversal and inspect every spiral step on target hardware.
+
 - [x] Add the shared five-level lighthouse/island layout builder, modular level prefabs, room triggers, dual routes, hiding spots, stair links, floor occlusion areas and URP particle materials.
 - [x] Rebuild Acts 1–5 with the shared layout while retaining gameplay anchors and canonical beat assets.
 - [x] Add the themed TMP HUD, pause menu, journal tabs, HUD settings, room-name flash and optional composure presentation.

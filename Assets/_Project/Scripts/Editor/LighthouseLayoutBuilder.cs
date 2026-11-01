@@ -19,13 +19,13 @@ namespace TheLightHouse.Editor
         const string PrefabFolder="Assets/_Project/Prefabs/Level";
         const string MaterialFolder="Assets/_Project/Materials/Level";
         const string SettingsFolder="Assets/_Project/Settings/UI";
-        const float FloorHeight=3.2f;
-        const float TowerRadius=4.5f;
         static readonly Dictionary<string,Material> Materials=new();
+        static LighthouseLayoutSettings dimensions;
 
         public static void BuildSharedLayout(string actName)
         {
             EnsureAssets();
+            dimensions=EnsureLayoutSettings();
             RemoveLegacyGeometry();
             GameObject old=GameObject.Find(RootName);if(old)Object.DestroyImmediate(old);
             Transform root=new GameObject(RootName).transform;
@@ -39,6 +39,7 @@ namespace TheLightHouse.Editor
             BuildWaypoints(root);
             BuildOcclusion(root);
             RelocateGameplayAnchors(actName);
+            TunePlayerMovement();
             BuildHud();
             FixParticleMaterials();
             ReportMaterialProblems();
@@ -54,6 +55,24 @@ namespace TheLightHouse.Editor
             UITheme theme=AssetDatabase.LoadAssetAtPath<UITheme>($"{SettingsFolder}/UITheme.asset");if(!theme){theme=ScriptableObject.CreateInstance<UITheme>();AssetDatabase.CreateAsset(theme,$"{SettingsFolder}/UITheme.asset");}
             HudSettings hud=AssetDatabase.LoadAssetAtPath<HudSettings>($"{SettingsFolder}/HudSettings.asset");if(!hud){hud=ScriptableObject.CreateInstance<HudSettings>();AssetDatabase.CreateAsset(hud,$"{SettingsFolder}/HudSettings.asset");}
             AssignThemeSprites(theme);EditorUtility.SetDirty(theme);AssetDatabase.SaveAssets();
+        }
+
+        static void TunePlayerMovement()
+        {
+            const string path="Assets/_Project/Resources/PlayerMovementSettings.asset";
+            PlayerMovementSettings settings=AssetDatabase.LoadAssetAtPath<PlayerMovementSettings>(path);
+            if(!settings)return;
+            settings.stepOffset=Mathf.Min(settings.stepOffset,.2f);
+            settings.slopeLimit=Mathf.Min(settings.slopeLimit,38f);
+            EditorUtility.SetDirty(settings);
+        }
+
+        static LighthouseLayoutSettings EnsureLayoutSettings()
+        {
+            const string path="Assets/_Project/Settings/LighthouseLayoutSettings.asset";
+            LighthouseLayoutSettings value=AssetDatabase.LoadAssetAtPath<LighthouseLayoutSettings>(path);
+            if(!value){value=ScriptableObject.CreateInstance<LighthouseLayoutSettings>();AssetDatabase.CreateAsset(value,path);}
+            EditorUtility.SetDirty(value);AssetDatabase.SaveAssets();return value;
         }
 
         static void EnsureTag(string tag)
@@ -118,84 +137,143 @@ namespace TheLightHouse.Editor
             PrefabUtility.SaveAsPrefabAsset(go,path);Object.DestroyImmediate(go);
         }
 
+        static void Ring(Transform parent,string name,float y,float diameter,float thickness,float height,int segments,bool doorway)
+        {
+            float radius=diameter*.5f-thickness*.5f;
+            for(int i=0;i<segments;i++)
+            {
+                float angle=i*360f/segments;
+                if(doorway&&Mathf.Abs(Mathf.DeltaAngle(angle,180f))<18f)continue;
+                float radians=angle*Mathf.Deg2Rad;
+                float tangent=2f*Mathf.PI*radius/segments*1.08f;
+                GameObject segment=Place($"{name} wall {i:00}",new(Mathf.Sin(radians)*radius,y+height*.5f,Mathf.Cos(radians)*radius),new(tangent,height,thickness),"Curved Wall","Stone",parent);
+                segment.transform.rotation=Quaternion.Euler(0,angle,0);
+            }
+        }
+
+        static void Band(Transform parent,string name,float y,float diameter,float height,float depth,int segments)
+        {
+            Ring(parent,name,y,diameter,depth,height,segments,false);
+        }
+
+        static void Gallery(Transform parent,float y)
+        {
+            float radius=dimensions.towerGalleryDiameter*.5f+dimensions.galleryWidth*.5f;
+            Place("Gallery Floor",new(0,y-.12f,0),new(dimensions.towerGalleryDiameter+dimensions.galleryWidth*2f,.24f,dimensions.towerGalleryDiameter+dimensions.galleryWidth*2f),"Floor","Metal",parent);
+            for(int i=0;i<dimensions.towerWallSegments;i++)
+            {
+                float angle=i*360f/dimensions.towerWallSegments;float radians=angle*Mathf.Deg2Rad;
+                Place($"Gallery Railing {i:00}",new(Mathf.Sin(radians)*radius,y+dimensions.railingHeight*.5f,Mathf.Cos(radians)*radius),new(.12f,dimensions.railingHeight,.12f),"Wall","Metal",parent);
+            }
+            Ring(parent,"Gallery Rail",y+dimensions.railingHeight,dimensions.towerGalleryDiameter+dimensions.galleryWidth*2f,.12f,.12f,dimensions.towerWallSegments,true);
+        }
+
+        static void HouseWall(Transform parent,string name,Vector3 center,Vector2 size,bool horizontal)
+        {
+            Vector3 scale=horizontal?new(size.x,dimensions.houseSize.y,dimensions.houseWallThickness):new(dimensions.houseWallThickness,dimensions.houseSize.y,size.y);
+            Wall(name,new(center.x,dimensions.houseSize.y*.5f,center.z),scale,parent);
+        }
+
         static void BuildExterior(Transform root)
         {
             Transform exterior=Group("Exterior",root);
-            Place("Beach",new(0,-.35f,-14),new(42,.35f,38),"Floor","Sand",exterior);
-            Place("Sea Plane",new(0,-.55f,-28),new(90,.12f,70),"Floor","Water",exterior);
-            Place("Dock",new(0,-.05f,-25),new(6,.35f,12),"Floor","Wood",exterior);
-            Place("Cliff Path",new(0,.05f,-15),new(3,.35f,14),"Floor","Stone",exterior);
-            Place("Courtyard",new(0,.05f,-8),new(18,.35f,12),"Floor","Stone",exterior);
-            Place("Courtyard Wall West",new(-9,1.25f,-8),new(.45f,2.5f,12),"Wall","Stone",exterior);
-            Place("Courtyard Wall East",new(9,1.25f,-8),new(.45f,2.5f,12),"Wall","Stone",exterior);
+            Place("Beach",new(0,-.35f,-16),new(46,.35f,42),"Floor","Sand",exterior);
+            Place("Sea Plane",new(0,-.55f,-31),new(96,.12f,76),"Floor","Water",exterior);
+            Place("Dock",new(0,-.05f,-27),new(6,.35f,12),"Floor","Wood",exterior);
+            Place("Cliff Path",new(0,.05f,-18),new(3.5f,.35f,16),"Floor","Stone",exterior);
+            Place("Courtyard",new(0,.05f,-10),new(20,.35f,14),"Floor","Stone",exterior);
+            Place("Courtyard Wall West",new(-10,1.25f,-10),new(.45f,2.5f,14),"Wall","Stone",exterior);
+            Place("Courtyard Wall East",new(10,1.25f,-10),new(.45f,2.5f,14),"Wall","Stone",exterior);
             Place("Boat Shed Floor",new(10,.1f,-14),new(7,.3f,6),"Floor","Wood",exterior);
             Place("Boat Shed Back",new(13.5f,1.5f,-14),new(.35f,3,6),"Wall","Wood",exterior);
             Place("Boat Shed Roof",new(10,3,-14),new(7,.3f,6),"Floor","Wood",exterior);
-            for(int i=0;i<9;i++){float x=-20+i*5f;Place($"Rock South {i}",new(x,.4f,-35+Mathf.Abs(x)*.08f),new(5,1.6f,4),"Floor","Stone",exterior);}
-            Place("Cliff West",new(-23,2,0),new(5,5,48),"Wall","Stone",exterior);Place("Cliff East",new(23,2,0),new(5,5,48),"Wall","Stone",exterior);
-            Bounds(exterior,new(0,3,9),new(50,8,1));Bounds(exterior,new(-25,3,-12),new(1,8,52));Bounds(exterior,new(25,3,-12),new(1,8,52));Bounds(exterior,new(0,3,-39),new(50,8,1));
+            for(int i=0;i<dimensions.cliffRockCount;i++){float x=-22+i*5.5f;Place($"Rock South {i}",new(x,.4f,-39+Mathf.Abs(x)*.08f),new(5,1.6f,4),"Floor","Stone",exterior);}
+            Place("Cliff West",new(-25,2,0),new(5,5,52),"Wall","Stone",exterior);Place("Cliff East",new(25,2,0),new(5,5,52),"Wall","Stone",exterior);
+            Bounds(exterior,new(0,3,11),new(54,8,1));Bounds(exterior,new(-27,3,-14),new(1,8,56));Bounds(exterior,new(27,3,-14),new(1,8,56));Bounds(exterior,new(0,3,-42),new(54,8,1));
         }
 
         static void BuildTower(Transform root)
         {
             Transform tower=Group("Tower",root);
-            for(int level=0;level<4;level++)
+            for(int level=0;level<=dimensions.towerLevelCount;level++)
             {
-                float y=level*FloorHeight;
-                Place($"Tower Floor {level}",new(0,y-.12f,0),new(8.6f,.24f,8.6f),"Floor",level==3?"Metal":"Wood",tower);
-                for(int segment=0;segment<20;segment++)
-                {
-                    float angle=segment*18f;if(level==0&&(segment==9||segment==10))continue;
-                    float radians=angle*Mathf.Deg2Rad;Vector3 position=new(Mathf.Sin(radians)*TowerRadius,y+1.55f,Mathf.Cos(radians)*TowerRadius);
-                    GameObject wall=Place($"Tower L{level} wall {segment:00}",position,new(1.45f,3.1f,.28f),"Curved Wall","Stone",tower);wall.transform.rotation=Quaternion.Euler(0,angle,0);
-                }
+                float y=level*dimensions.floorHeight;
+                float t=level/(float)Mathf.Max(1,dimensions.towerLevelCount);
+                float diameter=Mathf.Lerp(dimensions.towerBaseDiameter,dimensions.towerGalleryDiameter,t);
+                Place($"Tower Floor {level}",new(0,y-.12f,0),new(diameter,.24f,diameter),"Floor",level==dimensions.towerLevelCount?"Metal":"Stone",tower);
+                if(level==dimensions.towerLevelCount)continue;
+                Ring(tower,$"Tower L{level}",y,diameter,Mathf.Lerp(dimensions.towerBaseWallThickness,dimensions.towerGalleryWallThickness,t),dimensions.floorHeight,dimensions.towerWallSegments,level==0);
+                Band(tower,$"Tower Cornice {level}",y+dimensions.floorHeight-.16f,diameter+.25f,dimensions.ringCorniceHeight,dimensions.ringCorniceDepth,dimensions.towerWallSegments);
             }
-            for(int segment=0;segment<28;segment++){float angle=segment*(360f/28f);float radians=angle*Mathf.Deg2Rad;Place($"Gallery {segment:00}",new(Mathf.Sin(radians)*5.25f,9.45f,Mathf.Cos(radians)*5.25f),new(1.3f,.22f,1.1f),"Floor","Metal",tower).transform.rotation=Quaternion.Euler(0,angle,0);}
+            float galleryY=dimensions.towerLevelCount*dimensions.floorHeight;
+            Ring(tower,"Lantern Ring",galleryY,dimensions.towerGalleryDiameter,dimensions.towerGalleryWallThickness,dimensions.floorHeight,dimensions.lanternPaneCount,false);
+            Gallery(tower,galleryY);
+            Place("Lantern Cap",new(0,galleryY+dimensions.floorHeight+.7f,0),new(dimensions.towerGalleryDiameter*.55f,1.4f,dimensions.towerGalleryDiameter*.55f),"Curved Wall","Metal",tower);
         }
 
         static void BuildRooms(Transform root)
         {
             Transform rooms=Group("Room Dividers",root);
-            Wall("Ground Keeper divider",new(-1.5f,1.5f,-.5f),new(.22f,3,7),rooms);Wall("Ground Generator divider",new(2.2f,1.5f,1.8f),new(4.2f,3,.22f),rooms);Wall("Pantry divider",new(-2.8f,1.5f,2.4f),new(3,.3f,3),rooms);
-            Wall("Level 2 library divider",new(0,4.75f,.8f),new(7,.22f,3),rooms);Wall("Level 3 Crane divider",new(-.8f,7.95f,0),new(.22f,3,7),rooms);
-            Place("Generator Plinth",new(2.8f,.35f,2.8f),new(2,.7f,1.5f),"Floor","Metal",rooms);
-            Place("Cellar Floor",new(-2,-3.3f,2),new(8,.3f,7),"Floor","Stone",rooms);Place("Hidden Room Floor",new(-7,-3.3f,2),new(4,.3f,5),"Floor","Stone",rooms);Place("Flooded Corridor",new(2.5f,-3.45f,2),new(3,.18f,8),"Floor","Water",rooms);
-            for(int i=0;i<3;i++){Place($"Cellar Arch Left {i}",new(-4.3f,-1.8f,-.2f+i*2.2f),new(.35f,2.8f,.35f),"Wall","Stone",rooms);Place($"Cellar Arch Top {i}",new(-3.5f,-.55f,-.2f+i*2.2f),new(1.6f,.3f,.35f),"Wall","Stone",rooms);}
-            Place("Drain",new(2.5f,-3.25f,4.8f),new(1.2f,.08f,1.2f),"Floor","Metal",rooms);
+            float hw=dimensions.houseSize.x*.5f,hd=dimensions.houseSize.z*.5f,hh=dimensions.houseSize.y;
+            HouseWall(rooms,"House Front Left",new(-5-hw*.5f,-5-hd),new(hw*.5f-dimensions.houseDoorWidth*.5f,hh),true);
+            HouseWall(rooms,"House Front Right",new(-5+hw*.5f*.5f,-5-hd),new(hw*.5f-dimensions.houseDoorWidth*.5f,hh),true);
+            Wall("House Back",new(-5,-5+hd,hh*.5f),new(dimensions.houseSize.x,hh,dimensions.houseWallThickness),rooms);
+            HouseWall(rooms,"House West",new(-5-hw,-5),new(dimensions.houseWallThickness,hh),false);
+            HouseWall(rooms,"House East",new(-5+hw,-5),new(dimensions.houseWallThickness,hh),false);
+            Place("House Roof South",new(-5,-5,hh+dimensions.roofPitch*.5f),new(dimensions.houseSize.x+.5f,dimensions.roofPitch,dimensions.houseSize.z*.55f),"Wall","Stone",rooms).transform.rotation=Quaternion.Euler(0,0,18);
+            Place("House Roof North",new(-5,-5,hh+dimensions.roofPitch*.5f),new(dimensions.houseSize.x+.5f,dimensions.roofPitch,dimensions.houseSize.z*.55f),"Wall","Stone",rooms).transform.rotation=Quaternion.Euler(0,0,-18);
+            Place("House Chimney",new(-8,-3.5f,hh+1.2f),new(.8f,2.4f,.8f),"Wall","Stone",rooms);
+            Wall("House Keeper Divider",new(-5.5f,-5,1.4f),new(.3f,2.8f,7.4f),rooms);
+            Wall("House Kitchen Divider",new(-2,-5,1.4f),new(.3f,2.8f,7.4f),rooms);
+            Wall("House Pantry Divider",new(-8,-3.2f,1.4f),new(5,.3f,2.8f),rooms);
+            CreateDoor("Keeper House Front Door",new(-5,0,-9),dimensions.houseDoorWidth,dimensions.houseDoorHeight,rooms,false);
+            Place("Generator Plinth",new(-1,-3, .35f),new(1.8f,.7f,1.4f),"Floor","Metal",rooms);
+            Place("Cellar Floor",new(-5,-5,-3.3f),new(12,.3f,7),"Floor","Stone",rooms);
+            Place("Hidden Room Floor",new(-12,-5,-3.3f),new(4,.3f,5),"Floor","Stone",rooms);
+            Place("Flooded Corridor",new(1,-5,-3.45f),new(3,.18f,8),"Floor","Water",rooms);
+            for(int i=0;i<3;i++){Place($"Cellar Arch Left {i}",new(-9,-1.8f,-7+i*2.2f),new(.35f,2.8f,.35f),"Wall","Stone",rooms);Place($"Cellar Arch Top {i}",new(-8.2f,-.55f,-7+i*2.2f),new(1.6f,.3f,.35f),"Wall","Stone",rooms);}
+            Place("Drain",new(1,-3.25f,-1.2f),new(1.2f,.08f,1.2f),"Floor","Metal",rooms);
         }
 
         static void BuildStairs(Transform root)
         {
             Transform stairs=Group("Stairs",root);
-            for(int level=0;level<3;level++){Flight(stairs,$"Main L{level}",new(2.7f,level*FloorHeight,-2.4f),1);Flight(stairs,$"Service L{level}",new(-2.7f,level*FloorHeight,2.4f),-1);Link(stairs,$"Main Link {level}",new(2.7f,level*FloorHeight,-2.4f),new(2.7f,(level+1)*FloorHeight,2.4f));Link(stairs,$"Service Link {level}",new(-2.7f,level*FloorHeight,2.4f),new(-2.7f,(level+1)*FloorHeight,-2.4f));}
-            Flight(stairs,"Cellar Stair",new(-2.8f,-3.2f,-1.8f),1);Flight(stairs,"Generator Service Stair",new(2.8f,-3.2f,3.2f),-1);
-            Link(stairs,"Cellar Link",new(-2.8f,-3.2f,-1.8f),new(-2.8f,0,3));Link(stairs,"Generator Basement Link",new(2.8f,-3.2f,3.2f),new(2.8f,0,-1.6f));
+            for(int level=0;level<dimensions.towerLevelCount;level++)SpiralFlight(stairs,$"Spiral L{level}",level*dimensions.floorHeight);
+            for(int level=0;level<dimensions.towerLevelCount;level++)Link(stairs,$"Spiral Link {level}",new(0,level*dimensions.floorHeight+dimensions.floorHeight-.2f,0),new(0,(level+1)*dimensions.floorHeight+.1f,0));
+            StraightFlight(stairs,"Cellar Stair",new(-8,-3.2f,-5),new(-8,0,-5),16);
+            for(int i=0;i<dimensions.outsideStairSteps;i++){float t=i/(float)(dimensions.outsideStairSteps-1);Place($"Outside Iron Stair {i:00}",new(8,Mathf.Lerp(0,dimensions.towerLevelCount*dimensions.floorHeight,t),-8+t*4),new(dimensions.stairWidth,dimensions.stairStepHeight,dimensions.stairStepDepth),"Stair","Metal",stairs);}
+            Link(stairs,"Cellar Link",new(-8,-3.2f,-5),new(-8,0,-5));Link(stairs,"Outside Gallery Link",new(8,0,-8),new(8,dimensions.towerLevelCount*dimensions.floorHeight, -4));
         }
 
-        static void Flight(Transform parent,string name,Vector3 start,float direction)
+        static void SpiralFlight(Transform parent,string name,float baseY)
         {
-            Transform flight=Group(name,parent);for(int i=0;i<16;i++)Place($"{name} {i:00}",start+new Vector3(0,(i+.5f)*.2f,direction*i*.3f),new(1.5f,.2f,.34f),"Stair","Wood",flight);
+            Transform flight=Group(name,parent);int steps=Mathf.CeilToInt(dimensions.floorHeight/dimensions.stairStepHeight);float radius=2.8f;
+            for(int i=0;i<steps;i++){float angle=i*360f/steps;float radians=angle*Mathf.Deg2Rad;GameObject step=Place($"{name} {i:00}",new(Mathf.Sin(radians)*radius,baseY+(i+.5f)*dimensions.stairStepHeight,Mathf.Cos(radians)*radius),new(dimensions.stairWidth,dimensions.stairStepHeight,dimensions.stairStepDepth),"Stair","Wood",flight);step.transform.rotation=Quaternion.Euler(0,-angle,0);}
+            Place($"{name} Landing",new(0,baseY+dimensions.floorHeight-.1f,0),new(2.6f,.2f,2.6f),"Floor","Wood",flight);
+            for(int i=0;i<6;i++){float a=i*60f;float r=a*Mathf.Deg2Rad;Place($"{name} Handrail {i}",new(Mathf.Sin(r)*3.1f,baseY+1.1f,Mathf.Cos(r)*3.1f),new(.08f,1.1f,.08f),"Wall","Metal",flight);}
         }
-        static void Link(Transform parent,string name,Vector3 start,Vector3 end){var link=new GameObject(name).AddComponent<NavMeshLink>();link.transform.SetParent(parent);link.startPoint=start;link.endPoint=end;link.width=1.4f;link.bidirectional=true;}
+        static void StraightFlight(Transform parent,string name,Vector3 start,Vector3 end,int count){for(int i=0;i<count;i++){float t=(i+.5f)/count;Place($"{name} {i:00}",Vector3.Lerp(start,end,t),new(dimensions.stairWidth,dimensions.stairStepHeight,.5f),"Stair","Wood",parent);}}
+        static void Link(Transform parent,string name,Vector3 start,Vector3 end){var link=new GameObject(name).AddComponent<NavMeshLink>();link.transform.SetParent(parent);link.startPoint=start;link.endPoint=end;link.width=dimensions.stairWidth;link.bidirectional=true;}
 
         static void BuildWindows(Transform root)
         {
-            Transform windows=Group("Windows",root);for(int level=0;level<4;level++){float y=level*FloorHeight+1.65f;Window(windows,$"Courtyard Window L{level}",new(0,y,-4.52f),0);Window(windows,$"Shallows Window L{level}",new(4.52f,y,0),90);}
+            Transform windows=Group("Windows",root);for(int level=0;level<=dimensions.towerLevelCount;level++){float t=level/(float)Mathf.Max(1,dimensions.towerLevelCount);float radius=Mathf.Lerp(dimensions.towerBaseDiameter,dimensions.towerGalleryDiameter,t)*.5f;float y=level*dimensions.floorHeight+1.5f;Window(windows,$"Courtyard Window L{level}",new(0,y,-radius-.03f),0);Window(windows,$"Shallows Window L{level}",new(radius+.03f,y,0),90);}
+            Window(windows,"House Courtyard Window",new(-5,1.5f,-1.05f),0);Window(windows,"House Shallows Window",new(1.95f,1.5f,-5),90);
         }
         static void Window(Transform parent,string name,Vector3 position,float angle){GameObject frame=Place(name,position,new(1.6f,1.4f,.12f),"Window","Metal",parent);frame.transform.rotation=Quaternion.Euler(0,angle,0);frame.tag="Window";}
 
         static void BuildRoomVolumes(Transform root)
         {
             Transform rooms=Group("Room Triggers",root);
-            Room(rooms,"entry-hall","Entry Hall",0,new(1,1.4f,-2.1f),new(5,2.8f,3.5f));Room(rooms,"keeper-room","Keeper's Room",0,new(-2.3f,1.4f,0),new(3.8f,2.8f,5));Room(rooms,"kitchen-pantry","Kitchen & Pantry",0,new(-2.3f,1.4f,2.9f),new(3.5f,2.8f,2.2f));Room(rooms,"generator-room","Generator Room",0,new(2.7f,1.4f,2.8f),new(2.8f,2.8f,2.5f));
-            Room(rooms,"cellar","Cellar",-1,new(-2,-1.8f,2),new(8,2.7f,7));Room(rooms,"hidden-room","Hidden Room",-1,new(-7,-1.8f,2),new(4,2.7f,5));Room(rooms,"flooded-corridor","Flooded Corridor",-1,new(2.5f,-1.8f,2),new(3,2.7f,8));
-            Room(rooms,"bedroom-library","Bedroom & Library",2,new(0,4.7f,0),new(8,2.8f,8));Room(rooms,"crane-room","Crane's Room",3,new(-2,7.9f,0),new(4,2.8f,7));Room(rooms,"upper-landing","Upper Landing",3,new(2.2f,7.9f,0),new(3.5f,2.8f,7));Room(rooms,"lantern-room","Lantern Room",4,new(0,11.05f,0),new(8,2.8f,8));
+            Room(rooms,"entry-hall","Entry Hall",0,new(-5,1.4f,-5),new(3,2.8f,3));Room(rooms,"keeper-room","Keeper's Room",0,new(-8,1.4f,-5),new(3,2.8f,3));Room(rooms,"kitchen-pantry","Kitchen & Pantry",0,new(-3,1.4f,-5),new(2.5f,2.8f,3));Room(rooms,"generator-room","Generator Room",0,new(-1,1.4f,-3),new(2,2.8f,2));
+            Room(rooms,"cellar","Cellar",-1,new(-5,-1.8f,-5),new(8,2.7f,7));Room(rooms,"hidden-room","Hidden Room",-1,new(-12,-1.8f,-5),new(4,2.7f,5));Room(rooms,"flooded-corridor","Flooded Corridor",-1,new(1,-1.8f,-5),new(3,2.7f,8));
+            Room(rooms,"bedroom-library","Bedroom & Library",2,new(0,dimensions.floorHeight*2+1.4f,0),new(5,2.8f,5));Room(rooms,"crane-room","Crane's Room",3,new(-1.5f,dimensions.floorHeight*3+1.4f,0),new(3,2.8f,5));Room(rooms,"upper-landing","Upper Landing",3,new(1.5f,dimensions.floorHeight*3+1.4f,0),new(2,2.8f,5));Room(rooms,"lantern-room","Lantern Room",8,new(0,dimensions.towerLevelCount*dimensions.floorHeight+1.4f,0),new(4.5f,2.8f,4.5f));
         }
         static void Room(Transform parent,string id,string display,int floor,Vector3 position,Vector3 size){var go=new GameObject(display+" Trigger");go.transform.SetParent(parent);go.transform.position=position;var box=go.AddComponent<BoxCollider>();box.isTrigger=true;box.size=size;var room=go.AddComponent<RoomTrigger>();Set(room,"roomId",id);Set(room,"displayName",display);Set(room,"floorLevel",floor);}
 
         static void BuildHidingSpots(Transform root)
         {
-            Transform group=Group("Hiding Spots",root);Vector3[] positions={new(-3,0,-.5f),new(-3,0,3),new(3,0,3),new(-3,-3.2f,1),new(2.6f,-3.2f,1),new(-2.8f,3.2f,1),new(2.8f,3.2f,-1),new(2.6f,6.4f,1),new(-2.7f,6.4f,-1),new(2.8f,9.6f,1),new(10,0,-14)};string[] ids={"keeper-wardrobe","pantry-cupboard","generator-locker","cellar-coal-bin","drain-alcove","library-wardrobe","level2-desk","upper-locker","crane-bed","lantern-cabinet","boat-shed-crate"};
+            Transform group=Group("Hiding Spots",root);Vector3[] positions={new(-8,0,-5),new(-3,0,-5),new(-1,0,-3),new(-7,-3.2f,-5),new(1,-3.2f,-5),new(-2.8f,dimensions.floorHeight*2,1),new(2.2f,dimensions.floorHeight*2,-1),new(2.2f,dimensions.floorHeight*3,1),new(-2.2f,dimensions.floorHeight*3,-1),new(2.2f,dimensions.towerLevelCount*dimensions.floorHeight,1),new(10,0,-14)};string[] ids={"keeper-wardrobe","pantry-cupboard","generator-locker","cellar-coal-bin","drain-alcove","library-wardrobe","level2-desk","upper-locker","crane-bed","lantern-cabinet","boat-shed-crate"};
             var actions=AssetDatabase.LoadAssetAtPath<UnityEngine.InputSystem.InputActionAsset>("Assets/InputSystem_Actions.inputactions");var health=Object.FindAnyObjectByType<PlayerHealthState>();var stalker=GameObject.Find("Stalker");List<HidingSpot> spots=new();
             for(int i=0;i<positions.Length;i++){GameObject prop=Place(ids[i],positions[i]+Vector3.up,new(1.1f,2,1.1f),"Wall","Wood",group);var collider=prop.GetComponent<BoxCollider>();collider.size=new(.95f,.9f,.95f);collider.center=new(0,-.45f,0);var spot=prop.AddComponent<HidingSpot>();Transform pose=new GameObject(ids[i]+" pose").transform;pose.SetParent(prop.transform);pose.position=positions[i]+Vector3.up*.2f;Set(spot,"spotId",ids[i]);Set(spot,"hidingPose",pose);Set(spot,"inputActions",actions);Set(spot,"player",health);Set(spot,"stalker",stalker?stalker.transform:null);spots.Add(spot);}
             StalkerAI ai=stalker?stalker.GetComponent<StalkerAI>():null;if(ai){spots.AddRange(Object.FindObjectsByType<HidingSpot>(FindObjectsSortMode.None).Where(value=>!spots.Contains(value)));SetArray(ai,"hidingSpots",spots.ToArray());}
@@ -203,26 +281,27 @@ namespace TheLightHouse.Editor
 
         static void BuildWaypoints(Transform root)
         {
-            Transform group=Group("Waypoints",root);List<Transform> points=new();for(int floor=-1;floor<=3;floor++){float y=floor<0?-3.15f:floor*FloorHeight;Vector3[] ring={new(-2.8f,y,-2),new(2.8f,y,-2),new(2.8f,y,2),new(-2.8f,y,2)};for(int i=0;i<ring.Length;i++){Transform point=new GameObject($"Floor {floor} Waypoint {i}").transform;point.SetParent(group);point.position=ring[i];points.Add(point);}}
+            Transform group=Group("Waypoints",root);List<Transform> points=new();for(int floor=-1;floor<=dimensions.towerLevelCount;floor++){float y=floor<0?-3.15f:floor*dimensions.floorHeight;Vector3[] ring={new(-2.2f,y,-2),new(2.2f,y,-2),new(2.2f,y,2),new(-2.2f,y,2)};for(int i=0;i<ring.Length;i++){Transform point=new GameObject($"Floor {floor} Waypoint {i}").transform;point.SetParent(group);point.position=ring[i];points.Add(point);}}
             StalkerAI ai=Object.FindAnyObjectByType<StalkerAI>();if(ai)SetArray(ai,"waypoints",points.ToArray());
         }
 
         static void BuildOcclusion(Transform root)
         {
-            Transform group=Group("Occlusion",root);for(int floor=-1;floor<=3;floor++){GameObject area=new($"Floor {floor} Occlusion Area");area.transform.SetParent(group);area.transform.position=new(0,floor<0?-1.8f:floor*FloorHeight+1.5f,0);var component=area.AddComponent<OcclusionArea>();component.size=new(10,3,10);}
-            for(int i=0;i<4;i++){GameObject portal=new($"Floor {i} Stair Portal");portal.transform.SetParent(group);portal.transform.position=new(0,i*FloorHeight+.1f,0);portal.AddComponent<OcclusionPortal>().open=true;}
+            Transform group=Group("Occlusion",root);for(int floor=-1;floor<=dimensions.towerLevelCount;floor++){GameObject area=new($"Floor {floor} Occlusion Area");area.transform.SetParent(group);area.transform.position=new(0,floor<0?-1.8f:floor*dimensions.floorHeight+1.5f,0);var component=area.AddComponent<OcclusionArea>();component.size=new(10,3,10);}
+            for(int i=0;i<dimensions.towerLevelCount;i++){GameObject portal=new($"Floor {i} Stair Portal");portal.transform.SetParent(group);portal.transform.position=new(0,i*dimensions.floorHeight+.1f,0);portal.AddComponent<OcclusionPortal>().open=true;}
         }
 
         static void RelocateGameplayAnchors(string actName)
         {
-            Move("Tower Door",new(0,0,-4.65f));MoveChild("Tower Door","Door panel",new(0,1.5f,0));
-            Move("Radio",new(-2.6f,1,-.2f));Move("Hot Meal",new(-2.5f,.9f,-1.8f));Move("Table",new(-2.5f,.45f,-1.8f));Move("Steam placeholder",new(-2.5f,1.1f,-1.8f));
-            Move("Lamp",new(0,11.1f,0));Move("Crank Station",new(2.2f,10.35f,0));
-            Move("Locked Cellar Door",new(-4.2f,-1.7f,2));Move("Wet footprints (Act 2)",new(-1.5f,-3.15f,1));Move("Cellar Hum",new(-1.5f,-1.8f,1));Move("Reserve Fuel Can",new(-3,-2.75f,3));
-            Move("hidden shelf",new(-5,-2.2f,2));Move("Marta reel-to-reel recorder",new(-7,-2.65f,2.5f));Move("Harbor board ledger",new(-7,-2.65f,.8f));
-            Move("Crane's Room Door",new(-.8f,6.4f,-1.2f));Move("Family Photo",new(-4.15f,7.8f,1));Move("Crane's Desk",new(-2.6f,6.75f,1.8f));Move("Crane Room Key",new(10,.4f,-14));
-            Move("Boat",new(-3.5f,.15f,-27));Move("Shoreline ending trigger",new(0,1,-25));
-            GameObject player=GameObject.Find("Player");if(player)player.transform.position=actName=="Act1"?new(0,.15f,-27):new(0,9.8f,-1.5f);
+            Move("Tower Door",new(0,0,-4.15f));MoveChild("Tower Door","Door panel",new(0,1.1f,0));
+            MakeNonBlocking("Door panel");
+            Move("Radio",new(-8,1,-5));Move("Hot Meal",new(-8,.9f,-6));Move("Table",new(-8,.45f,-6));Move("Steam placeholder",new(-8,1.1f,-6));
+            Move("Lamp",new(0,dimensions.towerLevelCount*dimensions.floorHeight+1.1f,0));Move("Crank Station",new(2.2f,dimensions.towerLevelCount*dimensions.floorHeight+.35f,0));
+            Move("Locked Cellar Door",new(-8,-1.7f,-5));Move("Wet footprints (Act 2)",new(-6,-3.15f,-5));Move("Cellar Hum",new(-6,-1.8f,-5));Move("Reserve Fuel Can",new(-3,-2.75f,-5));
+            Move("hidden shelf",new(-10,-2.2f,-5));Move("Marta reel-to-reel recorder",new(-12,-2.65f,-4));Move("Harbor board ledger",new(-12,-2.65f,-6));
+            Move("Crane's Room Door",new(-1.5f,dimensions.floorHeight*3,-2.4f));Move("Family Photo",new(-2.5f,dimensions.floorHeight*3+1.4f,1));Move("Crane's Desk",new(-1.5f,dimensions.floorHeight*3+.35f,1.2f));Move("Crane Room Key",new(10,.4f,-14));
+            Move("Boat",new(-3.5f,.15f,-29));Move("Shoreline ending trigger",new(0,1,-27));
+            GameObject player=GameObject.Find("Player");if(player)player.transform.position=actName=="Act1"?new(0,.15f,-29):new(0,dimensions.towerLevelCount*dimensions.floorHeight-.8f,-1.5f);
         }
 
         static void BuildHud()
@@ -273,8 +352,25 @@ namespace TheLightHouse.Editor
         static void Bounds(Transform parent,Vector3 position,Vector3 size){GameObject go=new("Invisible Bounds");go.transform.SetParent(parent);go.transform.position=position;BoxCollider box=go.AddComponent<BoxCollider>();box.size=size;}
         static void Move(string name,Vector3 position){GameObject go=GameObject.Find(name);if(go)go.transform.position=position;}
         static void MoveChild(string rootName,string childName,Vector3 localPosition){GameObject root=GameObject.Find(rootName);if(!root)return;Transform child=root.transform.Find(childName);if(child)child.localPosition=localPosition;}
+        static void MakeNonBlocking(string name)
+        {
+            GameObject go=GameObject.Find(name);
+            if(!go)return;
+            foreach(Collider collider in go.GetComponentsInChildren<Collider>())collider.enabled=false;
+            foreach(Renderer renderer in go.GetComponentsInChildren<Renderer>())renderer.enabled=false;
+        }
+        static void CreateDoor(string name,Vector3 position,float width,float height,Transform parent,bool locked)
+        {
+            if(GameObject.Find(name))return;
+            GameObject root=new(name);root.transform.SetParent(parent);root.transform.position=position;
+            GameObject frame=Place($"{name} Frame",position+Vector3.up*height*.5f,new(.18f,height,.2f),"Door Frame","Wood",parent);
+            frame.transform.SetParent(root.transform,true);
+            NoiseEmitter noise=root.AddComponent<NoiseEmitter>();Door door=root.AddComponent<Door>();
+            Set(door,"locked",locked);Set(door,"doorId",name);
+        }
         static void Set(Object target,string name,Object value){if(!target)return;SerializedObject serialized=new(target);SerializedProperty property=serialized.FindProperty(name);if(property!=null){property.objectReferenceValue=value;serialized.ApplyModifiedPropertiesWithoutUndo();}}
         static void Set(Object target,string name,string value){if(!target)return;SerializedObject serialized=new(target);SerializedProperty property=serialized.FindProperty(name);if(property!=null){property.stringValue=value;serialized.ApplyModifiedPropertiesWithoutUndo();}}
+        static void Set(Object target,string name,bool value){if(!target)return;SerializedObject serialized=new(target);SerializedProperty property=serialized.FindProperty(name);if(property!=null){property.boolValue=value;serialized.ApplyModifiedPropertiesWithoutUndo();}}
         static void Set(Object target,string name,int value){if(!target)return;SerializedObject serialized=new(target);SerializedProperty property=serialized.FindProperty(name);if(property!=null){property.intValue=value;serialized.ApplyModifiedPropertiesWithoutUndo();}}
         static void SetArray<T>(Object target,string name,T[] values) where T:Object{if(!target)return;SerializedObject serialized=new(target);SerializedProperty property=serialized.FindProperty(name);if(property==null)return;property.arraySize=values.Length;for(int i=0;i<values.Length;i++)property.GetArrayElementAtIndex(i).objectReferenceValue=values[i];serialized.ApplyModifiedPropertiesWithoutUndo();}
     }
