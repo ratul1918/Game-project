@@ -23,6 +23,8 @@ namespace TheLightHouse
         [Min(.1f)] public float stairStepHeight=.18f;
         [Min(.1f)] public float stairStepDepth=.28f;
         [Min(1f)] public float stairWidth=1.1f;
+        [Min(.5f)] public float stairwellRadius=1.05f;
+        [Range(1f,1.02f)] public float wallSegmentCoverage=1.001f;
 
         [Header("Keeper House")]
         public Vector3 houseSize=new(14f,2.8f,8f);

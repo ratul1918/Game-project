@@ -10,9 +10,11 @@ namespace TheLightHouse
         [SerializeField] private TMP_Text styledLabel;
         [SerializeField] private Image keyIcon;
         [SerializeField] private string promptFormat = "[E] {0}";
+        CanvasGroup group;
 
         private void Awake()
         {
+            group=GetComponent<CanvasGroup>()??gameObject.AddComponent<CanvasGroup>();
             Hide();
         }
 
@@ -27,6 +29,8 @@ namespace TheLightHouse
             if(label){label.text=value;label.enabled=styledLabel==null;}
             if(styledLabel){styledLabel.text=value;styledLabel.enabled=true;}
             if(keyIcon)keyIcon.enabled=true;
+            group.alpha=1f;
+            group.blocksRaycasts=true;
         }
 
         public void Hide()
@@ -37,6 +41,7 @@ namespace TheLightHouse
             }
             if(styledLabel)styledLabel.enabled=false;
             if(keyIcon)keyIcon.enabled=false;
+            if(group){group.alpha=0f;group.blocksRaycasts=false;}
         }
     }
 }

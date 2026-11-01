@@ -26,6 +26,7 @@ namespace TheLightHouse
         [SerializeField] GameObject lampRoot;
         [SerializeField] GameObject objectiveRoot;
         [SerializeField] GameObject inventoryRoot;
+        [SerializeField] CanvasGroup inventoryGroup;
         [SerializeField] GameObject interactionRoot;
         [SerializeField] CanvasGroup noiseGroup;
         [SerializeField] CanvasGroup staminaGroup;
@@ -137,7 +138,7 @@ namespace TheLightHouse
         void SetLamp(float value,LampState state){if(lampFill){lampFill.fillAmount=Mathf.Clamp01(value);lampFill.color=state==LampState.Failing?theme.Warning:state==LampState.Extinguished?theme.Danger:lampColor;}if(lampState)lampState.text=state.ToString();ShowGroup(lampGroup);RestartFade(ref lampRoutine,lampGroup,value>=.999f?0f:gaugeIdleSeconds);}
         void Objective(string value){if(objectiveText)objectiveText.text=value;ShowGroup(objectiveGroup);RestartFade(ref objectiveRoutine,objectiveGroup,objectiveVisibleSeconds);}
         void UpdateObjectiveVisibility(){if(objectiveGroup&&Keyboard.current!=null&&Keyboard.current.anyKey.wasPressedThisFrame){ShowGroup(objectiveGroup);RestartFade(ref objectiveRoutine,objectiveGroup,objectiveVisibleSeconds);}}
-        void Item(ItemCollectedEvent value){if(!inventoryText)return;if(inventoryBuilder.Length>0)inventoryBuilder.Append("  •  ");inventoryBuilder.Append(value.Id);inventoryText.text=inventoryBuilder.ToString();}
+        void Item(ItemCollectedEvent value){if(!inventoryText)return;if(inventoryBuilder.Length>0)inventoryBuilder.Append("  •  ");inventoryBuilder.Append(value.Id);inventoryText.text=inventoryBuilder.ToString();ShowGroup(inventoryGroup);}
         void Checkpoint(CheckpointReachedEvent value){ShowToast(ref checkpointRoutine,checkpointToast,checkpointText,$"Checkpoint — {value.Id}");}
         void Page(PageReadEvent value){ShowToast(ref pageRoutine,pageToast,pageText,$"Page added — {value.Id}");}
         void Room(RoomEnteredEvent value){if(settings&&settings.ShowRoomNames)ShowToast(ref roomRoutine,roomToast,roomText,$"{value.DisplayName}\n<size=70%>Floor {value.FloorLevel}</size>",false);}

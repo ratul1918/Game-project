@@ -27,7 +27,6 @@ namespace TheLightHouse.Editor
             EnsureAssets();
             dimensions=EnsureLayoutSettings();
             RemoveLegacyGeometry();
-            GameObject old=GameObject.Find(RootName);if(old)Object.DestroyImmediate(old);
             Transform root=new GameObject(RootName).transform;
             BuildExterior(root);
             BuildTower(root);
@@ -145,8 +144,8 @@ namespace TheLightHouse.Editor
                 float angle=i*360f/segments;
                 if(doorway&&Mathf.Abs(Mathf.DeltaAngle(angle,180f))<18f)continue;
                 float radians=angle*Mathf.Deg2Rad;
-                float tangent=2f*Mathf.PI*radius/segments*1.08f;
-                GameObject segment=Place($"{name} wall {i:00}",new(Mathf.Sin(radians)*radius,y+height*.5f,Mathf.Cos(radians)*radius),new(tangent,height,thickness),"Curved Wall","Stone",parent);
+                float tangent=2f*Mathf.PI*radius/segments*dimensions.wallSegmentCoverage;
+                GameObject segment=Place($"{name} wall {i:00}",new(Mathf.Sin(radians)*radius,y+height*.5f,Mathf.Cos(radians)*radius),new(tangent,height,thickness/.22f),"Wall","Stone",parent);
                 segment.transform.rotation=Quaternion.Euler(0,angle,0);
             }
         }
@@ -200,7 +199,7 @@ namespace TheLightHouse.Editor
                 float y=level*dimensions.floorHeight;
                 float t=level/(float)Mathf.Max(1,dimensions.towerLevelCount);
                 float diameter=Mathf.Lerp(dimensions.towerBaseDiameter,dimensions.towerGalleryDiameter,t);
-                Place($"Tower Floor {level}",new(0,y-.12f,0),new(diameter,.24f,diameter),"Floor",level==dimensions.towerLevelCount?"Metal":"Stone",tower);
+                FloorRing(tower,$"Tower Floor {level}",y,diameter,level==dimensions.towerLevelCount?"Metal":"Stone");
                 if(level==dimensions.towerLevelCount)continue;
                 Ring(tower,$"Tower L{level}",y,diameter,Mathf.Lerp(dimensions.towerBaseWallThickness,dimensions.towerGalleryWallThickness,t),dimensions.floorHeight,dimensions.towerWallSegments,level==0);
                 Band(tower,$"Tower Cornice {level}",y+dimensions.floorHeight-.16f,diameter+.25f,dimensions.ringCorniceHeight,dimensions.ringCorniceDepth,dimensions.towerWallSegments);
@@ -209,6 +208,26 @@ namespace TheLightHouse.Editor
             Ring(tower,"Lantern Ring",galleryY,dimensions.towerGalleryDiameter,dimensions.towerGalleryWallThickness,dimensions.floorHeight,dimensions.lanternPaneCount,false);
             Gallery(tower,galleryY);
             Place("Lantern Cap",new(0,galleryY+dimensions.floorHeight+.7f,0),new(dimensions.towerGalleryDiameter*.55f,1.4f,dimensions.towerGalleryDiameter*.55f),"Curved Wall","Metal",tower);
+            Place("Tower Door Lintel",new(0,dimensions.towerDoorHeight,-dimensions.towerBaseDiameter*.5f-.08f),new(dimensions.towerDoorWidth+.36f,.18f,.28f),"Door Frame","Wood",tower);
+            Place("Tower Door Left Jamb",new(-(dimensions.towerDoorWidth*.5f+.09f),dimensions.towerDoorHeight*.5f,-dimensions.towerBaseDiameter*.5f-.08f),new(.18f,dimensions.towerDoorHeight,.28f),"Door Frame","Wood",tower);
+            Place("Tower Door Right Jamb",new(dimensions.towerDoorWidth*.5f+.09f,dimensions.towerDoorHeight*.5f,-dimensions.towerBaseDiameter*.5f-.08f),new(.18f,dimensions.towerDoorHeight,.28f),"Door Frame","Wood",tower);
+            Place("Tower Door Step",new(0,.08f,-dimensions.towerBaseDiameter*.5f-.2f),new(dimensions.towerDoorWidth+.5f,.16f,.45f),"Floor","Stone",tower);
+        }
+
+        static void FloorRing(Transform parent,string name,float y,float diameter,string surface)
+        {
+            float outerRadius=diameter*.5f;
+            float innerRadius=dimensions.stairwellRadius;
+            float radialWidth=Mathf.Max(.2f,outerRadius-innerRadius);
+            float radius=innerRadius+radialWidth*.5f;
+            for(int i=0;i<dimensions.towerWallSegments;i++)
+            {
+                float angle=i*360f/dimensions.towerWallSegments;
+                float radians=angle*Mathf.Deg2Rad;
+                float tangent=2f*Mathf.PI*radius/dimensions.towerWallSegments*dimensions.wallSegmentCoverage;
+                GameObject segment=Place($"{name} segment {i:00}",new(Mathf.Sin(radians)*radius,y-.12f,Mathf.Cos(radians)*radius),new(tangent,.24f,radialWidth),"Floor",surface,parent);
+                segment.transform.rotation=Quaternion.Euler(0,angle,0);
+            }
         }
 
         static void BuildRooms(Transform root)
@@ -238,16 +257,16 @@ namespace TheLightHouse.Editor
         static void BuildStairs(Transform root)
         {
             Transform stairs=Group("Stairs",root);
+            GameObject support=GameObject.CreatePrimitive(PrimitiveType.Cylinder);support.name="Tower Central Support";support.transform.SetParent(stairs);support.transform.position=new(0,dimensions.towerLevelCount*dimensions.floorHeight*.5f,0);support.transform.localScale=new(.35f,dimensions.towerLevelCount*dimensions.floorHeight*.5f,.35f);support.GetComponent<Renderer>().sharedMaterial=Materials["Metal"];GameObjectUtility.SetStaticEditorFlags(support,StaticEditorFlags.BatchingStatic|StaticEditorFlags.OccludeeStatic|StaticEditorFlags.NavigationStatic);
             for(int level=0;level<dimensions.towerLevelCount;level++)SpiralFlight(stairs,$"Spiral L{level}",level*dimensions.floorHeight);
             for(int level=0;level<dimensions.towerLevelCount;level++)Link(stairs,$"Spiral Link {level}",new(0,level*dimensions.floorHeight+dimensions.floorHeight-.2f,0),new(0,(level+1)*dimensions.floorHeight+.1f,0));
             StraightFlight(stairs,"Cellar Stair",new(-8,-3.2f,-5),new(-8,0,-5),16);
-            for(int i=0;i<dimensions.outsideStairSteps;i++){float t=i/(float)(dimensions.outsideStairSteps-1);Place($"Outside Iron Stair {i:00}",new(8,Mathf.Lerp(0,dimensions.towerLevelCount*dimensions.floorHeight,t),-8+t*4),new(dimensions.stairWidth,dimensions.stairStepHeight,dimensions.stairStepDepth),"Stair","Metal",stairs);}
-            Link(stairs,"Cellar Link",new(-8,-3.2f,-5),new(-8,0,-5));Link(stairs,"Outside Gallery Link",new(8,0,-8),new(8,dimensions.towerLevelCount*dimensions.floorHeight, -4));
+            Link(stairs,"Cellar Link",new(-8,-3.2f,-5),new(-8,0,-5));
         }
 
         static void SpiralFlight(Transform parent,string name,float baseY)
         {
-            Transform flight=Group(name,parent);int steps=Mathf.CeilToInt(dimensions.floorHeight/dimensions.stairStepHeight);float radius=2.8f;
+            Transform flight=Group(name,parent);int steps=Mathf.CeilToInt(dimensions.floorHeight/dimensions.stairStepHeight);float progress=baseY/(dimensions.floorHeight*Mathf.Max(1,dimensions.towerLevelCount));float diameter=Mathf.Lerp(dimensions.towerBaseDiameter,dimensions.towerGalleryDiameter,progress);float radius=diameter*.5f-Mathf.Lerp(dimensions.towerBaseWallThickness,dimensions.towerGalleryWallThickness,progress)-dimensions.stairWidth*.5f;
             for(int i=0;i<steps;i++){float angle=i*360f/steps;float radians=angle*Mathf.Deg2Rad;GameObject step=Place($"{name} {i:00}",new(Mathf.Sin(radians)*radius,baseY+(i+.5f)*dimensions.stairStepHeight,Mathf.Cos(radians)*radius),new(dimensions.stairWidth,dimensions.stairStepHeight,dimensions.stairStepDepth),"Stair","Wood",flight);step.transform.rotation=Quaternion.Euler(0,-angle,0);}
             Place($"{name} Landing",new(0,baseY+dimensions.floorHeight-.1f,0),new(2.6f,.2f,2.6f),"Floor","Wood",flight);
             for(int i=0;i<6;i++){float a=i*60f;float r=a*Mathf.Deg2Rad;Place($"{name} Handrail {i}",new(Mathf.Sin(r)*3.1f,baseY+1.1f,Mathf.Cos(r)*3.1f),new(.08f,1.1f,.08f),"Wall","Metal",flight);}
@@ -293,7 +312,7 @@ namespace TheLightHouse.Editor
 
         static void RelocateGameplayAnchors(string actName)
         {
-            Move("Tower Door",new(0,0,-4.15f));MoveChild("Tower Door","Door panel",new(0,1.1f,0));
+            Move("Tower Door",new(0,0,-4.15f));MoveChild("Tower Door","Door panel",new(0,1.1f,0));EnsureDoorCollider("Tower Door",dimensions.towerDoorWidth,dimensions.towerDoorHeight);
             MakeNonBlocking("Door panel");
             Move("Radio",new(-8,1,-5));Move("Hot Meal",new(-8,.9f,-6));Move("Table",new(-8,.45f,-6));Move("Steam placeholder",new(-8,1.1f,-6));
             Move("Lamp",new(0,dimensions.towerLevelCount*dimensions.floorHeight+1.1f,0));Move("Crank Station",new(2.2f,dimensions.towerLevelCount*dimensions.floorHeight+.35f,0));
@@ -308,12 +327,12 @@ namespace TheLightHouse.Editor
         {
             GameObject canvas=GameObject.Find("Debug Canvas");if(!canvas)return;CanvasScaler scaler=canvas.GetComponent<CanvasScaler>();if(scaler){scaler.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;scaler.referenceResolution=new(1920,1080);scaler.screenMatchMode=CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;scaler.matchWidthOrHeight=.5f;}
             Transform previous=canvas.transform.Find("HUD Root");if(previous)Object.DestroyImmediate(previous.gameObject);RectTransform root=Rect("HUD Root",canvas.transform,Vector2.zero,Vector2.one);UITheme theme=AssetDatabase.LoadAssetAtPath<UITheme>($"{SettingsFolder}/UITheme.asset");HudSettings settings=AssetDatabase.LoadAssetAtPath<HudSettings>($"{SettingsFolder}/HudSettings.asset");HudRoot hud=root.gameObject.AddComponent<HudRoot>();Set(hud,"theme",theme);Set(hud,"settings",settings);Set(hud,"scalableRoot",root);
-            GameObject noise=Panel("NoiseMeter",root,new(.03f,.06f),new(.17f,.11f),new Color(theme.Panel.r,theme.Panel.g,theme.Panel.b,.72f));CanvasGroup noiseGroup=noise.AddComponent<CanvasGroup>();Image[] noiseSegments=new Image[3];for(int i=0;i<3;i++)noiseSegments[i]=Panel($"Noise {i+1}",noise.transform,new(.08f+i*.31f,.22f),new(.32f+i*.31f,.78f),new Color(.16f,.22f,.28f,1f)).GetComponent<Image>();SetArray(hud,"noiseSegments",noiseSegments);Set(hud,"noiseRoot",noise);Set(hud,"noiseGroup",noiseGroup);
-            GameObject stamina=Panel("StaminaBar",root,new(.38f,.035f),new(.62f,.06f),new Color(theme.Panel.r,theme.Panel.g,theme.Panel.b,.65f));CanvasGroup staminaGroup=stamina.AddComponent<CanvasGroup>();Image staminaFill=Panel("Fill",stamina.transform,Vector2.zero,Vector2.one,new Color(.42f,.54f,.62f,1f)).GetComponent<Image>();staminaFill.type=Image.Type.Filled;staminaFill.fillMethod=Image.FillMethod.Horizontal;Set(hud,"staminaFill",staminaFill);Set(hud,"staminaRoot",stamina);Set(hud,"staminaGroup",staminaGroup);
-            GameObject lamp=Panel("LampGauge",root,new(.82f,.045f),new(.96f,.11f),new Color(theme.Panel.r,theme.Panel.g,theme.Panel.b,.65f));CanvasGroup lampGroup=lamp.AddComponent<CanvasGroup>();Image lampFill=Panel("Fill",lamp.transform,new(.05f,.12f),new(.95f,.5f),new Color(.88f,.58f,.22f,1f)).GetComponent<Image>();lampFill.type=Image.Type.Filled;lampFill.fillMethod=Image.FillMethod.Horizontal;TMP_Text lampLabel=Text("State",lamp.transform,new(.05f,.52f),new(.95f,.96f),"LAMP",18,theme);Set(hud,"lampFill",lampFill);Set(hud,"lampState",lampLabel);Set(hud,"lampRoot",lamp);Set(hud,"lampGroup",lampGroup);
-            GameObject objective=Panel("ObjectiveText",root,new(.32f,.91f),new(.68f,.96f),new Color(theme.Panel.r,theme.Panel.g,theme.Panel.b,.58f));CanvasGroup objectiveGroup=objective.AddComponent<CanvasGroup>();TMP_Text objectiveLabel=Text("Label",objective.transform,new(.04f,.05f),new(.96f,.95f),"",20,theme);Set(hud,"objectiveText",objectiveLabel);Set(hud,"objectiveRoot",objective);Set(hud,"objectiveGroup",objectiveGroup);
-            GameObject inventory=Panel("InventoryStrip",root,new(.31f,.075f),new(.69f,.12f),theme.Panel);TMP_Text inventoryLabel=Text("Items",inventory.transform,new(.03f,.05f),new(.97f,.95f),"",20,theme);Set(hud,"inventoryText",inventoryLabel);Set(hud,"inventoryRoot",inventory);
-            InteractionPrompt prompt=Object.FindAnyObjectByType<InteractionPrompt>();GameObject promptRoot=prompt?prompt.gameObject:Panel("InteractionPrompt",root,new(.36f,.16f),new(.64f,.22f),theme.Panel);TMP_Text promptText=Text("Styled Prompt",promptRoot.transform,Vector2.zero,Vector2.one,"",24,theme);if(prompt){Set(prompt,"styledLabel",promptText);Set(prompt,"keyIcon",(Object)null);}Set(hud,"interactionRoot",promptRoot);
+            GameObject noise=Panel("NoiseMeter",root,new(.03f,.06f),new(.17f,.11f),new Color(theme.Panel.r,theme.Panel.g,theme.Panel.b,.72f));CanvasGroup noiseGroup=noise.AddComponent<CanvasGroup>();noiseGroup.alpha=0;noiseGroup.blocksRaycasts=false;Image[] noiseSegments=new Image[3];for(int i=0;i<3;i++)noiseSegments[i]=Panel($"Noise {i+1}",noise.transform,new(.08f+i*.31f,.22f),new(.32f+i*.31f,.78f),new Color(.16f,.22f,.28f,1f)).GetComponent<Image>();SetArray(hud,"noiseSegments",noiseSegments);Set(hud,"noiseRoot",noise);Set(hud,"noiseGroup",noiseGroup);
+            GameObject stamina=Panel("StaminaBar",root,new(.38f,.035f),new(.62f,.06f),new Color(theme.Panel.r,theme.Panel.g,theme.Panel.b,.65f));CanvasGroup staminaGroup=stamina.AddComponent<CanvasGroup>();staminaGroup.alpha=0;staminaGroup.blocksRaycasts=false;Image staminaFill=Panel("Fill",stamina.transform,Vector2.zero,Vector2.one,new Color(.42f,.54f,.62f,1f)).GetComponent<Image>();staminaFill.type=Image.Type.Filled;staminaFill.fillMethod=Image.FillMethod.Horizontal;Set(hud,"staminaFill",staminaFill);Set(hud,"staminaRoot",stamina);Set(hud,"staminaGroup",staminaGroup);
+            GameObject lamp=Panel("LampGauge",root,new(.82f,.045f),new(.96f,.11f),new Color(theme.Panel.r,theme.Panel.g,theme.Panel.b,.65f));CanvasGroup lampGroup=lamp.AddComponent<CanvasGroup>();lampGroup.alpha=0;lampGroup.blocksRaycasts=false;Image lampFill=Panel("Fill",lamp.transform,new(.05f,.12f),new(.95f,.5f),new Color(.88f,.58f,.22f,1f)).GetComponent<Image>();lampFill.type=Image.Type.Filled;lampFill.fillMethod=Image.FillMethod.Horizontal;TMP_Text lampLabel=Text("State",lamp.transform,new(.05f,.52f),new(.95f,.96f),"LAMP",18,theme);Set(hud,"lampFill",lampFill);Set(hud,"lampState",lampLabel);Set(hud,"lampRoot",lamp);Set(hud,"lampGroup",lampGroup);
+            GameObject objective=Panel("ObjectiveText",root,new(.32f,.91f),new(.68f,.96f),new Color(theme.Panel.r,theme.Panel.g,theme.Panel.b,.58f));CanvasGroup objectiveGroup=objective.AddComponent<CanvasGroup>();objectiveGroup.alpha=0;objectiveGroup.blocksRaycasts=false;TMP_Text objectiveLabel=Text("Label",objective.transform,new(.04f,.05f),new(.96f,.95f),"",20,theme);Set(hud,"objectiveText",objectiveLabel);Set(hud,"objectiveRoot",objective);Set(hud,"objectiveGroup",objectiveGroup);
+            GameObject inventory=Panel("InventoryStrip",root,new(.31f,.075f),new(.69f,.12f),theme.Panel);CanvasGroup inventoryGroup=inventory.AddComponent<CanvasGroup>();inventoryGroup.alpha=0;inventoryGroup.blocksRaycasts=false;TMP_Text inventoryLabel=Text("Items",inventory.transform,new(.03f,.05f),new(.97f,.95f),"",20,theme);Set(hud,"inventoryText",inventoryLabel);Set(hud,"inventoryRoot",inventory);Set(hud,"inventoryGroup",inventoryGroup);
+            InteractionPrompt prompt=Object.FindAnyObjectByType<InteractionPrompt>();GameObject promptRoot=prompt?prompt.gameObject:Panel("InteractionPrompt",root,new(.36f,.16f),new(.64f,.22f),theme.Panel);CanvasGroup promptGroup=promptRoot.GetComponent<CanvasGroup>();if(!promptGroup)promptGroup=promptRoot.AddComponent<CanvasGroup>();promptGroup.alpha=0;promptGroup.blocksRaycasts=false;TMP_Text promptText=Text("Styled Prompt",promptRoot.transform,Vector2.zero,Vector2.one,"",24,theme);if(prompt){Set(prompt,"styledLabel",promptText);Set(prompt,"keyIcon",(Object)null);}Set(hud,"interactionRoot",promptRoot);
             Toast(hud,root,"CheckpointToast","checkpointToast","checkpointText",new(.37f,.72f),new(.63f,.78f),theme);Toast(hud,root,"PageAddedToast","pageToast","pageText",new(.37f,.78f),new(.63f,.84f),theme);Toast(hud,root,"RoomNameFlash","roomToast","roomText",new(.35f,.62f),new(.65f,.7f),theme);
             GameObject composure=Panel("ComposureMeter",root,new(.44f,.01f),new(.56f,.025f),theme.Panel);Image composureFill=Panel("Fill",composure.transform,Vector2.zero,Vector2.one,theme.Safe).GetComponent<Image>();composureFill.type=Image.Type.Filled;composureFill.fillMethod=Image.FillMethod.Horizontal;Set(hud,"composureRoot",composure);Set(hud,"composureFill",composureFill);
             GameObject pulse=Panel("Composure Edge Pulse",root,Vector2.zero,Vector2.one,new Color(theme.Danger.r,theme.Danger.g,theme.Danger.b,0));pulse.GetComponent<Image>().raycastTarget=false;Set(hud,"screenEdgePulse",pulse.GetComponent<Image>());
@@ -321,7 +340,7 @@ namespace TheLightHouse.Editor
             BuildPauseMenu(canvas.transform,theme);
         }
 
-        static void Toast(HudRoot hud,Transform root,string name,string groupField,string textField,Vector2 min,Vector2 max,UITheme theme){GameObject go=Panel(name,root,min,max,theme.Panel);CanvasGroup group=go.AddComponent<CanvasGroup>();TMP_Text text=Text("Label",go.transform,new(.03f,.05f),new(.97f,.95f),"",22,theme);Set(hud,groupField,group);Set(hud,textField,text);}
+        static void Toast(HudRoot hud,Transform root,string name,string groupField,string textField,Vector2 min,Vector2 max,UITheme theme){GameObject go=Panel(name,root,min,max,theme.Panel);CanvasGroup group=go.AddComponent<CanvasGroup>();group.alpha=0;group.blocksRaycasts=false;TMP_Text text=Text("Label",go.transform,new(.03f,.05f),new(.97f,.95f),"",22,theme);Set(hud,groupField,group);Set(hud,textField,text);}
         static void BuildPauseMenu(Transform canvas,UITheme theme)
         {
             Transform old=canvas.Find("Pause Menu");if(old)Object.DestroyImmediate(old.gameObject);PauseMenu existing=canvas.GetComponent<PauseMenu>();if(existing)Object.DestroyImmediate(existing);GameObject panel=Panel("Pause Menu",canvas,new(.32f,.18f),new(.68f,.82f),new Color(theme.Panel.r,theme.Panel.g,theme.Panel.b,.97f));PauseMenu pause=canvas.gameObject.AddComponent<PauseMenu>();Set(pause,"panel",panel);Set(pause,"player",Object.FindAnyObjectByType<FirstPersonController>());Set(pause,"interactor",Object.FindAnyObjectByType<Interactor>());Set(pause,"journal",Object.FindAnyObjectByType<JournalUI>());
@@ -343,6 +362,10 @@ namespace TheLightHouse.Editor
 
         static void RemoveLegacyGeometry()
         {
+            foreach(string rootName in new[]{"Lighthouse Layout","Tower","Stairs","Room Dividers","Exterior","Windows","Room Triggers","Hiding Spots","Waypoints","Occlusion"})
+            {
+                foreach(GameObject root in Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None).Where(value=>value.transform.parent==null&&value.name==rootName).ToArray())Object.DestroyImmediate(root);
+            }
             string[] exact={"Greybox Tower","South wall left","South wall right","Door lintel","Dock","Path","Boat Shed Floor","Boat Shed Back","Boat Shed Roof","Lantern Room Floor","Lantern Room Floor Back","Stair Top Landing","Storeroom rear wall","Storeroom divider","East window sill","East window lintel","Window pier south","Window pier middle","Window pier north","Shallows","Cellar floor","Cellar north wall","Cellar south wall","Cellar west wall","Hidden room floor","Hidden room west wall","Hidden room north wall","Hidden room south wall","Crane room partition","Flooded courtyard","Lower window pressure ledge"};foreach(string name in exact){GameObject go=GameObject.Find(name);if(go)Object.DestroyImmediate(go);}foreach(GameObject go in Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None))if(go.name.StartsWith("Stair ",StringComparison.Ordinal)&&int.TryParse(go.name.Substring(6),out _))Object.DestroyImmediate(go);
         }
 
@@ -366,7 +389,15 @@ namespace TheLightHouse.Editor
             GameObject frame=Place($"{name} Frame",position+Vector3.up*height*.5f,new(.18f,height,.2f),"Door Frame","Wood",parent);
             frame.transform.SetParent(root.transform,true);
             NoiseEmitter noise=root.AddComponent<NoiseEmitter>();Door door=root.AddComponent<Door>();
+            EnsureDoorCollider(root,width,height);
             Set(door,"locked",locked);Set(door,"doorId",name);
+        }
+        static void EnsureDoorCollider(string name,float width,float height){GameObject go=GameObject.Find(name);if(go)EnsureDoorCollider(go,width,height);}
+        static void EnsureDoorCollider(GameObject go,float width,float height)
+        {
+            BoxCollider collider=go.GetComponent<BoxCollider>();
+            if(!collider)collider=go.AddComponent<BoxCollider>();
+            collider.center=new(0,height*.5f,0);collider.size=new(width,.12f,.16f);
         }
         static void Set(Object target,string name,Object value){if(!target)return;SerializedObject serialized=new(target);SerializedProperty property=serialized.FindProperty(name);if(property!=null){property.objectReferenceValue=value;serialized.ApplyModifiedPropertiesWithoutUndo();}}
         static void Set(Object target,string name,string value){if(!target)return;SerializedObject serialized=new(target);SerializedProperty property=serialized.FindProperty(name);if(property!=null){property.stringValue=value;serialized.ApplyModifiedPropertiesWithoutUndo();}}

@@ -54,8 +54,10 @@ The cards below mirror `docs/roadmap.md`. A card is complete only when its accep
 
 ## Card 7 — Polish
 
-- [x] Replace the short solid tower with the tall tapered hollow tower, keeper house, real door openings, spiral and outside stairs, cellar route, and serialized layout dimensions.
-- [x] Export greybox layout previews for the courtyard, dock, front door, and tower floors.
+- [x] Replace the short solid tower with the tall tapered hollow tower, keeper house, real door openings, spiral stair, cellar route, and serialized layout dimensions.
+- [x] Remove stale generated roots/orphan stairs, roofs, and panels before rebuilding.
+- [x] Hide empty HUD backgrounds and interaction/objective/inventory roots until they contain content.
+- [x] Export and inspect greybox layout previews for the courtyard, dock, front door, and tower floors.
 - [ ] Run a player-controlled dock-to-lantern-to-cellar traversal and inspect every spiral step on target hardware.
 
 - [x] Add the shared five-level lighthouse/island layout builder, modular level prefabs, room triggers, dual routes, hiding spots, stair links, floor occlusion areas and URP particle materials.
