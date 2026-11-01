@@ -63,6 +63,8 @@ The cards below mirror `docs/roadmap.md`. A card is complete only when its accep
 - [x] Add the shared five-level lighthouse/island layout builder, modular level prefabs, room triggers, dual routes, hiding spots, stair links, floor occlusion areas and URP particle materials.
 - [x] Rebuild Acts 1–5 with the shared layout while retaining gameplay anchors and canonical beat assets.
 - [x] Add the themed TMP HUD, pause menu, journal tabs, HUD settings, room-name flash and optional composure presentation.
+- [x] Complete UI polish pass: imported sprite settings, expanded UITheme roles, empty-panel gating, UI audio hook, and UI layout checker.
+- [x] Regenerate UI previews with rendered canvases and wire the Options credits text asset; Play Mode/Game-view capture, menu interaction, and target-device profiling remain manual verification.
 - [x] Add and pass batch validation for required scene anchors, materials, shared layout/HUD, and A1-B01–A5-B06 beat publication order.
 - [ ] Bake and manually inspect NavMesh and occlusion data in each rebuilt act scene.
 - [ ] Complete a player-controlled Acts 1–5 regression of interactions, fleeing routes, pause/journal, HUD readability and room sightlines.

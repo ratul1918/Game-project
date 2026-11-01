@@ -50,6 +50,8 @@ The F4 performance HUD reports draw calls/batches when Unity runtime statistics 
 
 Generated greybox previews are stored in [docs/level-previews](./level-previews): courtyard exterior, dock exterior, front-door interior, and top-down floor views for each tower level. They are layout references only, not final art. Batch rendering requires Unity rendering enabled; `-nographics` produces blank captures. The current top-down captures are angled inspection views and may be occluded by the level landing rather than true sectional cutaways.
 
+UI preview captures are stored in [docs/ui-previews](./ui-previews). The rendered HUD start and mid-dialogue frames were inspected for empty-background behavior; editor-only menu captures are layout references, not Play Mode verification.
+
 ## Verification status
 
 - Batch compile, full Act 1–5 regeneration, gameplay-anchor retention, and canonical A1-B01 through A5-B06 order were run in an isolated Unity copy.

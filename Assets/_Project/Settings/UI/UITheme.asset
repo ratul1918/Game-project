@@ -19,11 +19,27 @@ MonoBehaviour:
   safe: {r: 0.33, g: 0.68, b: 0.54, a: 1}
   warning: {r: 0.9, g: 0.62, b: 0.22, a: 1}
   danger: {r: 0.68, g: 0.16, b: 0.13, a: 1}
+  coldBlueGrey: {r: 0.42, g: 0.54, b: 0.62, a: 1}
+  amber: {r: 0.88, g: 0.58, b: 0.22, a: 1}
   bodyFont: {fileID: 0}
   displayFont: {fileID: 0}
+  journalFont: {fileID: 0}
+  notesFont: {fileID: 0}
   panelSprite: {fileID: 0}
-  keySprite: {fileID: 1086331387851373080, guid: 9170405e41e69453ab65259fb6883dd0, type: 3}
-  pageSprite: {fileID: -3720491305630814848, guid: cecfef28f06344af3914215ccb4b2119, type: 3}
-  itemSprite: {fileID: -5680835434184144748, guid: 007bc0c65c387464a8e4d56e4d4ec581, type: 3}
-  lampSprite: {fileID: -6743024233415356852, guid: f1017b0e7f53346a6bf02d9d201ec71b, type: 3}
-  checkpointSprite: {fileID: 1061801751286890457, guid: 312a9e9ea48714be0982892a9a03d6af, type: 3}
+  keySprite: {fileID: 21300000, guid: 9170405e41e69453ab65259fb6883dd0, type: 3}
+  pageSprite: {fileID: 21300000, guid: cecfef28f06344af3914215ccb4b2119, type: 3}
+  itemSprite: {fileID: 21300000, guid: 007bc0c65c387464a8e4d56e4d4ec581, type: 3}
+  lampSprite: {fileID: 21300000, guid: f1017b0e7f53346a6bf02d9d201ec71b, type: 3}
+  checkpointSprite: {fileID: 21300000, guid: 312a9e9ea48714be0982892a9a03d6af, type: 3}
+  buttonSprite: {fileID: 21300000, guid: 9170405e41e69453ab65259fb6883dd0, type: 3}
+  barFrameSprite: {fileID: 21300000, guid: 6b39016e389ff4735b1b5261de24799f, type: 3}
+  barFillSprite: {fileID: 21300000, guid: 05ab0a3ad143543e7b69bc0d87808aef, type: 3}
+  toastSprite: {fileID: 0}
+  tabSprite: {fileID: 21300000, guid: 9170405e41e69453ab65259fb6883dd0, type: 3}
+  fuelSprite: {fileID: 0}
+  ledgerSprite: {fileID: 0}
+  lanternSprite: {fileID: 21300000, guid: f1017b0e7f53346a6bf02d9d201ec71b, type: 3}
+  hideSprite: {fileID: 0}
+  crankSprite: {fileID: 21300000, guid: f1017b0e7f53346a6bf02d9d201ec71b, type: 3}
+  interactSprite: {fileID: 21300000, guid: 9170405e41e69453ab65259fb6883dd0, type: 3}
+  typeScale: {x: 14, y: 18, z: 24, w: 36}

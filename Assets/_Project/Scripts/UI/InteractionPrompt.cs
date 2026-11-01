@@ -18,6 +18,11 @@ namespace TheLightHouse
             Hide();
         }
 
+        public void SetKeyIcon(Sprite sprite)
+        {
+            if(keyIcon){keyIcon.sprite=sprite;keyIcon.enabled=sprite&&group&&group.alpha>0f;}
+        }
+
         public void Show(string prompt)
         {
             if (label == null)

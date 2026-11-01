@@ -48,12 +48,33 @@ namespace TheLightHouse.Editor
         static void EnsureAssets()
         {
             Directory.CreateDirectory(PrefabFolder);Directory.CreateDirectory(MaterialFolder);Directory.CreateDirectory(SettingsFolder);AssetDatabase.Refresh();
+            ConfigureUiAssets();
             EnsureTag("Window");
             Material("Stone",new(.19f,.21f,.22f),false);Material("Wood",new(.24f,.16f,.1f),false);Material("Metal",new(.22f,.25f,.27f),false);Material("Sand",new(.32f,.29f,.22f),false);Material("Water",new(.06f,.16f,.2f,.72f),true);Material("Particle",new(.62f,.68f,.7f,.35f),true,true);
             Prefab("Floor",new(1,.25f,1),"Stone");Prefab("Wall",new(1,1,0.22f),"Stone");Prefab("Door Frame",new(1,1,.25f),"Wood");Prefab("Window",new(1,1,.12f),"Metal");Prefab("Stair",new(1,.2f,.3f),"Wood");Prefab("Curved Wall",new(1.45f,1,.22f),"Stone");
             UITheme theme=AssetDatabase.LoadAssetAtPath<UITheme>($"{SettingsFolder}/UITheme.asset");if(!theme){theme=ScriptableObject.CreateInstance<UITheme>();AssetDatabase.CreateAsset(theme,$"{SettingsFolder}/UITheme.asset");}
             HudSettings hud=AssetDatabase.LoadAssetAtPath<HudSettings>($"{SettingsFolder}/HudSettings.asset");if(!hud){hud=ScriptableObject.CreateInstance<HudSettings>();AssetDatabase.CreateAsset(hud,$"{SettingsFolder}/HudSettings.asset");}
             AssignThemeSprites(theme);EditorUtility.SetDirty(theme);AssetDatabase.SaveAssets();
+        }
+
+        static void ConfigureUiAssets()
+        {
+            foreach(string guid in AssetDatabase.FindAssets("t:Texture2D",new[]{"Assets/_Project/Art/UI"}))
+            {
+                string path=AssetDatabase.GUIDToAssetPath(guid);
+                TextureImporter importer=AssetImporter.GetAtPath(path) as TextureImporter;
+                if(!importer)continue;
+                TextureImporterCompression compression=TextureImporterCompression.Compressed;
+                int maxSize=path.Contains("/Icons/")||path.Contains("/icons/")?128:1024;
+                bool changed=importer.textureType!=TextureImporterType.Sprite||importer.spriteImportMode!=SpriteImportMode.Single||importer.mipmapEnabled||importer.maxTextureSize!=maxSize||importer.textureCompression!=compression;
+                if(!changed)continue;
+                importer.textureType=TextureImporterType.Sprite;
+                importer.spriteImportMode=SpriteImportMode.Single;
+                importer.mipmapEnabled=false;
+                importer.maxTextureSize=maxSize;
+                importer.textureCompression=compression;
+                importer.SaveAndReimport();
+            }
         }
 
         static void TunePlayerMovement()
@@ -90,6 +111,19 @@ namespace TheLightHouse.Editor
             Set(theme,"lampSprite",FindSprite("power"));
             Set(theme,"bodyFont",FindFont("kenney_input_generic"));
             Set(theme,"displayFont",FindFont("Kenney Future"));
+            Set(theme,"journalFont",FindFont("Kenney Future"));
+            Set(theme,"notesFont",FindFont("kenney_input_generic"));
+            Set(theme,"buttonSprite",FindSprite("button"));
+            Set(theme,"barFrameSprite",FindSprite("bar"));
+            Set(theme,"barFillSprite",FindSprite("fill"));
+            Set(theme,"toastSprite",FindSprite("panel"));
+            Set(theme,"tabSprite",FindSprite("button"));
+            Set(theme,"fuelSprite",FindSprite("fuel"));
+            Set(theme,"ledgerSprite",FindSprite("book"));
+            Set(theme,"lanternSprite",FindSprite("power"));
+            Set(theme,"hideSprite",FindSprite("hide"));
+            Set(theme,"crankSprite",FindSprite("power"));
+            Set(theme,"interactSprite",FindSprite("button1"));
         }
 
         static Sprite FindSprite(string name)
@@ -325,19 +359,26 @@ namespace TheLightHouse.Editor
 
         static void BuildHud()
         {
-            GameObject canvas=GameObject.Find("Debug Canvas");if(!canvas)return;CanvasScaler scaler=canvas.GetComponent<CanvasScaler>();if(scaler){scaler.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;scaler.referenceResolution=new(1920,1080);scaler.screenMatchMode=CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;scaler.matchWidthOrHeight=.5f;}
+            GameObject canvas=GameObject.Find("Debug Canvas");if(!canvas)return;if(!canvas.GetComponent<UiAudio>())canvas.AddComponent<UiAudio>();CanvasScaler scaler=canvas.GetComponent<CanvasScaler>();if(scaler){scaler.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;scaler.referenceResolution=new(1920,1080);scaler.screenMatchMode=CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;scaler.matchWidthOrHeight=.5f;}
             Transform previous=canvas.transform.Find("HUD Root");if(previous)Object.DestroyImmediate(previous.gameObject);RectTransform root=Rect("HUD Root",canvas.transform,Vector2.zero,Vector2.one);UITheme theme=AssetDatabase.LoadAssetAtPath<UITheme>($"{SettingsFolder}/UITheme.asset");HudSettings settings=AssetDatabase.LoadAssetAtPath<HudSettings>($"{SettingsFolder}/HudSettings.asset");HudRoot hud=root.gameObject.AddComponent<HudRoot>();Set(hud,"theme",theme);Set(hud,"settings",settings);Set(hud,"scalableRoot",root);
-            GameObject noise=Panel("NoiseMeter",root,new(.03f,.06f),new(.17f,.11f),new Color(theme.Panel.r,theme.Panel.g,theme.Panel.b,.72f));CanvasGroup noiseGroup=noise.AddComponent<CanvasGroup>();noiseGroup.alpha=0;noiseGroup.blocksRaycasts=false;Image[] noiseSegments=new Image[3];for(int i=0;i<3;i++)noiseSegments[i]=Panel($"Noise {i+1}",noise.transform,new(.08f+i*.31f,.22f),new(.32f+i*.31f,.78f),new Color(.16f,.22f,.28f,1f)).GetComponent<Image>();SetArray(hud,"noiseSegments",noiseSegments);Set(hud,"noiseRoot",noise);Set(hud,"noiseGroup",noiseGroup);
-            GameObject stamina=Panel("StaminaBar",root,new(.38f,.035f),new(.62f,.06f),new Color(theme.Panel.r,theme.Panel.g,theme.Panel.b,.65f));CanvasGroup staminaGroup=stamina.AddComponent<CanvasGroup>();staminaGroup.alpha=0;staminaGroup.blocksRaycasts=false;Image staminaFill=Panel("Fill",stamina.transform,Vector2.zero,Vector2.one,new Color(.42f,.54f,.62f,1f)).GetComponent<Image>();staminaFill.type=Image.Type.Filled;staminaFill.fillMethod=Image.FillMethod.Horizontal;Set(hud,"staminaFill",staminaFill);Set(hud,"staminaRoot",stamina);Set(hud,"staminaGroup",staminaGroup);
-            GameObject lamp=Panel("LampGauge",root,new(.82f,.045f),new(.96f,.11f),new Color(theme.Panel.r,theme.Panel.g,theme.Panel.b,.65f));CanvasGroup lampGroup=lamp.AddComponent<CanvasGroup>();lampGroup.alpha=0;lampGroup.blocksRaycasts=false;Image lampFill=Panel("Fill",lamp.transform,new(.05f,.12f),new(.95f,.5f),new Color(.88f,.58f,.22f,1f)).GetComponent<Image>();lampFill.type=Image.Type.Filled;lampFill.fillMethod=Image.FillMethod.Horizontal;TMP_Text lampLabel=Text("State",lamp.transform,new(.05f,.52f),new(.95f,.96f),"LAMP",18,theme);Set(hud,"lampFill",lampFill);Set(hud,"lampState",lampLabel);Set(hud,"lampRoot",lamp);Set(hud,"lampGroup",lampGroup);
+            GameObject noise=Panel("NoiseMeter",root,new(.03f,.06f),new(.17f,.11f),new Color(theme.Panel.r,theme.Panel.g,theme.Panel.b,.72f));CanvasGroup noiseGroup=noise.AddComponent<CanvasGroup>();noiseGroup.alpha=0;noiseGroup.blocksRaycasts=false;Image[] noiseSegments=new Image[3];for(int i=0;i<3;i++)noiseSegments[i]=Panel($"Noise {i+1}",noise.transform,new(.08f+i*.31f,.22f),new(.32f+i*.31f,.78f),theme.ColdBlueGrey).GetComponent<Image>();SetArray(hud,"noiseSegments",noiseSegments);Set(hud,"noiseRoot",noise);Set(hud,"noiseGroup",noiseGroup);
+            GameObject stamina=Panel("StaminaBar",root,new(.38f,.035f),new(.62f,.06f),new Color(theme.Panel.r,theme.Panel.g,theme.Panel.b,.65f));CanvasGroup staminaGroup=stamina.AddComponent<CanvasGroup>();staminaGroup.alpha=0;staminaGroup.blocksRaycasts=false;Image staminaFill=Panel("Fill",stamina.transform,Vector2.zero,Vector2.one,theme.ColdBlueGrey).GetComponent<Image>();staminaFill.type=Image.Type.Filled;staminaFill.fillMethod=Image.FillMethod.Horizontal;Set(hud,"staminaFill",staminaFill);Set(hud,"staminaRoot",stamina);Set(hud,"staminaGroup",staminaGroup);
+            GameObject lamp=Panel("LampGauge",root,new(.82f,.045f),new(.96f,.11f),new Color(theme.Panel.r,theme.Panel.g,theme.Panel.b,.65f));CanvasGroup lampGroup=lamp.AddComponent<CanvasGroup>();lampGroup.alpha=0;lampGroup.blocksRaycasts=false;Image lampFill=Panel("Fill",lamp.transform,new(.05f,.12f),new(.95f,.5f),theme.Amber).GetComponent<Image>();lampFill.type=Image.Type.Filled;lampFill.fillMethod=Image.FillMethod.Horizontal;TMP_Text lampLabel=Text("State",lamp.transform,new(.05f,.52f),new(.95f,.96f),"LAMP",18,theme);Set(hud,"lampFill",lampFill);Set(hud,"lampState",lampLabel);Set(hud,"lampRoot",lamp);Set(hud,"lampGroup",lampGroup);
             GameObject objective=Panel("ObjectiveText",root,new(.32f,.91f),new(.68f,.96f),new Color(theme.Panel.r,theme.Panel.g,theme.Panel.b,.58f));CanvasGroup objectiveGroup=objective.AddComponent<CanvasGroup>();objectiveGroup.alpha=0;objectiveGroup.blocksRaycasts=false;TMP_Text objectiveLabel=Text("Label",objective.transform,new(.04f,.05f),new(.96f,.95f),"",20,theme);Set(hud,"objectiveText",objectiveLabel);Set(hud,"objectiveRoot",objective);Set(hud,"objectiveGroup",objectiveGroup);
             GameObject inventory=Panel("InventoryStrip",root,new(.31f,.075f),new(.69f,.12f),theme.Panel);CanvasGroup inventoryGroup=inventory.AddComponent<CanvasGroup>();inventoryGroup.alpha=0;inventoryGroup.blocksRaycasts=false;TMP_Text inventoryLabel=Text("Items",inventory.transform,new(.03f,.05f),new(.97f,.95f),"",20,theme);Set(hud,"inventoryText",inventoryLabel);Set(hud,"inventoryRoot",inventory);Set(hud,"inventoryGroup",inventoryGroup);
-            InteractionPrompt prompt=Object.FindAnyObjectByType<InteractionPrompt>();GameObject promptRoot=prompt?prompt.gameObject:Panel("InteractionPrompt",root,new(.36f,.16f),new(.64f,.22f),theme.Panel);CanvasGroup promptGroup=promptRoot.GetComponent<CanvasGroup>();if(!promptGroup)promptGroup=promptRoot.AddComponent<CanvasGroup>();promptGroup.alpha=0;promptGroup.blocksRaycasts=false;TMP_Text promptText=Text("Styled Prompt",promptRoot.transform,Vector2.zero,Vector2.one,"",24,theme);if(prompt){Set(prompt,"styledLabel",promptText);Set(prompt,"keyIcon",(Object)null);}Set(hud,"interactionRoot",promptRoot);
+            InteractionPrompt prompt=Object.FindAnyObjectByType<InteractionPrompt>();GameObject promptRoot=prompt?prompt.gameObject:Panel("InteractionPrompt",root,new(.36f,.16f),new(.64f,.22f),theme.Panel);CanvasGroup promptGroup=promptRoot.GetComponent<CanvasGroup>();if(!promptGroup)promptGroup=promptRoot.AddComponent<CanvasGroup>();promptGroup.alpha=0;promptGroup.blocksRaycasts=false;TMP_Text promptText=Text("Styled Prompt",promptRoot.transform,Vector2.zero,Vector2.one,"",24,theme);if(prompt){Set(prompt,"styledLabel",promptText);Set(prompt,"keyIcon",theme.KeySprite);}Set(hud,"interactionRoot",promptRoot);
             Toast(hud,root,"CheckpointToast","checkpointToast","checkpointText",new(.37f,.72f),new(.63f,.78f),theme);Toast(hud,root,"PageAddedToast","pageToast","pageText",new(.37f,.78f),new(.63f,.84f),theme);Toast(hud,root,"RoomNameFlash","roomToast","roomText",new(.35f,.62f),new(.65f,.7f),theme);
-            GameObject composure=Panel("ComposureMeter",root,new(.44f,.01f),new(.56f,.025f),theme.Panel);Image composureFill=Panel("Fill",composure.transform,Vector2.zero,Vector2.one,theme.Safe).GetComponent<Image>();composureFill.type=Image.Type.Filled;composureFill.fillMethod=Image.FillMethod.Horizontal;Set(hud,"composureRoot",composure);Set(hud,"composureFill",composureFill);
+            GameObject composure=Panel("ComposureMeter",root,new(.44f,.01f),new(.56f,.025f),theme.Panel);Image composureFill=Panel("Fill",composure.transform,Vector2.zero,Vector2.one,theme.ColdBlueGrey).GetComponent<Image>();composureFill.type=Image.Type.Filled;composureFill.fillMethod=Image.FillMethod.Horizontal;Set(hud,"composureRoot",composure);Set(hud,"composureFill",composureFill);
             GameObject pulse=Panel("Composure Edge Pulse",root,Vector2.zero,Vector2.one,new Color(theme.Danger.r,theme.Danger.g,theme.Danger.b,0));pulse.GetComponent<Image>().raycastTarget=false;Set(hud,"screenEdgePulse",pulse.GetComponent<Image>());
             SubtitleUI subtitles=Object.FindAnyObjectByType<SubtitleUI>();if(subtitles){Transform oldBackground=canvas.transform.Find("Subtitle Background");if(oldBackground)Object.DestroyImmediate(oldBackground.gameObject);GameObject background=Panel("Subtitle Background",canvas.transform,new(.16f,.025f),new(.84f,.115f),new Color(theme.Panel.r,theme.Panel.g,theme.Panel.b,settings.SubtitleBackgroundOpacity));background.GetComponent<Image>().raycastTarget=false;background.transform.SetSiblingIndex(Mathf.Max(0,subtitles.transform.GetSiblingIndex()-1));Set(subtitles,"background",background.GetComponent<Image>());subtitles.ApplySettings(settings);}
             BuildPauseMenu(canvas.transform,theme);
+            EnsureCreditsAsset();
+        }
+
+        static void EnsureCreditsAsset()
+        {
+            const string path="Assets/_Project/Settings/UI/Credits.txt";
+            if(!AssetDatabase.LoadAssetAtPath<TextAsset>(path))AssetDatabase.CreateAsset(new TextAsset("UI assets, input prompts, interface sounds, and Kenney Future fonts by Kenney Vleugels, released under CC0 1.0.\nhttps://kenney.nl/assets"),path);
         }
 
         static void Toast(HudRoot hud,Transform root,string name,string groupField,string textField,Vector2 min,Vector2 max,UITheme theme){GameObject go=Panel(name,root,min,max,theme.Panel);CanvasGroup group=go.AddComponent<CanvasGroup>();group.alpha=0;group.blocksRaycasts=false;TMP_Text text=Text("Label",go.transform,new(.03f,.05f),new(.97f,.95f),"",22,theme);Set(hud,groupField,group);Set(hud,textField,text);}
@@ -348,6 +389,7 @@ namespace TheLightHouse.Editor
             GameObject options=Panel("Options",panel.transform,new(.04f,.03f),new(.96f,.83f),theme.Panel);HudSettings hudSettings=AssetDatabase.LoadAssetAtPath<HudSettings>($"{SettingsFolder}/HudSettings.asset");HudSettingsPanel controller=options.AddComponent<HudSettingsPanel>();Set(controller,"settings",hudSettings);Set(controller,"hud",Object.FindAnyObjectByType<HudRoot>());Set(controller,"subtitles",Object.FindAnyObjectByType<SubtitleUI>());Text("Options Label",options.transform,new(.05f,.88f),new(.95f,.98f),"HUD OPTIONS",25,theme);
             string[] labels={"Noise","Stamina","Lamp","Objective","Inventory","Interaction","Toasts","Room names","Composure","Minimal HUD"};bool[] values={true,true,true,true,true,true,true,true,false,false};for(int i=0;i<labels.Length;i++){int column=i/5;int row=i%5;Toggle toggle=OptionToggle(labels[i],options.transform,new(.05f+column*.48f,.74f-row*.13f),new(.47f+column*.48f,.84f-row*.13f),theme,values[i]);switch(i){case 0:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetNoise);break;case 1:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetStamina);break;case 2:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetLamp);break;case 3:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetObjective);break;case 4:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetInventory);break;case 5:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetInteraction);break;case 6:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetToasts);break;case 7:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetRoomNames);break;case 8:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetComposure);break;case 9:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetMinimal);break;}}
             Slider scale=OptionSlider("HUD Scale",options.transform,new(.08f,.04f),new(.92f,.12f),theme,.7f,1.5f,1f);UnityEventTools.AddPersistentListener(scale.onValueChanged,controller.SetHudScale);options.SetActive(false);Set(pause,"optionsPanel",options);
+            TextAsset credits=AssetDatabase.LoadAssetAtPath<TextAsset>($"{SettingsFolder}/Credits.txt");if(credits)Text("Credits",options.transform,new(.05f,.13f),new(.95f,.2f),credits.text,12,theme).alignment=TextAlignmentOptions.Left;
         }
 
         static Button Button(string label,Transform parent,Vector2 min,Vector2 max,UITheme theme){GameObject go=Panel(label,parent,min,max,theme.Accent);Button button=go.AddComponent<Button>();button.targetGraphic=go.GetComponent<Image>();Text("Label",go.transform,Vector2.zero,Vector2.one,label,22,theme);return button;}
