@@ -7,15 +7,21 @@ namespace TheLightHouse
 {
     public sealed class JournalUI : MonoBehaviour
     {
+        public enum Tab { Pages, Items, Notes }
         [SerializeField] LogbookJournal journal;
         [SerializeField] GameObject panel;
         [SerializeField] Text listLabel;
+        [SerializeField] Inventory inventory;
+        [SerializeField] GameObject pagesTab;
+        [SerializeField] GameObject itemsTab;
+        [SerializeField] GameObject notesTab;
         [SerializeField] InputActionAsset inputActions;
         [SerializeField] FirstPersonController player;
         [SerializeField] PlayerHealthState health;
         [SerializeField] Interactor interactor;
         [SerializeField] ActFourSettings settings;
         InputAction toggle;
+        public bool IsOpen=>panel&&panel.activeSelf;
         void Awake(){toggle=inputActions?.FindActionMap("Player")?.FindAction("Journal");if(panel)panel.SetActive(false);}
         void OnEnable()=>toggle?.Enable();
         void OnDisable(){toggle?.Disable();if(panel&&panel.activeSelf){panel.SetActive(false);if(!health||(!health.IsCaught&&!health.IsHidden)){player?.SetMovementLocked(false);player?.SetLookLocked(false);if(interactor)interactor.enabled=true;}GameEvents.RaiseReadingStateChanged(new(false,1,1));}}
@@ -28,6 +34,29 @@ namespace TheLightHouse
             else {if(!health||(!health.IsCaught&&!health.IsHidden)){player?.SetMovementLocked(false);player?.SetLookLocked(false);if(interactor)interactor.enabled=true;}GameEvents.RaiseReadingStateChanged(new(false,1,1));return;}
             var text=new StringBuilder("JOURNAL\n\n");
             foreach(var page in journal.Pages)text.Append(journal.HasRead(page.id)?"[read] ":"[new] ").AppendLine(page.title);
+            listLabel.text=text.ToString();
+        }
+
+        public void Open(Tab tab)
+        {
+            if(panel&&!panel.activeSelf)Toggle();
+            SelectTab(tab);
+        }
+
+        public void SelectPages()=>SelectTab(Tab.Pages);
+        public void SelectItems()=>SelectTab(Tab.Items);
+        public void SelectNotes()=>SelectTab(Tab.Notes);
+
+        public void SelectTab(Tab tab)
+        {
+            if(pagesTab)pagesTab.SetActive(tab==Tab.Pages);
+            if(itemsTab)itemsTab.SetActive(tab==Tab.Items);
+            if(notesTab)notesTab.SetActive(tab==Tab.Notes);
+            if(!listLabel)return;
+            var text=new StringBuilder(tab.ToString().ToUpperInvariant()).Append("\n\n");
+            if(tab==Tab.Pages&&journal)foreach(var page in journal.Pages)text.Append(journal.HasRead(page.id)?"[read] ":"[new] ").AppendLine(page.title);
+            if(tab==Tab.Items){inventory??=FindAnyObjectByType<Inventory>();if(inventory!=null)foreach(string item in inventory.Items)text.Append("• ").AppendLine(item);}
+            if(tab==Tab.Notes)text.Append("Daniel's notes are added as the story progresses.");
             listLabel.text=text.ToString();
         }
     }

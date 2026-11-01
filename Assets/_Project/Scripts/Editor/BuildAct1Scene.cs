@@ -68,6 +68,7 @@ beats[4]=Beat("A1-B05",StoryTrigger.Signal,"radio","Light the lamp",new[]{new Di
 beats[5]=Beat("A1-B06",StoryTrigger.LampLit,"","Act 1 complete — keep the lamp fed",new[]{new DialogueLine("Marta","There. Now keep it fed.")});
 var director=new GameObject("Story Director").AddComponent<StoryDirector>();var so=new SerializedObject(director);var array=so.FindProperty("beats");array.arraySize=beats.Length;for(int i=0;i<beats.Length;i++)array.GetArrayElementAtIndex(i).objectReferenceValue=beats[i];so.ApplyModifiedPropertiesWithoutUndo();
 var boatman=new GameObject("Boatman").AddComponent<Boatman>();Set(boatman,"player",player.GetComponent<FirstPersonController>());Set(boatman,"subtitles",subtitleUI);Set(boatman,"boat",boat.transform);
+LighthouseLayoutBuilder.BuildSharedLayout("Act1");
 EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(),scenePath);AssetDatabase.SaveAssets();
 Debug.Log("Act 1 built. Bake Navigation/NavMeshSurface, then Play.");
 }

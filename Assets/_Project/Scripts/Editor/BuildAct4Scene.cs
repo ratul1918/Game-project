@@ -71,7 +71,7 @@ namespace TheLightHouse.Editor
             var cellarDoor=GameObject.Find("Locked Cellar Door").GetComponent<Door>();Set(cellarDoor,"locked",true);
             var gate=new GameObject("Act Four Cellar Gate").AddComponent<ActFourGate>();Set(gate,"cellarDoor",cellarDoor);Set(gate,"settings",settings);
             Cube("Cellar floor",new(-13,-.25f,3),new(7,.5f,8));Cube("Cellar north wall",new(-13,1.5f,7),new(7,3,.3f));Cube("Cellar south wall",new(-13,1.5f,-1),new(7,3,.3f));Cube("Cellar west wall",new(-16.5f,1.5f,3),new(.3f,3,8));
-            var shelf=Cube("False cellar shelf",new(-14,1,3),new(.4f,2,3));shelf.AddComponent<NoiseEmitter>();var hidden=shelf.AddComponent<HiddenCellarRoom>();Set(hidden,"shelf",shelf.transform);Set(hidden,"settings",settings);
+            var shelf=Cube("hidden shelf",new(-14,1,3),new(.4f,2,3));shelf.AddComponent<NoiseEmitter>();var hidden=shelf.AddComponent<HiddenCellarRoom>();Set(hidden,"shelf",shelf.transform);Set(hidden,"settings",settings);
             Cube("Hidden room floor",new(-19,-.25f,3),new(5,.5f,6));Cube("Hidden room west wall",new(-21.5f,1.5f,3),new(.3f,3,6));Cube("Hidden room north wall",new(-19,1.5f,6),new(5,3,.3f));Cube("Hidden room south wall",new(-19,1.5f,0),new(5,3,.3f));
             var transmitter=Cube("Hidden signal transmitter",new(-20,.7f,4.5f),new(.8f,1.4f,.8f)).transform;
             var recorder=Cube("Marta reel-to-reel recorder",new(-19,.7f,3),new(1.2f,1,.8f));recorder.AddComponent<AudioSource>();recorder.AddComponent<RecordedTransmitter>();
@@ -96,6 +96,7 @@ namespace TheLightHouse.Editor
                 Beat("A4-B06","crane-bargain","Hold the light until dawn")});
             SetArray(director,"optionalBeats",System.Array.Empty<StoryBeat>());Set(director,"allowPendingActTwoSignals",true);
             GameObject.Find("Front Door Knocking")?.SetActive(false);GameObject.Find("Singing From Shore")?.SetActive(false);
+            LighthouseLayoutBuilder.BuildSharedLayout("Act4");
             EditorSceneManager.SaveScene(scene,scenePath);AssetDatabase.SaveAssets();
             Debug.Log("Act 4 built after the storm. Bake Navigation/NavMeshSurface, save, then Play. Tune with Q/T or the mouse wheel; J opens the journal.");
         }

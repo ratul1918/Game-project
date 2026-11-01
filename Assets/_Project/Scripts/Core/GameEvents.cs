@@ -196,6 +196,15 @@ namespace TheLightHouse
         public CheckpointReachedEvent(string id,Vector3 position){Id=id;Position=position;}
     }
 
+    public readonly struct RoomEnteredEvent
+    {
+        public readonly string RoomId;
+        public readonly string DisplayName;
+        public readonly int FloorLevel;
+        public RoomEnteredEvent(string roomId,string displayName,int floorLevel)
+        { RoomId=roomId;DisplayName=displayName;FloorLevel=floorLevel; }
+    }
+
     public static class GameEvents
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -241,6 +250,7 @@ namespace TheLightHouse
             DawnThresholdReached = null;
             ServerStormState = null;
             ServerConnectionChanged = null;
+            RoomEntered = null;
         }
         public static event Action<NoiseEmittedEvent> NoiseHeard;
         public static event Action Thunder;
@@ -308,6 +318,7 @@ namespace TheLightHouse
         public static event Action<float> DawnThresholdReached;
         public static event Action<ServerStormStateEvent> ServerStormState;
         public static event Action<ServerConnectionChangedEvent> ServerConnectionChanged;
+        public static event Action<RoomEnteredEvent> RoomEntered;
         public static void RaisePageRead(PageReadEvent e) => PageRead?.Invoke(e);
         public static void RaiseLedgerRead(LedgerReadEvent e) => LedgerRead?.Invoke(e);
         public static void RaiseReadingStateChanged(ReadingStateChangedEvent e) => ReadingStateChanged?.Invoke(e);
@@ -318,6 +329,7 @@ namespace TheLightHouse
         public static void RaiseDawnThresholdReached(float elapsed)=>DawnThresholdReached?.Invoke(elapsed);
         public static void RaiseServerStormState(ServerStormStateEvent e)=>ServerStormState?.Invoke(e);
         public static void RaiseServerConnectionChanged(ServerConnectionChangedEvent e)=>ServerConnectionChanged?.Invoke(e);
+        public static void RaiseRoomEntered(RoomEnteredEvent e)=>RoomEntered?.Invoke(e);
         public static void RaiseDawnReached(DawnReachedEvent e)=>DawnReached?.Invoke(e);
 
         public static void RaiseNoiseEmitted(NoiseEmittedEvent eventData)

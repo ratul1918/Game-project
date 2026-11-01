@@ -15,7 +15,7 @@ The cards below mirror `docs/roadmap.md`. A card is complete only when its accep
 
 - [x] Implement the approved Act 1 beats and interactions.
 - [x] Add ferry arrival, boatman warning, tower entry, meal, radio greeting, and first lamp objective.
-- [ ] Validate all Act 1 unlocks against `docs/story-beats.md`.
+- [x] Validate all Act 1 unlocks against `docs/story-beats.md`.
 - [ ] Produce a playable Act 1 build.
 
 ## Card 3 — Act 2: Cellar and Stalker
@@ -24,7 +24,7 @@ The cards below mirror `docs/roadmap.md`. A card is complete only when its accep
 - [x] Introduce Drowned figures advancing when unobserved.
 - [x] Add hiding/hold-breath, checkpoint catch sequence, knocking and singing-lure hooks.
 - [x] Add a reusable Act 2 scene builder starting directly at Night.
-- [ ] Validate all Act 2 unlocks against `docs/story-beats.md`.
+- [x] Validate all Act 2 unlocks against `docs/story-beats.md`.
 - [ ] Produce a playable Acts 1–2 build.
 
 ## Card 4 — Act 3: Storm and Crank
@@ -33,7 +33,7 @@ The cards below mirror `docs/roadmap.md`. A card is complete only when its accep
 - [x] Make hand-cranking restore lamp power while emitting dangerous noise.
 - [x] Make darkness advance the Drowned threat.
 - [x] Add thunder masking, charge gauge/pulse, stamina pressure, stair warning, lantern hiding and an Act 4 placeholder.
-- [ ] Validate all Act 3 unlocks against `docs/story-beats.md`.
+- [x] Validate all Act 3 unlocks against `docs/story-beats.md`.
 - [ ] Produce a playable Acts 1–3 build.
 
 ## Card 5 — Act 4: Truth
@@ -53,6 +53,13 @@ The cards below mirror `docs/roadmap.md`. A card is complete only when its accep
 - [ ] Produce a complete playable build.
 
 ## Card 7 — Polish
+
+- [x] Add the shared five-level lighthouse/island layout builder, modular level prefabs, room triggers, dual routes, hiding spots, stair links, floor occlusion areas and URP particle materials.
+- [x] Rebuild Acts 1–5 with the shared layout while retaining gameplay anchors and canonical beat assets.
+- [x] Add the themed TMP HUD, pause menu, journal tabs, HUD settings, room-name flash and optional composure presentation.
+- [x] Add and pass batch validation for required scene anchors, materials, shared layout/HUD, and A1-B01–A5-B06 beat publication order.
+- [ ] Bake and manually inspect NavMesh and occlusion data in each rebuilt act scene.
+- [ ] Complete a player-controlled Acts 1–5 regression of interactions, fleeing routes, pause/journal, HUD readability and room sightlines.
 
 - [x] Implement movement upgrade: jump, stamina, crouch clearance, phase-driven surface noise, camera accessibility, lean, safety and F3 diagnostics.
 - [x] Add the reusable MovementTest scene builder and shared PlayerMovementSettings asset.

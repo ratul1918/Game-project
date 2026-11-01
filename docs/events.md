@@ -1,5 +1,10 @@
 # Game Event Contracts
 
+## Shared level and HUD additions
+
+- `RoomEntered: Action<RoomEnteredEvent>` is published by `RoomTrigger` when the player enters a generated room volume. The immutable payload carries stable `RoomId`, display-safe `DisplayName`, and integer `FloorLevel`. HUD subscribers may show a temporary room/floor label; it is not a minimap and does not own progression.
+- Noise, stamina, lamp, objective, inventory, checkpoint, journal, and interaction HUD elements remain presentation subscribers to their existing owning events. HUD settings never suppress gameplay events.
+
 ## Act 5 additions
 
 - `FinalePhaseChanged: Action<FinalePhaseChangedEvent>` publishes the current `FinalePhase` (`Flood`, `Hold`, `CraneIntervenes`, `DawnCountdown`, `Escape`) and normalized phase progress. `DrownedManager` uses Hold progress only to raise its serialized pressure multiplier.
@@ -125,6 +130,7 @@ namespace TheLightHouse
         public static event Action<ItemCollectedEvent> ItemCollected;
         public static event Action<DoorStateChangedEvent> DoorStateChanged;
         public static event Action<DawnReachedEvent> DawnReached;
+        public static event Action<RoomEnteredEvent> RoomEntered;
     }
 }
 ```

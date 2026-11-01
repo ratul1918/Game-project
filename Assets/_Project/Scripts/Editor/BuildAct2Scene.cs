@@ -141,6 +141,7 @@ namespace TheLightHouse.Editor
             beats[6]=Beat("A2-B07","hide-success","You escaped notice. Keep the lamp fed.");
             var director=Object.FindAnyObjectByType<StoryDirector>();SetArray(director,"beats",beats);Set(director,"allowPendingActTwoSignals",true);
             stalker.SetActive(false);
+            LighthouseLayoutBuilder.BuildSharedLayout("Act2");
             EditorSceneManager.SaveScene(scene,scenePath);AssetDatabase.SaveAssets();
             Debug.Log("Act 2 saved at Night. Bake Navigation/NavMeshSurface, then Play. Crane spawns after A2-B03.");
         }

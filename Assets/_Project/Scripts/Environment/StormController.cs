@@ -15,12 +15,15 @@ namespace TheLightHouse
   public bool IsActive=>active;
   public bool IsFlashing=>flashing;
   public float Intensity=>!active||!settings?0f:Mathf.Clamp01((Time.time-started)/Mathf.Max(.01f,settings.rampDuration));
+  public void ApplyServerIntensity(float value){if(!active)return;serverIntensity=Mathf.Clamp01(value);}
+  public void ClearServerIntensity(){serverIntensity=-1f;}
+  float serverIntensity=-1f;
   void OnEnable(){GameEvents.GameStateChanged+=State;GameEvents.StoryBeatTriggered+=Beat;}
   void OnDisable(){GameEvents.GameStateChanged-=State;GameEvents.StoryBeatTriggered-=Beat;StopAllCoroutines();flashing=false;if(skyLight)skyLight.intensity=baseIntensity;}
   void Awake(){baseIntensity=skyLight.intensity;GetComponent<AudioSource>().playOnAwake=false;}
   void State(GameStateChangedEvent e){if(e.Current!=GameState.Storm||active)return;active=true;started=Time.time;rain.Play();StartCoroutine(Flashes());}
   void Beat(StoryBeatTriggeredEvent e){if(e.Id=="A3-B09"){active=false;rain.Stop();if(wind)wind.windMain=0;}}
-  void Update(){if(!active)return;float t=Mathf.Clamp01((Time.time-started)/Mathf.Max(.01f,settings.rampDuration));var emission=rain.emission;emission.rateOverTime=settings.rainRate*t*(accessibility.Reduced?settings.rainReduction:1);wind.windMain=settings.windStrength*t;}
+  void Update(){if(!active)return;float t=serverIntensity>=0?serverIntensity:Mathf.Clamp01((Time.time-started)/Mathf.Max(.01f,settings.rampDuration));var emission=rain.emission;emission.rateOverTime=settings.rainRate*t*(accessibility.Reduced?settings.rainReduction:1);wind.windMain=settings.windStrength*t;}
   IEnumerator Flashes(){while(active){yield return new WaitForSeconds(Random.Range(settings.lightningInterval.x,settings.lightningInterval.y));if(!active)yield break;flashing=true;skyLight.intensity=baseIntensity+(accessibility.Reduced?settings.safeFlashIntensity:settings.flashIntensity);yield return new WaitForSeconds(settings.flashDuration);flashing=false;skyLight.intensity=baseIntensity;yield return new WaitForSeconds(settings.thunderDelay);if(!active)yield break;if(thunder)GetComponent<AudioSource>().PlayOneShot(thunder);GameEvents.RequestDialogue(new("","(thunder)"){duration=1});GameEvents.RaiseThunder();}}
  }
 }
