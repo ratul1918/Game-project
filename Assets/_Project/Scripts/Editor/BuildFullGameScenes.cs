@@ -21,7 +21,7 @@ namespace TheLightHouse.Editor
         [MenuItem("TheLightHouse/Build Full Game Scenes")]
         public static void Build()
         {
-            BuildAct1Scene.BuildTo("Assets/_Project/Scenes/Act1.unity");BuildAct2Scene.BuildTo("Assets/_Project/Scenes/Act2.unity");BuildAct3Scene.BuildTo("Assets/_Project/Scenes/Act3.unity");BuildAct4Scene.BuildTo("Assets/_Project/Scenes/Act4.unity");BuildAct5Scene.BuildTo("Assets/_Project/Scenes/Act5.unity");BuildMenu();
+            BuildAct1Scene.BuildTo("Assets/_Project/Scenes/Act1.unity");BuildAct2Scene.BuildTo("Assets/_Project/Scenes/Act2.unity");BuildAct3Scene.BuildTo("Assets/_Project/Scenes/Act3.unity");BuildAct4Scene.BuildTo("Assets/_Project/Scenes/Act4.unity");BuildAct5Scene.BuildTo("Assets/_Project/Scenes/Act5.unity");ApplyGraphics1.Apply();BuildMenu();
             string[] paths={MenuPath,"Assets/_Project/Scenes/Act1.unity","Assets/_Project/Scenes/Act2.unity","Assets/_Project/Scenes/Act3.unity","Assets/_Project/Scenes/Act4.unity","Assets/_Project/Scenes/Act5.unity"};var scenes=new EditorBuildSettingsScene[paths.Length];for(int i=0;i<paths.Length;i++)scenes[i]=new EditorBuildSettingsScene(paths[i],true);EditorBuildSettings.scenes=scenes;AssetDatabase.SaveAssets();Debug.Log("Full game scenes built and added to Build Settings. MainMenu is scene zero.");
         }
 

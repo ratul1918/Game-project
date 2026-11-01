@@ -12,6 +12,7 @@ namespace TheLightHouse
         [SerializeField] Rect panelRect=new(16f,16f,310f,150f);
         [SerializeField,Min(8)] int fontSize=14;
         bool visible;float nextRefresh,fps,frameMs;int realtimeLights;long managedBytes,totalBytes,drawCalls;
+        public bool IsVisible => visible;
         ProfilerRecorder totalMemoryRecorder,drawCallRecorder;
         void Awake(){visible=visibleByDefault;totalMemoryRecorder=ProfilerRecorder.StartNew(ProfilerCategory.Memory,"Total Used Memory");drawCallRecorder=ProfilerRecorder.StartNew(ProfilerCategory.Render,"Draw Calls Count");}
         void OnDestroy(){totalMemoryRecorder.Dispose();drawCallRecorder.Dispose();}

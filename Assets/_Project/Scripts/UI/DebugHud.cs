@@ -17,14 +17,22 @@ namespace TheLightHouse
         [SerializeField] private string telemetryFormat = "Telemetry: sent {0}  queued {1}  dropped {2}";
         string serverStatus="Offline";float serverStorm;
         TelemetryReporter telemetry;
+        PlayerDebugPanel movementDebug;
+        PerformanceHud performanceHud;
 
-        void OnEnable(){telemetry=FindAnyObjectByType<TelemetryReporter>();GameEvents.ServerConnectionChanged+=ConnectionChanged;GameEvents.ServerStormState+=StormChanged;serverStatus=NetworkRuntimeState.Status;serverStorm=NetworkRuntimeState.StormIntensity;}
+        void OnEnable(){telemetry=FindAnyObjectByType<TelemetryReporter>();movementDebug=FindAnyObjectByType<PlayerDebugPanel>();performanceHud=FindAnyObjectByType<PerformanceHud>();GameEvents.ServerConnectionChanged+=ConnectionChanged;GameEvents.ServerStormState+=StormChanged;serverStatus=NetworkRuntimeState.Status;serverStorm=NetworkRuntimeState.StormIntensity;}
         void OnDisable(){GameEvents.ServerConnectionChanged-=ConnectionChanged;GameEvents.ServerStormState-=StormChanged;}
         void ConnectionChanged(ServerConnectionChangedEvent e)=>serverStatus=e.Status;
         void StormChanged(ServerStormStateEvent e)=>serverStorm=e.Intensity;
 
         private void Update()
         {
+            movementDebug??=FindAnyObjectByType<PlayerDebugPanel>();
+            performanceHud??=FindAnyObjectByType<PerformanceHud>();
+            bool debugVisible=(movementDebug&&movementDebug.IsVisible)||(performanceHud&&performanceHud.IsVisible);
+            if(fuelText)fuelText.enabled=debugVisible;
+            if(stalkerStateText)stalkerStateText.enabled=debugVisible;
+            if(!debugVisible)return;
             if (fuelText != null && lamp != null)
             {
                 fuelText.text = string.Format(

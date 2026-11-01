@@ -2,6 +2,7 @@ using System.Collections;
 using System.Text;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace TheLightHouse
@@ -26,6 +27,18 @@ namespace TheLightHouse
         [SerializeField] GameObject objectiveRoot;
         [SerializeField] GameObject inventoryRoot;
         [SerializeField] GameObject interactionRoot;
+        [SerializeField] CanvasGroup noiseGroup;
+        [SerializeField] CanvasGroup staminaGroup;
+        [SerializeField] CanvasGroup lampGroup;
+        [SerializeField] CanvasGroup objectiveGroup;
+        [SerializeField,Min(.1f)] float noiseIdleSeconds=2f;
+        [SerializeField,Min(.1f)] float gaugeIdleSeconds=2f;
+        [SerializeField,Min(.1f)] float objectiveVisibleSeconds=4f;
+        [SerializeField,Min(.05f)] float fadeSeconds=.35f;
+        [SerializeField] Color inactiveNoiseColor=new(.16f,.22f,.28f,1f);
+        [SerializeField] Color activeNoiseColor=new(.38f,.68f,.82f,1f);
+        [SerializeField] Color staminaColor=new(.42f,.54f,.62f,1f);
+        [SerializeField] Color lampColor=new(.88f,.58f,.22f,1f);
 
         [Header("Toasts")]
         [SerializeField] CanvasGroup checkpointToast;
@@ -50,7 +63,7 @@ namespace TheLightHouse
         Transform player;
         StalkerAI stalker;
         LampState currentLamp;
-        Coroutine checkpointRoutine,pageRoutine,roomRoutine;
+        Coroutine checkpointRoutine,pageRoutine,roomRoutine,noiseRoutine,staminaRoutine,lampRoutine,objectiveRoutine;
         readonly StringBuilder inventoryBuilder=new();
 
         void Awake()
@@ -59,6 +72,7 @@ namespace TheLightHouse
             stalker=FindAnyObjectByType<StalkerAI>();
             ApplySettings();
             SetAlpha(checkpointToast,0);SetAlpha(pageToast,0);SetAlpha(roomToast,0);
+            SetAlpha(noiseGroup,0);SetAlpha(staminaGroup,0);SetAlpha(lampGroup,0);SetAlpha(objectiveGroup,0);
         }
 
         void OnEnable()
@@ -89,6 +103,7 @@ namespace TheLightHouse
 
         void Update()
         {
+            UpdateObjectiveVisibility();
             if(!settings||!settings.ShowComposure||!composureFill)return;
             player??=FindAnyObjectByType<FirstPersonController>()?.transform;
             stalker??=FindAnyObjectByType<StalkerAI>();
@@ -113,19 +128,24 @@ namespace TheLightHouse
         {
             if(!player||!value.Source||value.Source.transform.root!=player.root)return;
             int level=value.Loudness<5f?1:value.Loudness<12f?2:3;
-            for(int i=0;i<noiseSegments.Length;i++)if(noiseSegments[i])noiseSegments[i].color=i<level?(level==3?theme.Danger:level==2?theme.Warning:theme.Safe):theme.Panel;
+            for(int i=0;i<noiseSegments.Length;i++)if(noiseSegments[i])noiseSegments[i].color=i<level?activeNoiseColor:inactiveNoiseColor;
+            ShowGroup(noiseGroup);RestartFade(ref noiseRoutine,noiseGroup,noiseIdleSeconds);
         }
-        void Stamina(StaminaChangedEvent value){if(staminaFill)staminaFill.fillAmount=value.Capacity>0?value.Current/value.Capacity:0;}
+        void Stamina(StaminaChangedEvent value){if(staminaFill)staminaFill.fillAmount=value.Capacity>0?value.Current/value.Capacity:0;ShowGroup(staminaGroup);RestartFade(ref staminaRoutine,staminaGroup,value.Capacity>0&&value.Current>=value.Capacity-.01f?0f:gaugeIdleSeconds);}
         void Lamp(LampStateChangedEvent value){currentLamp=value.Current;SetLamp(value.IntensityNormalized,value.Current);}
         void Charge(float value)=>SetLamp(value,currentLamp);
-        void SetLamp(float value,LampState state){if(lampFill){lampFill.fillAmount=Mathf.Clamp01(value);lampFill.color=state==LampState.Failing?theme.Warning:state==LampState.Extinguished?theme.Danger:theme.Accent;}if(lampState)lampState.text=state.ToString();}
-        void Objective(string value){if(objectiveText)objectiveText.text=value;}
+        void SetLamp(float value,LampState state){if(lampFill){lampFill.fillAmount=Mathf.Clamp01(value);lampFill.color=state==LampState.Failing?theme.Warning:state==LampState.Extinguished?theme.Danger:lampColor;}if(lampState)lampState.text=state.ToString();ShowGroup(lampGroup);RestartFade(ref lampRoutine,lampGroup,value>=.999f?0f:gaugeIdleSeconds);}
+        void Objective(string value){if(objectiveText)objectiveText.text=value;ShowGroup(objectiveGroup);RestartFade(ref objectiveRoutine,objectiveGroup,objectiveVisibleSeconds);}
+        void UpdateObjectiveVisibility(){if(objectiveGroup&&Keyboard.current!=null&&Keyboard.current.anyKey.wasPressedThisFrame){ShowGroup(objectiveGroup);RestartFade(ref objectiveRoutine,objectiveGroup,objectiveVisibleSeconds);}}
         void Item(ItemCollectedEvent value){if(!inventoryText)return;if(inventoryBuilder.Length>0)inventoryBuilder.Append("  •  ");inventoryBuilder.Append(value.Id);inventoryText.text=inventoryBuilder.ToString();}
         void Checkpoint(CheckpointReachedEvent value){ShowToast(ref checkpointRoutine,checkpointToast,checkpointText,$"Checkpoint — {value.Id}");}
         void Page(PageReadEvent value){ShowToast(ref pageRoutine,pageToast,pageText,$"Page added — {value.Id}");}
         void Room(RoomEnteredEvent value){if(settings&&settings.ShowRoomNames)ShowToast(ref roomRoutine,roomToast,roomText,$"{value.DisplayName}\n<size=70%>Floor {value.FloorLevel}</size>",false);}
         void ShowToast(ref Coroutine routine,CanvasGroup group,TMP_Text label,string value,bool respectToastSetting=true){if(!settings||(respectToastSetting&&!settings.ShowToasts)||!group)return;if(routine!=null)StopCoroutine(routine);routine=StartCoroutine(FadeToast(group,label,value));}
         IEnumerator FadeToast(CanvasGroup group,TMP_Text label,string value){if(label)label.text=value;SetAlpha(group,1);yield return new WaitForSecondsRealtime(toastDuration);float start=Time.unscaledTime;while(Time.unscaledTime-start<.35f){SetAlpha(group,1f-(Time.unscaledTime-start)/.35f);yield return null;}SetAlpha(group,0);}
+        void ShowGroup(CanvasGroup group){if(group)group.alpha=1f;}
+        void RestartFade(ref Coroutine routine,CanvasGroup group,float delay){if(routine!=null)StopCoroutine(routine);routine=delay<=0f?StartCoroutine(FadeGroup(group,0f)):StartCoroutine(FadeGroup(group,delay));}
+        IEnumerator FadeGroup(CanvasGroup group,float delay){if(!group)yield break;if(delay>0f)yield return new WaitForSecondsRealtime(delay);float start=Time.unscaledTime;while(Time.unscaledTime-start<fadeSeconds){group.alpha=1f-(Time.unscaledTime-start)/fadeSeconds;yield return null;}group.alpha=0f;}
         static void SetAlpha(CanvasGroup group,float value){if(group)group.alpha=value;}
         static void SetActive(GameObject target,bool value){if(target)target.SetActive(value);}
     }

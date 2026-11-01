@@ -22,8 +22,8 @@ MonoBehaviour:
   bodyFont: {fileID: 0}
   displayFont: {fileID: 0}
   panelSprite: {fileID: 0}
-  keySprite: {fileID: 1086331387851373080, guid: d9712b570686f4799b06df67d7fd15bc, type: 3}
-  pageSprite: {fileID: -3720491305630814848, guid: fb663bd8524424f89823f8b23d8950f6, type: 3}
-  itemSprite: {fileID: -5680835434184144748, guid: 4d1eb8c75eed0483ca0146a27b68e9da, type: 3}
-  lampSprite: {fileID: -6743024233415356852, guid: bec82ef1ba6124474a50cd4805607032, type: 3}
-  checkpointSprite: {fileID: 1061801751286890457, guid: 803809604643146bab8adf47d860f543, type: 3}
+  keySprite: {fileID: 1086331387851373080, guid: 9170405e41e69453ab65259fb6883dd0, type: 3}
+  pageSprite: {fileID: -3720491305630814848, guid: cecfef28f06344af3914215ccb4b2119, type: 3}
+  itemSprite: {fileID: -5680835434184144748, guid: 007bc0c65c387464a8e4d56e4d4ec581, type: 3}
+  lampSprite: {fileID: -6743024233415356852, guid: f1017b0e7f53346a6bf02d9d201ec71b, type: 3}
+  checkpointSprite: {fileID: 1061801751286890457, guid: 312a9e9ea48714be0982892a9a03d6af, type: 3}
