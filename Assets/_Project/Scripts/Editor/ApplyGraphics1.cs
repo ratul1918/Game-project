@@ -149,7 +149,7 @@ namespace TheLightHouse.Editor
 
         static void MarkStaticGeometry()
         {
-            foreach(MeshRenderer renderer in Object.FindObjectsByType<MeshRenderer>()){string name=renderer.gameObject.name.ToLowerInvariant();if(name.Contains("player")||name.Contains("door")||name.Contains("stalker")||name.Contains("drowned")||name.Contains("figure")||name.Contains("crane")||name.Contains("boat")||name.Contains("lamp"))continue;if(renderer.GetComponentInParent<Rigidbody>()||renderer.GetComponentInParent<CharacterController>())continue;GameObjectUtility.SetStaticEditorFlags(renderer.gameObject,StaticEditorFlags.ContributeGI|StaticEditorFlags.BatchingStatic|StaticEditorFlags.ReflectionProbeStatic);}
+            foreach(MeshRenderer renderer in Object.FindObjectsByType<MeshRenderer>()){string name=renderer.gameObject.name.ToLowerInvariant();if(name.Contains("player")||name.Contains("door")||name.Contains("stalker")||name.Contains("drowned")||name.Contains("figure")||name.Contains("crane")||name.Contains("boat")||name.Contains("lamp"))continue;if(renderer.GetComponentInParent<Rigidbody>()||renderer.GetComponentInParent<CharacterController>())continue;var flags=GameObjectUtility.GetStaticEditorFlags(renderer.gameObject);GameObjectUtility.SetStaticEditorFlags(renderer.gameObject,flags|StaticEditorFlags.ContributeGI|StaticEditorFlags.BatchingStatic|StaticEditorFlags.ReflectionProbeStatic|StaticEditorFlags.OccluderStatic|StaticEditorFlags.OccludeeStatic|StaticEditorFlags.NavigationStatic);}
         }
 
         static void ConfigureLightmapping()
