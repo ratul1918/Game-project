@@ -105,3 +105,6 @@ InitTestScene*.unity*
 
 # macOS Finder metadata.
 .DS_Store
+
+# Maven target directories
+target/

@@ -20,7 +20,7 @@ namespace TheLightHouse
         {
             if(Keyboard.current!=null&&Keyboard.current.f4Key.wasPressedThisFrame)visible=!visible;
             if(Time.unscaledTime<nextRefresh)return;nextRefresh=Time.unscaledTime+refreshInterval;frameMs=Time.unscaledDeltaTime*1000f;fps=frameMs>0f?1000f/frameMs:0f;managedBytes=GC.GetTotalMemory(false);totalBytes=totalMemoryRecorder.Valid?totalMemoryRecorder.LastValue:0;drawCalls=drawCallRecorder.Valid?drawCallRecorder.LastValue:0;realtimeLights=0;
-            foreach(Light light in FindObjectsByType<Light>())if(light.enabled&&light.gameObject.activeInHierarchy&&light.lightmapBakeType!=LightmapBakeType.Baked)realtimeLights++;
+            foreach(Light light in FindObjectsByType<Light>())if(light.enabled&&light.gameObject.activeInHierarchy&&light.bakingOutput.lightmapBakeType!=LightmapBakeType.Baked)realtimeLights++;
         }
         void OnGUI()
         {

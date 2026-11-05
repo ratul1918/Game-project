@@ -75,6 +75,7 @@ namespace TheLightHouse
         private void Awake()
         {
             characterController = GetComponent<CharacterController>();
+            if (cameraTransform) pitch = Mathf.DeltaAngle(0f, cameraTransform.localEulerAngles.x);
             noiseEmitter ??= GetComponent<NoiseEmitter>();
 
             if (!settings) settings = Resources.Load<PlayerMovementSettings>("PlayerMovementSettings");

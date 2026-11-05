@@ -28,6 +28,6 @@ Material:
     - _BeamIntensity: 1
     - _EdgeSoftness: 2
     m_Colors:
-    - _BeamColor: {r: 1, g: 0.68, b: 0.25, a: 0.13}
+    - _BeamColor: {r: 0.63, g: 0.79, b: 0.86, a: 0.2}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

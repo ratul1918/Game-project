@@ -343,3 +343,13 @@ The immutable payload contains `float Current`, `float Capacity`, and `bool Exha
 `Exhausted` describes the temporary sprint/jump lockout after reaching zero.
 Example subscription: `GameEvents.StaminaChanged += HandleStamina;`; unsubscribe on disable.
 No changes were made to the NoiseEmitted payload or existing 2/6/12 m movement bases.
+
+## Reference atmosphere presentation
+
+`ReferenceRain` consumes `GameStateChanged` only: drizzle during arrival/night, heavier rain during storm/finale, fading to zero at dawn/ending. This exterior-only visual system does not emit gameplay noise or replace StormController's lightning, wind, accessibility settings or beat timing.
+
+## Island access
+
+DoorStateChanged retains its payload and existing `tower-front-door` ID. `tower-seaward-door` identifies the separate east lighthouse entrance; `Keeper House Front Door` retains the house entrance ID. Doors continue to emit NoiseEmitted through NoiseEmitter. Door colliders move with leaves so Closed blocks traversal and Open clears the doorway. No additional arrival or departure events are introduced.
+
+Interaction raycasts ignore colliders belonging to the player, including when looking down at a handle. The closest remaining solid hit still occludes interaction; doors behind walls cannot be used.

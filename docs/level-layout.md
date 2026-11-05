@@ -57,3 +57,19 @@ UI preview captures are stored in [docs/ui-previews](./ui-previews). The rendere
 - Batch compile, full Act 1–5 regeneration, gameplay-anchor retention, and canonical A1-B01 through A5-B06 order were run in an isolated Unity copy.
 - Preview PNGs were rendered and visually inspected for the courtyard, dock, front door, and a tower floor.
 - Play Mode door traversal, complete spiral traversal, per-act NavMesh baking, empty-HUD Game-view start/mid-dialogue captures, and target Mac performance profiling remain unverified.
+
+## Reference visual pass
+
+The visual pass repairs the generated house's swapped Y/Z coordinates, adds its missing timber floor and ceiling, replaces the solid lantern enclosure with iron framing, and replaces disconnected spiral blocks with continuous wedge treads and following handrails. The house retains the front opening at (-5,0,-9), a rear connection to the tower, and a keeper desk near the Radio anchor. Cosmetic props do not add obstacles to the existing traversal and hiding interactions. Run the visual pass after a full greybox rebuild; it is idempotent and retains the original disabled geometry for inspection.
+
+The reference pass also moves the courtyard boundary south of the house and the west wall outside it, uses a continuous tapered visual shell over the tower's structural colliders, and opens the first intermediate floor ring for the lower spiral shaft. The radio's gameplay collider remains while its white placeholder renderer is hidden. The keeper wardrobe moves against the west office wall; the meal anchors move into the kitchen. The main scene builder applies the reference pass automatically after atmospheric setup.
+
+## Island arrival and doorway correction
+
+Act1 starts on solid island ground at the shoreward end of the dock, facing the boatman aboard a moored boat on the sea. Existing Boatman arrival dialogue, movement release and departure signals remain unchanged; the visible figure moves with the boat. The sea is an opaque animated surface around an irregular solid island, with a timber dock leading out to the boat. Untextured rectangular fog cards are disabled; distance fog remains.
+
+Three independent hinged doors provide access: the keeper-house front door, the existing `tower-front-door` connection from house to tower, and a new `tower-seaward-door` on the east side of the tower. Each moving leaf owns its blocking collider beneath its Door component; frames remain fixed. A second opening through the tower shell and structural colliders provides the exterior route. The house ceiling and northern roof stop at the tower wall instead of crossing the stair shaft. Opening the interior connector remains possible in Act2; existing threat and cellar locks retain their own controls.
+
+The exterior entrance includes a tiered masonry stoop, stone threshold sill, weather drip hood, foundation plinth, and paved approach connecting to the courtyard walkway. Doorways include continuous threshold plates bridging floor levels, eliminating gaps beneath moving leaves, along with mounted iron strap hinges and framed jambs. Tower storage features a circular masonry base plinth reaching the tapered tower wall, a dressed stone flagstone floor with a raised central timber duckboard bay, and a solid masonry stair footing with a cast-iron starter newel post and cantilever wall brackets anchoring the spiral staircase.
+
+The player's serialized initial camera pitch is respected at startup so the authored view continues to face the boatman without snapping to the horizon. `IslandArrivalSettings` owns start, boat and sea/shore dimensions. Both passes are included in a full scene rebuild.

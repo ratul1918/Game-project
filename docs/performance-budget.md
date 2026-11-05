@@ -19,3 +19,5 @@ The target has 8 GB of shared CPU/GPU memory and passive cooling. Budgets are ha
 - Target 30–60 FPS during a sustained play session, not only a cold editor run.
 
 Run **TheLightHouse → Check Asset Budget** before importing an art/audio batch and before every release candidate. Auto-fix is restricted to safe texture and audio importer changes; model reduction and scene-light decisions remain manual.
+
+The runtime light counter reads `Light.bakingOutput.lightmapBakeType`; `Light.lightmapBakeType` is editor-only and must not be used by player scripts.
