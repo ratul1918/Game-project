@@ -447,7 +447,7 @@ namespace TheLightHouse.Editor
             Vector3 tablePos = new(-2.8f, 0, -5.8f);
             Cylinder("Dining Table Base", tablePos + Vector3.up * .05f, .40f, .05f, wood, Vector3.zero);
             Cylinder("Dining Table Pedestal", tablePos + Vector3.up * .42f, .12f, .74f, wood, Vector3.zero);
-            Cylinder("Dining Tabletop", tablePos + Vector3.up * .82f, .68f, .06f, wood, true);
+            Cylinder("Dining Tabletop", tablePos + Vector3.up * .82f, .68f, .06f, wood, Vector3.zero);
 
             // Decorative woven table runner
             Box("Dining Table Runner", tablePos + Vector3.up * .855f, new(.34f, .01f, 1.24f), parchment);
