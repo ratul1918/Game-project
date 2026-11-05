@@ -28,7 +28,7 @@ MonoBehaviour:
   railingHeight: 1.1
   stairStepHeight: 0.18
   stairStepDepth: 0.28
-  stairWidth: 1.42
+  stairWidth: 1.85
   stairwellRadius: 1.05
   wallSegmentCoverage: 1.001
   houseSize: {x: 14, y: 2.8, z: 8}
