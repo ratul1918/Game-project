@@ -9,6 +9,8 @@ namespace TheLightHouse
     {
         [SerializeField] GameObject panel;
         [SerializeField] GameObject optionsPanel;
+        [SerializeField] SettingsMenuUI settingsMenu;
+        [SerializeField] SaveLoadUI saveLoad;
         [SerializeField] JournalUI journal;
         [SerializeField] FirstPersonController player;
         [SerializeField] Interactor interactor;
@@ -28,10 +30,14 @@ namespace TheLightHouse
         public void Resume()
         {
             paused=false;Time.timeScale=1f;if(panel)panel.SetActive(false);if(optionsPanel)optionsPanel.SetActive(false);
+            if(settingsMenu)settingsMenu.Close();if(saveLoad)saveLoad.Close();
             if(!journal||!journal.IsOpen){player?.SetMovementLocked(false);player?.SetLookLocked(false);if(interactor)interactor.enabled=previousInteractor;Cursor.lockState=CursorLockMode.Locked;Cursor.visible=false;}
         }
         public void OpenJournal(){journal?.Open(JournalUI.Tab.Pages);}
         public void OpenOptions(){if(optionsPanel)optionsPanel.SetActive(true);}
+        public void OpenSettings(){if(settingsMenu)settingsMenu.Open();else OpenOptions();}
+        public void OpenSaveMenu(){if(saveLoad)saveLoad.Open(true);else Save();}
+        public void OpenLoadMenu(){if(saveLoad)saveLoad.Open(false);}
         public void Save(){FindAnyObjectByType<SaveSystem>()?.Save();if(saveStatus)saveStatus.text="Saved";}
         public void QuitToMainMenu(){Time.timeScale=1f;SceneManager.LoadScene("MainMenu");}
     }

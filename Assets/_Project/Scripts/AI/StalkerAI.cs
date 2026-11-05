@@ -4,7 +4,7 @@ using UnityEngine.AI;
 namespace TheLightHouse
 {
     [RequireComponent(typeof(NavMeshAgent))]
-    public sealed class StalkerAI : MonoBehaviour
+    public sealed class StalkerAI : MonoBehaviour, IDamageable
     {
         public enum StalkerState
         {
@@ -80,6 +80,18 @@ namespace TheLightHouse
         public StalkerState CurrentState => currentState;
         public string StateName => currentState.ToString();
         public bool PostRevealMode => postRevealMode;
+
+        public void TakeHit(float damage, Vector3 hitPoint, Vector3 hitDirection, bool isHeavy)
+        {
+            if (currentState == StalkerState.Retreat) return;
+            retreatUntil = Time.time + (isHeavy ? 4.0f : 2.0f);
+            if (agent && agent.isOnNavMesh)
+            {
+                agent.ResetPath();
+                agent.isStopped = true;
+            }
+            ChangeState(StalkerState.Retreat);
+        }
 
         private void Awake()
         {
