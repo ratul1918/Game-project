@@ -125,15 +125,13 @@ namespace TheLightHouse.Editor
                 if (n == "Courtyard Wall East") { renderer.transform.position = new(10,1.1f,-13); renderer.transform.localScale = new(.45f,2.2f,8); }
                 if (n.StartsWith("Tower L") && n.Contains(" wall "))
                 {
-                    renderer.enabled=false;
-                    int level = int.Parse(n.Substring(7, n.IndexOf(" wall ", StringComparison.Ordinal)-7));
-                    var scale = renderer.transform.localScale; scale.z = Mathf.Lerp(.8f,.45f,level/8f); renderer.transform.localScale = scale;
-                    if(level==0){int segment=int.Parse(n.Substring(n.LastIndexOf(' ')+1));if(Mathf.Abs(Mathf.DeltaAngle(segment*15,90))<20)foreach(var c in renderer.GetComponents<Collider>())c.enabled=false;}
+                    renderer.enabled = false;
+                    foreach (var c in renderer.GetComponents<Collider>()) c.enabled = false;
+                    continue;
                 }
                 if (n.StartsWith("Tower Floor")) { renderer.enabled = false; foreach (var c in renderer.GetComponents<Collider>()) c.enabled = false; continue; }
-                if (n.StartsWith("Tower Cornice")) renderer.enabled = false;
-                if (n.StartsWith("Tower Cornice") || n.StartsWith("Gallery Rail"))
-                { var scale=renderer.transform.localScale; scale.z=.15f; renderer.transform.localScale=scale; }
+                if (n.StartsWith("Tower Cornice")) { renderer.enabled = false; foreach (var c in renderer.GetComponents<Collider>()) c.enabled = false; continue; }
+                if (n.StartsWith("Gallery Rail")) { renderer.enabled = false; foreach (var c in renderer.GetComponents<Collider>()) c.enabled = false; continue; }
                 if (n.Contains("Window")) { renderer.enabled = false; continue; }
                 string materialName = renderer.sharedMaterial ? renderer.sharedMaterial.name : "";
                 if (materialName == "Stone" || materialName == "Salt Plaster") renderer.sharedMaterial = plaster;
@@ -158,6 +156,7 @@ namespace TheLightHouse.Editor
             area = Group("Coast Dressing"); Coast(); CombineArea();
             var radioAnchor=GameObject.Find("Radio"); if(radioAnchor && radioAnchor.GetComponent<Renderer>())radioAnchor.GetComponent<Renderer>().enabled=false;
             var wardrobe=GameObject.Find("keeper-wardrobe"); if(wardrobe)wardrobe.transform.position=new(-11.2f,1,-3.2f);
+            var cab=GameObject.Find("lantern-cabinet"); if(cab)cab.transform.position=new Vector3(-2.2f, 26.6f, -1.0f);
             foreach(string name in new[]{"Table","Hot Meal","Steam placeholder"})
             {
                 var obj=GameObject.Find(name);
@@ -230,6 +229,7 @@ namespace TheLightHouse.Editor
                 float a=i*Mathf.PI*2/segments,b=(i+1)*Mathf.PI*2/segments;
                 float angle=(i+.5f)*360/segments;
                 if(level==0 && row<2 && (Mathf.Abs(Mathf.DeltaAngle(angle,180))<18 || Mathf.Abs(Mathf.DeltaAngle(angle,90))<16))continue;
+                if(level==7 && row<2 && Mathf.Abs(Mathf.DeltaAngle(angle,50))<24)continue;
                 if(level%2==0 && row==1 && Mathf.Abs(Mathf.DeltaAngle(angle,180))<6)continue;
                 Vector3 P(float theta,float y){
                     float outerR=Mathf.Lerp(5.20f,3.80f,y/25.6f);
@@ -243,7 +243,7 @@ namespace TheLightHouse.Editor
                 triangles.AddRange(side==0?new[]{k+2,k+1,k,k+3,k+2,k}:new[]{k,k+1,k+2,k,k+2,k+3});
             }
             var mesh=new Mesh{vertices=vertices.ToArray(),normals=normals.ToArray(),uv=uv.ToArray(),triangles=triangles.ToArray()};
-            var go=new GameObject("Tapered Masonry",typeof(MeshFilter),typeof(MeshRenderer));go.transform.SetParent(area);go.GetComponent<MeshFilter>().sharedMesh=mesh;go.GetComponent<Renderer>().sharedMaterial=plaster;
+            var go=new GameObject("Tapered Masonry",typeof(MeshFilter),typeof(MeshRenderer));go.transform.SetParent(area);go.GetComponent<MeshFilter>().sharedMesh=mesh;go.GetComponent<Renderer>().sharedMaterial=plaster;go.AddComponent<MeshCollider>().sharedMesh=mesh;
         }
 
         static void House()
@@ -682,15 +682,19 @@ namespace TheLightHouse.Editor
                     points.AddRange(new[] { currPts[0], currPts[1], prevPts[1], prevPts[0] });
                     tris.AddRange(new[] { k2, k2 + 1, k2 + 2, k2, k2 + 2, k2 + 3 });
 
-                    // Inner guard rail (double-sided, 1.25m height along inner edge to prevent falling into central atrium)
-                    Vector3 inG0 = prevPts[0] + Vector3.up * 1.25f;
-                    Vector3 inG1 = currPts[0] + Vector3.up * 1.25f;
-                    int kg = points.Count;
-                    points.AddRange(new[] { prevPts[0], inG0, inG1, currPts[0] });
-                    tris.AddRange(new[] { kg, kg + 1, kg + 2, kg, kg + 2, kg + 3 });
-                    int kg2 = points.Count;
-                    points.AddRange(new[] { currPts[0], inG1, inG0, prevPts[0] });
-                    tris.AddRange(new[] { kg2, kg2 + 1, kg2 + 2, kg2, kg2 + 2, kg2 + 3 });
+                    // Inner guard rail (double-sided, 1.25m height along inner edge to prevent falling)
+                    // Stops 3 steps before landing (s < steps - 2) so the exit gate onto the room floor is completely open!
+                    if (s < steps - 2)
+                    {
+                        Vector3 inG0 = prevPts[0] + Vector3.up * 1.25f;
+                        Vector3 inG1 = currPts[0] + Vector3.up * 1.25f;
+                        int kg = points.Count;
+                        points.AddRange(new[] { prevPts[0], inG0, inG1, currPts[0] });
+                        tris.AddRange(new[] { kg, kg + 1, kg + 2, kg, kg + 2, kg + 3 });
+                        int kg2 = points.Count;
+                        points.AddRange(new[] { currPts[0], inG1, inG0, prevPts[0] });
+                        tris.AddRange(new[] { kg2, kg2 + 1, kg2 + 2, kg2, kg2 + 2, kg2 + 3 });
+                    }
                 }
                 prevPts = currPts;
             }
@@ -874,51 +878,59 @@ namespace TheLightHouse.Editor
             float innerStairR = outerStairR - stairWidth;
 
             bool isOddLevel = (level % 2 == 1);
-            // Odd level: flight arrives on North side (105° to -110°). Stairwell VOID on North.
-            // Solid living floor on South: from -110° through -180° to +105°.
-            // Even level: flight arrives on South side (-115° to 55°). Stairwell VOID on South.
-            // Solid living floor on North: from -115° through 0° to +55°.
 
-            const int totalSegments = 36;
-            for (int i = 0; i < totalSegments; i++)
+            // 1. Solid Central Room Floor & Overhead Ceiling Disc (Full 360 degrees, from r = 0 to innerStairR)
+            // Provides unbroken, solid wooden living floor and solid ceiling across every single room
+            Box("Room Center Floor Cap", new Vector3(0, y - floorThick * 0.5f, 0), new Vector3(0.25f, floorThick, 0.25f), wood, true);
+            const int segs = 32;
+            for (int i = 0; i < segs; i++)
             {
-                float degMid = (i + 0.5f) * 360f / totalSegments;
-                if (degMid > 180f) degMid -= 360f; // normalize to [-180, 180]
+                float degA = i * 360f / segs;
+                float degB = (i + 1) * 360f / segs;
+                float a = degA * Mathf.Deg2Rad;
+                float b = degB * Mathf.Deg2Rad;
+                Wedge("Room Floor Center", 0.05f, innerStairR, a, b, y, floorThick, wood, true);
+            }
 
-                bool isVoid;
+            // 2. Solid Perimeter Floor with dedicated stairwell opening (innerStairR to outerStairR)
+            // Headroom slot only where flight arrives from below:
+            // Odd levels: flight arrives at -110° on North arc (slot from -30° to -115°)
+            // Even levels: flight arrives at +50° on South arc (slot from +45° to +130°)
+            for (int i = 0; i < segs; i++)
+            {
+                float degMid = (i + 0.5f) * 360f / segs;
+                if (degMid > 180f) degMid -= 360f; // [-180, 180]
+
+                bool isStairSlot;
                 if (isOddLevel)
                 {
-                    // Void on North arc: from -110° through 0° to +105° (generous open headroom for flight below)
-                    isVoid = (degMid >= -110f && degMid <= 105f);
+                    isStairSlot = (degMid >= -115f && degMid <= -30f);
                 }
                 else
                 {
-                    // Void on South arc: from -115° through -180° to +55° (generous open headroom for flight below)
-                    isVoid = (degMid < -115f || degMid > 55f);
+                    isStairSlot = (degMid >= 45f && degMid <= 130f);
                 }
 
-                if (isVoid) continue; // Full vertical headroom!
+                if (isStairSlot) continue; // Keep stair opening clear for headroom!
 
-                float degA = i * 360f / totalSegments;
-                float degB = (i + 1) * 360f / totalSegments;
+                float degA = i * 360f / segs;
+                float degB = (i + 1) * 360f / segs;
                 float a = degA * Mathf.Deg2Rad;
                 float b = degB * Mathf.Deg2Rad;
-
-                // Solid continuous wooden floor wedge spanning from central atrium (r=0.05) to outer wall!
-                Wedge("Room Floor Solid", 0.05f, outerStairR, a, b, y, floorThick, wood, true);
+                Wedge("Room Floor Perimeter", innerStairR - 0.02f, outerStairR, a, b, y, floorThick, wood, true);
             }
 
-            // Solid Landing Platform Wedge at arrival angle
+            // 3. Solid Landing Platform connecting stair top directly into room living floor
             float landingDeg = isOddLevel ? -110f : 50f;
             float landingRad = landingDeg * Mathf.Deg2Rad;
-            float landHalfSpan = 25f * Mathf.Deg2Rad;
-            Wedge("Stair Landing Platform", innerStairR - 0.35f, outerStairR, landingRad - landHalfSpan, landingRad + landHalfSpan, y, floorThick, wood, true);
+            float landHalfSpan = 22f * Mathf.Deg2Rad;
+            Wedge("Stair Landing Platform", innerStairR - 0.25f, outerStairR, landingRad - landHalfSpan, landingRad + landHalfSpan, y, floorThick, wood, true);
 
-            // Protective wrought-iron balustrade along the stairwell opening
+            // 4. Protective wrought-iron balustrade guarding stair opening with open landing gate
             float railH = 1.05f;
             int balSteps = 16;
-            float balStartDeg = isOddLevel ? 105f : -115f;
-            float balEndDeg = isOddLevel ? -85f : 25f; // Leaves wide open gateway at landing!
+            float balStartDeg = isOddLevel ? -30f : 130f;
+            float balEndDeg = isOddLevel ? -90f : 70f; // Leaves wide open gateway at landing!
 
             Vector3 prevTop = Vector3.zero, prevBot = Vector3.zero;
             for (int i = 0; i <= balSteps; i++)
@@ -926,9 +938,9 @@ namespace TheLightHouse.Editor
                 float t = i / (float)balSteps;
                 float deg = Mathf.Lerp(balStartDeg, balEndDeg, t);
                 float rad = deg * Mathf.Deg2Rad;
-                float r = innerStairR - 0.05f;
+                float r = innerStairR - 0.04f;
 
-                Vector3 bot = new Vector3(Mathf.Sin(rad) * r, y + 0.04f, Mathf.Cos(rad) * r);
+                Vector3 bot = new Vector3(Mathf.Sin(rad) * r, y + 0.02f, Mathf.Cos(rad) * r);
                 Vector3 top = bot + Vector3.up * railH;
                 Rod("Balustrade Baluster", bot, top, 0.035f, iron);
                 if (i > 0)
@@ -942,25 +954,25 @@ namespace TheLightHouse.Editor
             }
 
             // Prominent Brass Newel Post at the Landing Gate Entrance
-            Vector3 newelPos = new Vector3(Mathf.Sin(balEndDeg * Mathf.Deg2Rad) * (innerStairR - 0.05f), y, Mathf.Cos(balEndDeg * Mathf.Deg2Rad) * (innerStairR - 0.05f));
-            Rod("Balustrade Landing Newel", newelPos, newelPos + Vector3.up * 1.15f, 0.08f, iron);
+            Vector3 newelPos = new Vector3(Mathf.Sin(balEndDeg * Mathf.Deg2Rad) * (innerStairR - 0.04f), y, Mathf.Cos(balEndDeg * Mathf.Deg2Rad) * (innerStairR - 0.04f));
+            Rod("Balustrade Landing Newel", newelPos, newelPos + Vector3.up * 1.15f, 0.075f, brass);
             Cylinder("Balustrade Newel Finial", newelPos + Vector3.up * 1.18f, 0.06f, 0.08f, brass, Vector3.zero);
         }
 
         static void Library()
         {
             RoomFloor(1, 3.2f, .14f);
-            Box("Library Area Rug", new(.1f, 3.21f, -1.90f), new(2.8f, .012f, 2.0f), rugFabric);
+            Box("Library Area Rug", new(.1f, 3.21f, 1.20f), new(2.8f, .012f, 2.0f), rugFabric);
 
-            // Grand Curved Floor-to-Ceiling Library Bookcase along South wall
-            Box("Bookcase Left Upright", new(-1.6f, 4.5f, -3.45f), new(.08f, 2.6f, .40f), wood, true);
-            Box("Bookcase Right Upright", new(1.6f, 4.5f, -3.45f), new(.08f, 2.6f, .40f), wood, true);
-            Box("Bookcase Center Divider", new(0f, 4.5f, -3.45f), new(.06f, 2.6f, .38f), wood);
-            Box("Bookcase Top Crown", new(0f, 5.82f, -3.45f), new(3.32f, .10f, .44f), wood);
-            Box("Bookcase Shelf 1", new(0f, 3.32f, -3.45f), new(3.2f, .05f, .38f), wood);
-            Box("Bookcase Shelf 2", new(0f, 3.95f, -3.45f), new(3.2f, .05f, .38f), wood);
-            Box("Bookcase Shelf 3", new(0f, 4.60f, -3.45f), new(3.2f, .05f, .38f), wood);
-            Box("Bookcase Shelf 4", new(0f, 5.25f, -3.45f), new(3.2f, .05f, .38f), wood);
+            // Grand Curved Floor-to-Ceiling Library Bookcase along North wall (quiet wall without stairs)
+            Box("Bookcase Left Upright", new(-1.6f, 4.5f, 2.45f), new(.08f, 2.6f, .40f), wood, true);
+            Box("Bookcase Right Upright", new(1.6f, 4.5f, 2.45f), new(.08f, 2.6f, .40f), wood, true);
+            Box("Bookcase Center Divider", new(0f, 4.5f, 2.45f), new(.06f, 2.6f, .38f), wood);
+            Box("Bookcase Top Crown", new(0f, 5.82f, 2.45f), new(3.32f, .10f, .44f), wood);
+            Box("Bookcase Shelf 1", new(0f, 3.32f, 2.45f), new(3.2f, .05f, .38f), wood);
+            Box("Bookcase Shelf 2", new(0f, 3.95f, 2.45f), new(3.2f, .05f, .38f), wood);
+            Box("Bookcase Shelf 3", new(0f, 4.60f, 2.45f), new(3.2f, .05f, .38f), wood);
+            Box("Bookcase Shelf 4", new(0f, 5.25f, 2.45f), new(3.2f, .05f, .38f), wood);
 
             // Dense leatherbound books on Shelf 2
             for (int b = 0; b < 28; b++)
@@ -968,8 +980,8 @@ namespace TheLightHouse.Editor
                 float bx = -1.45f + b * .105f;
                 float bh = .24f + (b % 4) * .03f;
                 Material bm = (b % 4 == 0) ? bookRed : (b % 4 == 1) ? bookGreen : (b % 4 == 2) ? bookBlue : bookGold;
-                Box($"Book S2_{b}", new(bx, 3.98f + bh * .5f, -3.42f), new(.07f, bh, .24f), bm);
-                Box($"Book Spine S2_{b}", new(bx, 3.98f + bh * .5f, -3.29f), new(.065f, bh * .9f, .02f), bookGold);
+                Box($"Book S2_{b}", new(bx, 3.98f + bh * .5f, 2.42f), new(.07f, bh, .24f), bm);
+                Box($"Book Spine S2_{b}", new(bx, 3.98f + bh * .5f, 2.29f), new(.065f, bh * .9f, .02f), bookGold);
             }
             // Books on Shelf 3
             for (int b = 0; b < 26; b++)
@@ -977,83 +989,83 @@ namespace TheLightHouse.Editor
                 float bx = -1.35f + b * .11f;
                 float bh = .22f + ((b * 3) % 5) * .025f;
                 Material bm = (b % 3 == 0) ? bookBlue : (b % 3 == 1) ? bookRed : bookGreen;
-                Box($"Book S3_{b}", new(bx, 4.63f + bh * .5f, -3.42f), new(.075f, bh, .22f), bm);
+                Box($"Book S3_{b}", new(bx, 4.63f + bh * .5f, 2.42f), new(.075f, bh, .22f), bm);
             }
 
             // Shelf 1: Heavy log ledgers and chart tubes
-            Box("Log Ledger Stack", new(-.9f, 3.48f, -3.42f), new(.48f, .25f, .30f), darkCoat);
-            Box("Harbor Board Folios", new(.8f, 3.52f, -3.42f), new(.55f, .32f, .28f), parchment);
-            Cylinder("Chart Tube 1", new(-.3f, 3.42f, -3.42f), .06f, .42f, wood, new(0, 0, 90));
-            Cylinder("Chart Tube 2", new(-.3f, 3.54f, -3.42f), .05f, .40f, parchment, new(0, 0, 90));
+            Box("Log Ledger Stack", new(-.9f, 3.48f, 2.42f), new(.48f, .25f, .30f), darkCoat);
+            Box("Harbor Board Folios", new(.8f, 3.52f, 2.42f), new(.55f, .32f, .28f), parchment);
+            Cylinder("Chart Tube 1", new(-.3f, 3.42f, 2.42f), .06f, .42f, wood, new(0, 0, 90));
+            Cylinder("Chart Tube 2", new(-.3f, 3.54f, 2.42f), .05f, .40f, parchment, new(0, 0, 90));
 
             // Shelf 4: Potted plant with trailing green ivy
-            Cylinder("Library Planter Pot", new(.9f, 5.38f, -3.40f), .16f, .20f, warm, Vector3.zero);
-            Box("Planter Soil", new(.9f, 5.47f, -3.40f), new(.28f, .02f, .28f), ground);
+            Cylinder("Library Planter Pot", new(.9f, 5.38f, 2.40f), .16f, .20f, warm, Vector3.zero);
+            Box("Planter Soil", new(.9f, 5.47f, 2.40f), new(.28f, .02f, .28f), ground);
             for (int v = 0; v < 8; v++)
             {
                 float vy = 5.40f - v * .08f;
                 float vx = .9f + Mathf.Sin(v * .8f) * .12f;
-                Box($"Trailing Ivy {v}", new(vx, vy, -3.22f), new(.18f, .07f, .04f), leaf);
+                Box($"Trailing Ivy {v}", new(vx, vy, 2.22f), new(.18f, .07f, .04f), leaf);
             }
 
             // Study Writing Bureau / Desk
-            Box("Desk Top", new(.1f, 3.96f, -1.80f), new(1.8f, .08f, .90f), wood, true);
-            Box("Desk Pedestal L", new(-.60f, 3.58f, -1.80f), new(.45f, .68f, .82f), wood, true);
-            Box("Desk Drawer Pull L1", new(-.60f, 3.82f, -1.38f), new(.12f, .03f, .02f), brass);
-            Box("Desk Drawer Pull L2", new(-.60f, 3.60f, -1.38f), new(.12f, .03f, .02f), brass);
-            Box("Desk Drawer Pull L3", new(-.60f, 3.38f, -1.38f), new(.12f, .03f, .02f), brass);
-            Box("Desk Pedestal R", new(.80f, 3.58f, -1.80f), new(.45f, .68f, .82f), wood, true);
-            Box("Desk Drawer Pull R1", new(.80f, 3.82f, -1.38f), new(.12f, .03f, .02f), brass);
-            Box("Desk Drawer Pull R2", new(.80f, 3.60f, -1.38f), new(.12f, .03f, .02f), brass);
-            Box("Desk Drawer Pull R3", new(.80f, 3.38f, -1.38f), new(.12f, .03f, .02f), brass);
-            Box("Desk Kneehole Panel", new(.1f, 3.62f, -2.18f), new(.95f, .58f, .04f), wood);
+            Box("Desk Top", new(.1f, 3.96f, 1.10f), new(1.8f, .08f, .90f), wood, true);
+            Box("Desk Pedestal L", new(-.60f, 3.58f, 1.10f), new(.45f, .68f, .82f), wood, true);
+            Box("Desk Drawer Pull L1", new(-.60f, 3.82f, .68f), new(.12f, .03f, .02f), brass);
+            Box("Desk Drawer Pull L2", new(-.60f, 3.60f, .68f), new(.12f, .03f, .02f), brass);
+            Box("Desk Drawer Pull L3", new(-.60f, 3.38f, .68f), new(.12f, .03f, .02f), brass);
+            Box("Desk Pedestal R", new(.80f, 3.58f, 1.10f), new(.45f, .68f, .82f), wood, true);
+            Box("Desk Drawer Pull R1", new(.80f, 3.82f, .68f), new(.12f, .03f, .02f), brass);
+            Box("Desk Drawer Pull R2", new(.80f, 3.60f, .68f), new(.12f, .03f, .02f), brass);
+            Box("Desk Drawer Pull R3", new(.80f, 3.38f, .68f), new(.12f, .03f, .02f), brass);
+            Box("Desk Kneehole Panel", new(.1f, 3.62f, 1.48f), new(.95f, .58f, .04f), wood);
 
             // Brass Desktop Terrestrial Globe
-            Cylinder("Globe Base", new(-.50f, 4.02f, -1.65f), .11f, .03f, wood, Vector3.zero);
-            Rod("Globe Spindle", new(-.50f, 4.03f, -1.65f), new(-.50f, 4.16f, -1.65f), .025f, brass);
+            Cylinder("Globe Base", new(-.50f, 4.02f, 1.05f), .11f, .03f, wood, Vector3.zero);
+            Rod("Globe Spindle", new(-.50f, 4.03f, 1.05f), new(-.50f, 4.16f, 1.05f), .025f, brass);
             var globe = GameObject.CreatePrimitive(PrimitiveType.Sphere); globe.name = "Globe Sphere"; globe.transform.SetParent(area);
-            globe.transform.position = new(-.50f, 4.28f, -1.65f); globe.transform.localScale = Vector3.one * .24f;
+            globe.transform.position = new(-.50f, 4.28f, 1.05f); globe.transform.localScale = Vector3.one * .24f;
             globe.transform.eulerAngles = new(23.5f, 30f, 0); globe.GetComponent<Renderer>().sharedMaterial = parchment; Object.DestroyImmediate(globe.GetComponent<Collider>());
-            Cylinder("Globe Meridian Ring", new(-.50f, 4.28f, -1.65f), .14f, .015f, brass, new(0, 0, 90));
+            Cylinder("Globe Meridian Ring", new(-.50f, 4.28f, 1.05f), .14f, .015f, brass, new(0, 0, 90));
 
             // Brass Navigation Astrolabe / Armillary Sphere
-            Cylinder("Astrolabe Pedestal", new(.60f, 4.02f, -1.70f), .08f, .03f, brass, Vector3.zero);
-            Rod("Astrolabe Stand", new(.60f, 4.03f, -1.70f), new(.60f, 4.14f, -1.70f), .025f, brass);
-            Cylinder("Astrolabe Outer Ring", new(.60f, 4.22f, -1.70f), .12f, .015f, brass, Vector3.zero);
-            Cylinder("Astrolabe Meridian Ring", new(.60f, 4.22f, -1.70f), .11f, .015f, brass, new(90, 0, 0));
-            Cylinder("Astrolabe Equator Ring", new(.60f, 4.22f, -1.70f), .10f, .015f, brass, new(0, 0, 90));
+            Cylinder("Astrolabe Pedestal", new(.60f, 4.02f, 1.00f), .08f, .03f, brass, Vector3.zero);
+            Rod("Astrolabe Stand", new(.60f, 4.03f, 1.00f), new(.60f, 4.14f, 1.00f), .025f, brass);
+            Cylinder("Astrolabe Outer Ring", new(.60f, 4.22f, 1.00f), .12f, .015f, brass, Vector3.zero);
+            Cylinder("Astrolabe Meridian Ring", new(.60f, 4.22f, 1.00f), .11f, .015f, brass, new(90, 0, 0));
+            Cylinder("Astrolabe Equator Ring", new(.60f, 4.22f, 1.00f), .10f, .015f, brass, new(0, 0, 90));
 
             // Brass Reading Desk Banker Lamp
-            Cylinder("Banker Lamp Base", new(-.1f, 4.02f, -1.58f), .09f, .025f, brass, Vector3.zero);
-            Rod("Banker Lamp Neck", new(-.1f, 4.03f, -1.58f), new(-.1f, 4.30f, -1.68f), .025f, brass);
-            Box("Banker Lamp Shade", new(-.1f, 4.28f, -1.72f), new(.24f, .09f, .14f), warm);
+            Cylinder("Banker Lamp Base", new(-.1f, 4.02f, .98f), .09f, .025f, brass, Vector3.zero);
+            Rod("Banker Lamp Neck", new(-.1f, 4.03f, .98f), new(-.1f, 4.30f, .88f), .025f, brass);
+            Box("Banker Lamp Shade", new(-.1f, 4.28f, .84f), new(.24f, .09f, .14f), warm);
 
             // Open Keeper Logbook, Inkwell & Quill
-            Box("Logbook Page L", new(.10f, 4.02f, -1.85f), new(.18f, .015f, .26f), parchment);
-            Box("Logbook Page R", new(.29f, 4.02f, -1.85f), new(.18f, .015f, .26f), parchment);
-            Box("Logbook Cover", new(.195f, 4.005f, -1.85f), new(.39f, .015f, .28f), wood);
-            Cylinder("Inkwell", new(-.25f, 4.02f, -1.88f), .04f, .05f, dark, Vector3.zero);
-            Rod("Quill", new(-.25f, 4.03f, -1.88f), new(-.28f, 4.22f, -1.92f), .015f, parchment);
+            Box("Logbook Page L", new(.10f, 4.02f, 1.15f), new(.18f, .015f, .26f), parchment);
+            Box("Logbook Page R", new(.29f, 4.02f, 1.15f), new(.18f, .015f, .26f), parchment);
+            Box("Logbook Cover", new(.195f, 4.005f, 1.15f), new(.39f, .015f, .28f), wood);
+            Cylinder("Inkwell", new(-.25f, 4.02f, 1.18f), .04f, .05f, dark, Vector3.zero);
+            Rod("Quill", new(-.25f, 4.03f, 1.18f), new(-.28f, 4.22f, 1.22f), .015f, parchment);
 
             // Carved Library Armchair
-            Box("Chair Seat", new(.1f, 3.65f, -1.15f), new(.58f, .08f, .55f), wood, true);
-            Box("Chair Leg FL", new(-.15f, 3.42f, -1.38f), new(.06f, .44f, .06f), wood);
-            Box("Chair Leg FR", new(.35f, 3.42f, -1.38f), new(.06f, .44f, .06f), wood);
-            Box("Chair Leg BL", new(-.15f, 3.42f, -.92f), new(.06f, .44f, .06f), wood);
-            Box("Chair Leg BR", new(.35f, 3.42f, -.92f), new(.06f, .44f, .06f), wood);
-            Rod("Chair Back Post L", new(-.15f, 3.65f, -.92f), new(-.15f, 4.45f, -.92f), .06f, wood);
-            Rod("Chair Back Post R", new(.35f, 3.65f, -.92f), new(.35f, 4.45f, -.92f), .06f, wood);
-            Box("Chair Top Rail", new(.10f, 4.42f, -.92f), new(.56f, .12f, .06f), wood);
-            Box("Chair Back Slat 1", new(-.02f, 4.05f, -.92f), new(.04f, .65f, .03f), wood);
-            Box("Chair Back Slat 2", new(.10f, 4.05f, -.92f), new(.04f, .65f, .03f), wood);
-            Box("Chair Back Slat 3", new(.22f, 4.05f, -.92f), new(.04f, .65f, .03f), wood);
-            Rod("Chair Arm L", new(-.15f, 3.95f, -1.38f), new(-.15f, 4.05f, -.92f), .05f, wood);
-            Rod("Chair Arm R", new(.35f, 3.95f, -1.38f), new(.35f, 4.05f, -.92f), .05f, wood);
+            Box("Chair Seat", new(.1f, 3.65f, .45f), new(.58f, .08f, .55f), wood, true);
+            Box("Chair Leg FL", new(-.15f, 3.42f, .68f), new(.06f, .44f, .06f), wood);
+            Box("Chair Leg FR", new(.35f, 3.42f, .68f), new(.06f, .44f, .06f), wood);
+            Box("Chair Leg BL", new(-.15f, 3.42f, .22f), new(.06f, .44f, .06f), wood);
+            Box("Chair Leg BR", new(.35f, 3.42f, .22f), new(.06f, .44f, .06f), wood);
+            Rod("Chair Back Post L", new(-.15f, 3.65f, .22f), new(-.15f, 4.45f, .22f), .06f, wood);
+            Rod("Chair Back Post R", new(.35f, 3.65f, .22f), new(.35f, 4.45f, .22f), .06f, wood);
+            Box("Chair Top Rail", new(.10f, 4.42f, .22f), new(.56f, .12f, .06f), wood);
+            Box("Chair Back Slat 1", new(-.02f, 4.05f, .22f), new(.04f, .65f, .03f), wood);
+            Box("Chair Back Slat 2", new(.10f, 4.05f, .22f), new(.04f, .65f, .03f), wood);
+            Box("Chair Back Slat 3", new(.22f, 4.05f, .22f), new(.04f, .65f, .03f), wood);
+            Rod("Chair Arm L", new(-.15f, 3.95f, .68f), new(-.15f, 4.05f, .22f), .05f, wood);
+            Rod("Chair Arm R", new(.35f, 3.95f, .68f), new(.35f, 4.05f, .22f), .05f, wood);
 
             // Overhead Drop Pendant Lamp
-            Rod("Library Lamp Cord", new(0, 6.3f, -1.80f), new(0, 5.05f, -1.80f), .02f, iron);
-            Cylinder("Library Lamp Shade", new(0, 5.0f, -1.80f), .28f, .12f, iron, Vector3.zero);
-            Cylinder("Library Lamp Bulb", new(0, 4.94f, -1.80f), .08f, .06f, warm, Vector3.zero);
+            Rod("Library Lamp Cord", new(0, 6.3f, 1.10f), new(0, 5.05f, 1.10f), .02f, iron);
+            Cylinder("Library Lamp Shade", new(0, 5.0f, 1.10f), .28f, .12f, iron, Vector3.zero);
+            Cylinder("Library Lamp Bulb", new(0, 4.94f, 1.10f), .08f, .06f, warm, Vector3.zero);
         }
 
         static void WatchRoom()
@@ -1280,43 +1292,78 @@ namespace TheLightHouse.Editor
             var settings=AssetDatabase.LoadAssetAtPath<LighthouseLayoutSettings>("Assets/_Project/Settings/LighthouseLayoutSettings.asset");
             float y=settings.floorHeight*settings.towerLevelCount;
 
-            // Circular gallery deck with stairwell portal cutout at +50° (where Flight 7 arrives)
-            for(int i=0;i<32;i++)
+            const int segs = 32;
+
+            // 1. SOLID CENTRAL DECK UNDER LAMP & CONTROLLER (full 360° solid floor plate)
+            // Completely closes the central floor so the player can walk freely up to the Lamp!
+            Box("Lantern Central Floor Plate", new(0, y - 0.09f, 0), new(2.70f, 0.18f, 2.70f), iron, true);
+            for (int i = 0; i < segs; i++)
             {
-                float a=i*Mathf.PI*2/32,b=(i+1)*Mathf.PI*2/32;
-                float degMid = (i + 0.5f) * 360f / 32f;
-                if (degMid > 180f) degMid -= 360f;
-
-                // Omit floor at Flight 7 arrival hatch (+25° to +75°)
-                if (degMid >= 25f && degMid <= 75f) continue;
-
-                Wedge("Circular Gallery",1.2f,4.6f,a,b,y,.18f,iron,true);
-                Vector3 p=new(Mathf.Sin(a)*4.52f,y,Mathf.Cos(a)*4.52f),q=new(Mathf.Sin(b)*4.52f,y,Mathf.Cos(b)*4.52f);
-                Rod("Gallery Baluster",p,p+Vector3.up*1.1f,.05f,iron);Rod("Gallery Top Rail",p+Vector3.up*1.1f,q+Vector3.up*1.1f,.06f,iron);Rod("Gallery Lower Rail",p+Vector3.up*.45f,q+Vector3.up*.45f,.035f,iron);
-                if(i%4==0)Rod("Gallery Bracket",p-Vector3.up*.1f,p*.58f+Vector3.up*(y*.42f-1.5f),.12f,iron);
+                float a = i * Mathf.PI * 2 / segs;
+                float b = (i + 1) * Mathf.PI * 2 / segs;
+                Wedge("Lantern Central Deck", 0.05f, 1.35f, a, b, y, 0.18f, iron, true);
             }
 
-            // Landing Platform at Flight 7 top (+50°)
-            float landRad = 50f * Mathf.Deg2Rad;
-            float landHalf = 22f * Mathf.Deg2Rad;
-            Wedge("Lantern Stair Landing", 1.2f, 3.8f, landRad - landHalf, landRad + landHalf, y, .18f, iron, true);
+            // 2. OUTER CIRCULAR GALLERY DECK (r = 1.30m to 4.60m)
+            // Omit outer floor only at stair ascent slot (+50° to +110°)
+            for (int i = 0; i < segs; i++)
+            {
+                float a = i * Mathf.PI * 2 / segs;
+                float b = (i + 1) * Mathf.PI * 2 / segs;
+                float degMid = (i + 0.5f) * 360f / segs;
+                if (degMid > 180f) degMid -= 360f;
 
-            // Safety balustrade around inner stairwell opening at +50°
-            float stairGateA = 22f * Mathf.Deg2Rad;
-            float stairGateB = 78f * Mathf.Deg2Rad;
-            Vector3 gInA = new Vector3(Mathf.Sin(stairGateA) * 1.2f, y, Mathf.Cos(stairGateA) * 1.2f);
-            Vector3 gInB = new Vector3(Mathf.Sin(stairGateB) * 1.2f, y, Mathf.Cos(stairGateB) * 1.2f);
-            Rod("Stair Guard Rail", gInA + Vector3.up * 1.05f, gInB + Vector3.up * 1.05f, .05f, iron);
-            Rod("Stair Guard Post A", gInA, gInA + Vector3.up * 1.15f, .06f, brass);
-            Rod("Stair Guard Post B", gInB, gInB + Vector3.up * 1.15f, .06f, brass);
+                if (degMid >= 50f && degMid <= 110f) continue; // Stair ascent opening
 
+                Wedge("Circular Gallery", 1.30f, 4.60f, a, b, y, 0.18f, iron, true);
+                Vector3 p = new(Mathf.Sin(a) * 4.52f, y, Mathf.Cos(a) * 4.52f);
+                Vector3 q = new(Mathf.Sin(b) * 4.52f, y, Mathf.Cos(b) * 4.52f);
+                Rod("Gallery Baluster", p, p + Vector3.up * 1.1f, .05f, iron);
+                Rod("Gallery Top Rail", p + Vector3.up * 1.1f, q + Vector3.up * 1.1f, .06f, iron);
+                Rod("Gallery Lower Rail", p + Vector3.up * .45f, q + Vector3.up * .45f, .035f, iron);
+                if (i % 4 == 0) Rod("Gallery Bracket", p - Vector3.up * .1f, p * .58f + Vector3.up * (y * .42f - 1.5f), .12f, iron);
+            }
+
+            // 3. SOLID ARRIVAL LANDING AT FLIGHT 7 TOP (+25° to +50°)
+            float landRad = 38f * Mathf.Deg2Rad;
+            float landHalf = 15f * Mathf.Deg2Rad;
+            Wedge("Lantern Stair Landing", 1.30f, 3.80f, landRad - landHalf, landRad + landHalf, y, 0.18f, iron, true);
+
+            // 4. GRAND ARCHED ENTRYWAY PORTAL INTO LANTERN ROOM AT +50°
+            float gateAngL = 28f * Mathf.Deg2Rad;
+            float gateAngR = 72f * Mathf.Deg2Rad;
+            float gateR = 2.40f;
+            Vector3 jambL = new(Mathf.Sin(gateAngL) * gateR, y, Mathf.Cos(gateAngL) * gateR);
+            Vector3 jambR = new(Mathf.Sin(gateAngR) * gateR, y, Mathf.Cos(gateAngR) * gateR);
+            Rod("Lantern Portal Left Jamb", jambL, jambL + Vector3.up * 2.50f, 0.12f, iron);
+            Rod("Lantern Portal Right Jamb", jambR, jambR + Vector3.up * 2.50f, 0.12f, iron);
+            Rod("Lantern Portal Arched Header", jambL + Vector3.up * 2.50f, jambR + Vector3.up * 2.50f, 0.14f, iron);
+            Cylinder("Portal Lantern L Bracket", jambL + Vector3.up * 1.95f, 0.08f, 0.18f, brass, Vector3.zero);
+            Cylinder("Portal Lantern L Glow", jambL + Vector3.up * 1.90f, 0.06f, 0.12f, warm, Vector3.zero);
+            Cylinder("Portal Lantern R Bracket", jambR + Vector3.up * 1.95f, 0.08f, 0.18f, brass, Vector3.zero);
+            Cylinder("Portal Lantern R Glow", jambR + Vector3.up * 1.90f, 0.06f, 0.12f, warm, Vector3.zero);
+
+            // Safety guard railing along outer stair drop (from +105° down to +72°)
+            float guardStartRad = 105f * Mathf.Deg2Rad;
+            float guardEndRad = 72f * Mathf.Deg2Rad;
+            Vector3 gStart = new(Mathf.Sin(guardStartRad) * 1.32f, y, Mathf.Cos(guardStartRad) * 1.32f);
+            Vector3 gEnd = new(Mathf.Sin(guardEndRad) * 1.32f, y, Mathf.Cos(guardEndRad) * 1.32f);
+            Rod("Stair Guard Rail", gStart + Vector3.up * 1.05f, gEnd + Vector3.up * 1.05f, .05f, iron);
+            Rod("Stair Guard Post A", gStart, gStart + Vector3.up * 1.15f, .06f, brass);
+            Rod("Stair Guard Post B", gEnd, gEnd + Vector3.up * 1.15f, .06f, brass);
+
+            // 5. LANTERN ROOM ARCHITECTURE, GLASS & BEACON
             for(int i=0;i<8;i++)
             {
                 float a=i*Mathf.PI/4,b=(i+1)*Mathf.PI/4;
                 Vector3 p=new(Mathf.Sin(a)*2.6f,y,Mathf.Cos(a)*2.6f),q=new(Mathf.Sin(b)*2.6f,y,Mathf.Cos(b)*2.6f);
                 Rod("Lantern Iron Post",p,p+Vector3.up*3.6f,.09f,iron);
                 Rod("Lantern Lintel",p+Vector3.up*3.6f,q+Vector3.up*3.6f,.12f,iron);
-                Rod("Lantern Sill",p+Vector3.up*.2f,q+Vector3.up*.2f,.12f,iron);
+                // Keep doorway threshold completely open at +50° portal entrance (i != 0 && i != 1)
+                if (i != 0 && i != 1)
+                {
+                    Rod("Lantern Sill",p+Vector3.up*.2f,q+Vector3.up*.2f,.12f,iron);
+                }
                 Triangle("Lantern Pitched Cap",p+Vector3.up*3.6f,new(0,y+4.8f,0),q+Vector3.up*3.6f,roof);
             }
             var lens=GameObject.CreatePrimitive(PrimitiveType.Sphere);lens.name="Beacon Core";lens.transform.SetParent(area);lens.transform.position=new(0,y+2.4f,0);lens.transform.localScale=new(1.2f,1.7f,1.2f);Object.DestroyImmediate(lens.GetComponent<Collider>());lens.GetComponent<Renderer>().sharedMaterial=ReferenceSurfaceLibrary.Solid("Beacon Glass",new(.7f,.86f,1f),5);
