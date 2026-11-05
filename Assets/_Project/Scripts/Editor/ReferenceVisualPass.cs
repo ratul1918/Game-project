@@ -139,21 +139,47 @@ namespace TheLightHouse.Editor
                 if (materialName == "Metal" || materialName == "Oxidised Iron") renderer.sharedMaterial = iron;
                 if (renderer.sharedMaterial == plaster || renderer.sharedMaterial == wood || renderer.sharedMaterial == iron || renderer.sharedMaterial == ground) MapUV(renderer.GetComponent<MeshFilter>());
             }
-            area = Group("Tower Shell"); TowerShell(); CombineArea();
-            area = Group("Keeper House"); House(); CombineArea();
-            area = Group("Radio Office"); Office(); CombineArea();
-            area = Group("Keeper House Kitchen"); Kitchen(); CombineArea();
-            area = Group("Iron Spiral"); Stairs(); CombineArea();
-            area = Group("Tower Vestibule"); Vestibule(); CombineArea();
-            area = Group("Tower Library"); Library(); CombineArea();
-            area = Group("Tower Watch Room"); WatchRoom(); CombineArea();
-            area = Group("Tower Crane Quarters"); Landing3(); CombineArea();
-            area = Group("Tower Storeroom"); TowerStoreroom(); CombineArea();
-            area = Group("Tower Service Landing"); TowerServiceLanding(); CombineArea();
-            area = Group("Tower Machine Room"); TowerMachineRoom(); CombineArea();
-            area = Group("Tower Lantern Service"); TowerLanternService(); CombineArea();
-            area = Group("Lantern Gallery"); Lantern(); CombineArea();
-            area = Group("Coast Dressing"); Coast(); CombineArea();
+
+            // 1. Exterior
+            area = Group("Lighthouse/Exterior"); TowerShell(); CombineArea();
+
+            // 2. Attached Cottage
+            area = Group("Lighthouse/AttachedCottage/Architecture"); House(); CombineArea();
+            area = Group("Lighthouse/AttachedCottage/RadioOffice"); Office(); CombineArea();
+            area = Group("Lighthouse/AttachedCottage/Kitchen"); KitchenCountersAndStove(); CombineArea();
+            area = Group("Lighthouse/AttachedCottage/DiningArea"); DiningRoom(); CombineArea();
+
+            // 3. Ground Floor
+            area = Group("Lighthouse/GroundFloor/Architecture"); VestibuleArchitecture(); CombineArea();
+            area = Group("Lighthouse/GroundFloor/EntranceRoom"); VestibuleEntrance(); CombineArea();
+            area = Group("Lighthouse/GroundFloor/Storage"); VestibuleStorage(); CombineArea();
+            area = Group("Lighthouse/GroundFloor/Staircase_A"); StaircaseA(); CombineArea();
+
+            // 4. First Floor
+            area = Group("Lighthouse/FirstFloor/Architecture"); LibraryArchitecture(); CombineArea();
+            area = Group("Lighthouse/FirstFloor/ArchiveRoom"); LibraryArchiveAndWorkshop(); CombineArea();
+            area = Group("Lighthouse/FirstFloor/Staircase_B"); StaircaseB(); CombineArea();
+
+            // 5. Second Floor
+            area = Group("Lighthouse/SecondFloor/Architecture"); WatchRoomArchitecture(); CombineArea();
+            area = Group("Lighthouse/SecondFloor/LivingRoom"); WatchRoomLiving(); CombineArea();
+            area = Group("Lighthouse/SecondFloor/Staircase_C"); StaircaseC(); CombineArea();
+
+            // 6. Upper Tower
+            area = Group("Lighthouse/UpperTower/CraneQuarters_Level3"); Landing3(); CombineArea();
+            area = Group("Lighthouse/UpperTower/IntermediateFloors"); TowerIntermediateFloors(); CombineArea();
+            area = Group("Lighthouse/UpperTower/Stairs_Flights3_7"); UpperTowerStairs(); CombineArea();
+
+            // 7. Lantern Floor
+            area = Group("Lighthouse/LanternFloor/Architecture"); LanternArchitecture(); CombineArea();
+            area = Group("Lighthouse/LanternFloor/LanternRoom"); LanternRoom(); CombineArea();
+            area = Group("Lighthouse/LanternFloor/LampMechanism"); LampMechanism(); CombineArea();
+
+            // 8. Shared & Exterior Dressing
+            area = Group("Lighthouse/Shared/CoastDressing"); Coast(); CombineArea();
+            var aliasCoast = Group("Coast Dressing");
+            aliasCoast.gameObject.SetActive(true);
+
             var radioAnchor=GameObject.Find("Radio"); if(radioAnchor && radioAnchor.GetComponent<Renderer>())radioAnchor.GetComponent<Renderer>().enabled=false;
             var wardrobe=GameObject.Find("keeper-wardrobe"); if(wardrobe)wardrobe.transform.position=new(-11.2f,1,-3.2f);
             var cab=GameObject.Find("lantern-cabinet"); if(cab)cab.transform.position=new Vector3(-2.2f, 26.6f, -1.0f);
@@ -172,7 +198,23 @@ namespace TheLightHouse.Editor
             Debug.Log($"Reference visuals applied to {act}; gameplay anchors retained.");
         }
 
-        static Transform Group(string name) { var go = new GameObject(name); go.transform.SetParent(root); return go.transform; }
+        static Transform Group(string path)
+        {
+            string[] parts = path.Split('/');
+            Transform current = root;
+            foreach (var part in parts)
+            {
+                Transform child = current.Find(part);
+                if (child == null)
+                {
+                    var go = new GameObject(part);
+                    go.transform.SetParent(current, false);
+                    child = go.transform;
+                }
+                current = child;
+            }
+            return current;
+        }
         static GameObject Box(string name, Vector3 p, Vector3 scale, Material m, bool collision = false)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Cube); go.name = name; go.transform.SetParent(area); go.transform.position = p; go.transform.localScale = scale;
@@ -228,7 +270,7 @@ namespace TheLightHouse.Editor
                 float[] heights={0,1,level==0?2.4f:2.2f,3.2f};float y0=level*3.2f+heights[row],y1=level*3.2f+heights[row+1];
                 float a=i*Mathf.PI*2/segments,b=(i+1)*Mathf.PI*2/segments;
                 float angle=(i+.5f)*360/segments;
-                if(level==0 && row<2 && (Mathf.Abs(Mathf.DeltaAngle(angle,180))<18 || Mathf.Abs(Mathf.DeltaAngle(angle,90))<16))continue;
+                if(level==0 && row<2 && Mathf.Abs(Mathf.DeltaAngle(angle,180))<18)continue;
                 if(level==7 && row<2 && Mathf.Abs(Mathf.DeltaAngle(angle,50))<24)continue;
                 if(level%2==0 && row==1 && Mathf.Abs(Mathf.DeltaAngle(angle,180))<6)continue;
                 Vector3 P(float theta,float y){
@@ -357,101 +399,103 @@ namespace TheLightHouse.Editor
             Rod("Photo Tower Silhouette",new(-7.2f,1.9f,-1.25f),new(-7.2f,2.3f,-1.25f),.045f,darkCoat);
         }
 
-        static void Kitchen()
+        static void KitchenCountersAndStove()
         {
-            // Stone Backsplash along North wall behind kitchen counter
-            Box("Kitchen Backsplash", new(-3.9f, 1.5f, -1.16f), new(4.4f, 2.7f, .04f), ground);
+            // Stone Backsplash along cottage partition wall (x = -6.22m, facing East)
+            Box("Kitchen Backsplash", new(-6.22f, 1.5f, -3.2f), new(.04f, 2.7f, 3.8f), ground);
 
             // Base Kitchen Cabinetry & Countertop (depth 0.70m, height 0.90m)
-            Vector3 counterPos = new(-4.2f, .45f, -1.50f);
-            Box("Kitchen Base Cabinets", counterPos, new(3.2f, .86f, .70f), wood, true);
-            Box("Kitchen Countertop", counterPos + Vector3.up * .45f, new(3.3f, .06f, .76f), dark, true);
+            Vector3 counterPos = new(-5.85f, .45f, -3.5f);
+            Box("Kitchen Base Cabinets", counterPos, new(.70f, .86f, 2.6f), wood, true);
+            Box("Kitchen Countertop", counterPos + Vector3.up * .45f, new(.76f, .06f, 2.7f), dark, true);
 
-            // Cabinet doors, drawers and brass pulls across 4 bays
-            for (int b = 0; b < 4; b++)
+            // Cabinet doors, drawers and brass pulls across 3 bays
+            for (int b = 0; b < 3; b++)
             {
-                float bx = -5.35f + b * .77f;
-                Box($"Base Door Panel {b}", new(bx, .38f, -1.14f), new(.68f, .58f, .02f), wood);
-                Box($"Base Door Recess {b}", new(bx, .38f, -1.135f), new(.56f, .46f, .01f), dark);
-                Cylinder($"Base Door Pull {b}", new(bx + .24f, .55f, -1.12f), .025f, .03f, brass, new(90, 0, 0));
-                Box($"Base Drawer Panel {b}", new(bx, .76f, -1.14f), new(.68f, .15f, .02f), wood);
-                Box($"Base Drawer Pull {b}", new(bx, .76f, -1.12f), new(.10f, .03f, .02f), brass);
+                float bz = -4.3f + b * .80f;
+                Box($"Base Door Panel {b}", new(-5.49f, .38f, bz), new(.02f, .58f, .72f), wood);
+                Box($"Base Door Recess {b}", new(-5.485f, .38f, bz), new(.01f, .46f, .60f), dark);
+                Cylinder($"Base Door Pull {b}", new(-5.47f, .55f, bz + .24f), .025f, .03f, brass, new(0, 0, 90));
+                Box($"Base Drawer Panel {b}", new(-5.49f, .76f, bz), new(.02f, .15f, .72f), wood);
+                Box($"Base Drawer Pull {b}", new(-5.47f, .76f, bz), new(.02f, .03f, .10f), brass);
             }
 
             // Kitchen Wash Sink & Brass Gooseneck Faucet (matching Image 7)
-            Box("Wash Sink Basin", new(-4.2f, .88f, -1.48f), new(.65f, .02f, .48f), dark);
-            Box("Wash Sink Rim L", new(-4.53f, .91f, -1.48f), new(.04f, .05f, .50f), iron);
-            Box("Wash Sink Rim R", new(-3.87f, .91f, -1.48f), new(.04f, .05f, .50f), iron);
-            Box("Wash Sink Rim Back", new(-4.2f, .91f, -1.72f), new(.68f, .05f, .04f), iron);
-            Box("Wash Sink Rim Front", new(-4.2f, .91f, -1.24f), new(.68f, .05f, .04f), iron);
+            Box("Wash Sink Basin", new(-5.85f, .88f, -3.5f), new(.48f, .02f, .65f), dark);
+            Box("Wash Sink Rim N", new(-5.85f, .91f, -3.17f), new(.50f, .05f, .04f), iron);
+            Box("Wash Sink Rim S", new(-5.85f, .91f, -3.83f), new(.50f, .05f, .04f), iron);
+            Box("Wash Sink Rim Back", new(-6.09f, .91f, -3.5f), new(.04f, .05f, .68f), iron);
+            Box("Wash Sink Rim Front", new(-5.61f, .91f, -3.5f), new(.04f, .05f, .68f), iron);
 
             // Brass curved gooseneck faucet
-            Rod("Faucet Spout Vertical", new(-4.2f, .93f, -1.70f), new(-4.2f, 1.18f, -1.70f), .03f, brass);
-            Rod("Faucet Spout Arch", new(-4.2f, 1.18f, -1.70f), new(-4.2f, 1.22f, -1.58f), .028f, brass);
-            Rod("Faucet Spout Drop", new(-4.2f, 1.22f, -1.58f), new(-4.2f, 1.15f, -1.55f), .025f, brass);
-            Cylinder("Hot Water Tap", new(-4.32f, .95f, -1.70f), .03f, .04f, brass, Vector3.zero);
-            Cylinder("Cold Water Tap", new(-4.08f, .95f, -1.70f), .03f, .04f, brass, Vector3.zero);
+            Rod("Faucet Spout Vertical", new(-6.07f, .93f, -3.5f), new(-6.07f, 1.18f, -3.5f), .03f, brass);
+            Rod("Faucet Spout Arch", new(-6.07f, 1.18f, -3.5f), new(-5.95f, 1.22f, -3.5f), .028f, brass);
+            Rod("Faucet Spout Drop", new(-5.95f, 1.22f, -3.5f), new(-5.92f, 1.15f, -3.5f), .025f, brass);
+            Cylinder("Hot Water Tap", new(-6.07f, .95f, -3.62f), .03f, .04f, brass, Vector3.zero);
+            Cylinder("Cold Water Tap", new(-6.07f, .95f, -3.38f), .03f, .04f, brass, Vector3.zero);
 
             // Countertop prep accessories
-            Box("Oak Chopping Board", new(-5.2f, .94f, -1.45f), new(.42f, .035f, .34f), wood);
-            Cylinder("Ceramic Prep Bowl", new(-3.3f, .99f, -1.45f), .14f, .12f, ceramic, Vector3.zero);
-            Cylinder("Ceramic Pitcher", new(-5.5f, 1.05f, -1.35f), .11f, .24f, ceramic, Vector3.zero);
-            Rod("Pitcher Handle", new(-5.5f, 1.14f, -1.22f), new(-5.5f, .96f, -1.22f), .025f, ceramic);
+            Box("Oak Chopping Board", new(-5.82f, .94f, -4.3f), new(.34f, .035f, .42f), wood);
+            Cylinder("Ceramic Prep Bowl", new(-5.82f, .99f, -2.6f), .14f, .12f, ceramic, Vector3.zero);
+            Cylinder("Ceramic Pitcher", new(-5.72f, 1.05f, -4.5f), .11f, .24f, ceramic, Vector3.zero);
 
             // Upper Hanging Kitchen Cabinets (depth 0.38m, height 0.84m)
-            Vector3 upperPos = new(-4.2f, 2.22f, -1.32f);
-            Box("Kitchen Upper Cabinets", upperPos, new(3.2f, .84f, .38f), wood, true);
-            Box("Upper Crown Molding", upperPos + Vector3.up * .44f, new(3.3f, .06f, .42f), wood);
-            for (int b = 0; b < 4; b++)
+            Vector3 upperPos = new(-6.02f, 2.22f, -3.5f);
+            Box("Kitchen Upper Cabinets", upperPos, new(.38f, .84f, 2.6f), wood, true);
+            Box("Upper Crown Molding", upperPos + Vector3.up * .44f, new(.42f, .06f, 2.7f), wood);
+            for (int b = 0; b < 3; b++)
             {
-                float bx = -5.35f + b * .77f;
-                Box($"Upper Door Panel {b}", new(bx, 2.22f, -1.12f), new(.68f, .76f, .02f), wood);
-                Box($"Upper Door Recess {b}", new(bx, 2.22f, -1.115f), new(.56f, .64f, .01f), dark);
-                Cylinder($"Upper Door Knob {b}", new(bx + .26f, 1.95f, -1.10f), .02f, .025f, brass, new(90, 0, 0));
+                float bz = -4.3f + b * .80f;
+                Box($"Upper Door Panel {b}", new(-5.82f, 2.22f, bz), new(.02f, .76f, .72f), wood);
+                Box($"Upper Door Recess {b}", new(-5.815f, 2.22f, bz), new(.01f, .64f, .60f), dark);
+                Cylinder($"Upper Door Knob {b}", new(-5.80f, 1.95f, bz + .26f), .02f, .025f, brass, new(0, 0, 90));
             }
 
             // Top display shelf with ceramic dinner plates and spice jars
-            for (int p = 0; p < 4; p++)
+            for (int p = 0; p < 3; p++)
             {
-                float px = -5.2f + p * .65f;
-                Cylinder($"Display Plate {p}", new(px, 2.82f, -1.30f), .14f, .015f, ceramic, new(78, 0, 0));
+                float pz = -4.2f + p * .70f;
+                Cylinder($"Display Plate {p}", new(-6.00f, 2.82f, pz), .14f, .015f, ceramic, new(0, 0, 78));
             }
             for (int j = 0; j < 3; j++)
             {
-                float jx = -3.2f + j * .32f;
-                Cylinder($"Spice Jar {j}", new(jx, 2.76f, -1.30f), .06f, .12f, ceramic, Vector3.zero);
-                Cylinder($"Spice Lid {j}", new(jx, 2.83f, -1.30f), .065f, .025f, wood, Vector3.zero);
+                float jz = -2.6f + j * .32f;
+                Cylinder($"Spice Jar {j}", new(-6.00f, 2.76f, jz), .06f, .12f, ceramic, Vector3.zero);
+                Cylinder($"Spice Lid {j}", new(-6.00f, 2.83f, jz), .065f, .025f, wood, Vector3.zero);
             }
 
             // Under-cabinet warm task lighting strip
-            Box("Under Cabinet Light Strip", new(-4.2f, 1.78f, -1.32f), new(3.0f, .02f, .30f), warmWindow);
+            Box("Under Cabinet Light Strip", new(-6.02f, 1.78f, -3.5f), new(.30f, .02f, 2.4f), warmWindow);
 
             // Traditional Cast-Iron Cooking Range / Oven Stove (matching Image 7)
-            Vector3 stovePos = new(-2.0f, .46f, -1.55f);
-            Box("Stove Cast Body", stovePos, new(.92f, .88f, .76f), iron, true);
-            Box("Stove Cooktop", stovePos + Vector3.up * .45f, new(.96f, .04f, .80f), iron, true);
+            Vector3 stovePos = new(-5.85f, .46f, -1.75f);
+            Box("Stove Cast Body", stovePos, new(.76f, .88f, .92f), iron, true);
+            Box("Stove Cooktop", stovePos + Vector3.up * .45f, new(.80f, .04f, .96f), iron, true);
             for (int sx = -1; sx <= 1; sx += 2) for (int sz = -1; sz <= 1; sz += 2)
-                Cylinder("Stove Burner Ring", stovePos + new Vector3(sx * .24f, .48f, sz * .18f), .11f, .015f, iron, Vector3.zero);
+                Cylinder("Stove Burner Ring", stovePos + new Vector3(sx * .18f, .48f, sz * .24f), .11f, .015f, iron, Vector3.zero);
 
             // Cast-iron oven door with glowing warm fire/embers viewing window
-            Box("Oven Door Cast Frame", stovePos + new Vector3(0, -.02f, .39f), new(.78f, .56f, .04f), iron);
-            Box("Oven Glowing Fire", stovePos + new Vector3(0, -.02f, .40f), new(.52f, .34f, .02f), stoveFire);
-            Box("Oven Door Handle", stovePos + new Vector3(0, .20f, .42f), new(.34f, .03f, .03f), brass);
+            Box("Oven Door Cast Frame", stovePos + new Vector3(.39f, -.02f, 0), new(.04f, .56f, .78f), iron);
+            Box("Oven Glowing Fire", stovePos + new Vector3(.40f, -.02f, 0), new(.02f, .34f, .52f), stoveFire);
+            Box("Oven Door Handle", stovePos + new Vector3(.42f, .20f, 0), new(.03f, .03f, .34f), brass);
 
             // Simmering Cast-Iron Stew Pot on front burner
-            Vector3 potPos = stovePos + new Vector3(-.24f, .59f, .18f);
+            Vector3 potPos = stovePos + new Vector3(.18f, .59f, -.24f);
             Cylinder("Stovetop Stew Pot", potPos, .20f, .22f, iron, Vector3.zero);
             Cylinder("Stew Pot Lid", potPos + Vector3.up * .12f, .21f, .03f, brass, Vector3.zero);
-            Cylinder("Stew Pot Handle L", potPos + new Vector3(-.22f, .04f, 0), .03f, .04f, brass, new(0, 0, 90));
-            Cylinder("Stew Pot Handle R", potPos + new Vector3(.22f, .04f, 0), .03f, .04f, brass, new(0, 0, 90));
+            Cylinder("Stew Pot Handle L", potPos + new Vector3(0, .04f, -.22f), .03f, .04f, brass, new(90, 0, 0));
+            Cylinder("Stew Pot Handle R", potPos + new Vector3(0, .04f, .22f), .03f, .04f, brass, new(90, 0, 0));
 
             // Pyramidal Copper/Iron Chimney Range Hood
-            Box("Range Hood Base Rim", stovePos + new Vector3(0, 1.42f, 0), new(1.05f, .06f, .82f), iron);
-            Box("Range Hood Taper 1", stovePos + new Vector3(0, 1.55f, 0), new(.85f, .20f, .68f), iron);
-            Box("Range Hood Taper 2", stovePos + new Vector3(0, 1.75f, 0), new(.60f, .20f, .48f), iron);
-            Box("Range Hood Taper 3", stovePos + new Vector3(0, 1.95f, 0), new(.38f, .20f, .32f), iron);
-            Cylinder("Stove Chimney Flue", stovePos + new Vector3(0, 2.25f, 0), .14f, .55f, iron, Vector3.zero);
+            Box("Range Hood Base Rim", stovePos + new Vector3(0, 1.42f, 0), new(.82f, .06f, 1.05f), iron);
+            Box("Range Hood Taper 1", stovePos + new Vector3(0, 1.55f, 0), new(.68f, .20f, .85f), iron);
+            Box("Range Hood Taper 2", stovePos + new Vector3(0, 1.75f, 0), new(.48f, .20f, .60f), iron);
+            Box("Range Hood Taper 3", stovePos + new Vector3(0, 1.95f, 0), new(.32f, .20f, .38f), iron);
+            Cylinder("Stove Chimney Flue", stovePos + new Vector3(0, 2.45f, 0), .14f, .95f, iron, Vector3.zero);
+        }
 
+        static void DiningRoom()
+        {
             // Circular Wooden Dining Table (matching Image 7)
             Vector3 tablePos = new(-2.8f, 0, -5.8f);
             Cylinder("Dining Table Base", tablePos + Vector3.up * .05f, .40f, .05f, wood, Vector3.zero);
@@ -538,7 +582,7 @@ namespace TheLightHouse.Editor
             Barrel("Kitchen Corner Barrel", new(-5.9f, .45f, -3.6f), Vector3.zero, .34f, .88f);
 
             // Striped Woven Kitchen Runner Rug (matching Image 7)
-            Box("Kitchen Striped Rug", new(-3.9f, .072f, -2.4f), new(2.8f, .01f, .95f), stripedRug);
+            Box("Kitchen Striped Rug", new(-4.2f, .072f, -4.5f), new(.95f, .01f, 2.8f), stripedRug);
 
             // East Kitchen Window with rustic checkered curtains (matching Image 7)
             Window(new(1.95f, 1.70f, -5.0f), 1.10f, 1.35f, false, false);
@@ -556,6 +600,12 @@ namespace TheLightHouse.Editor
             Cylinder("Kitchen Lamp Shade", lampDrop + Vector3.down * .70f, .30f, .14f, iron, Vector3.zero);
             Cylinder("Kitchen Lamp Bulb", lampDrop + Vector3.down * .76f, .09f, .07f, warm, Vector3.zero);
         }
+
+        static void Kitchen()
+        {
+            KitchenCountersAndStove();
+            DiningRoom();
+        }
         static void Table(Vector3 p,float width,float depth)
         {
             Box("Table Top",p+Vector3.up*.9f,new(width,.1f,depth),wood);
@@ -566,7 +616,68 @@ namespace TheLightHouse.Editor
         {
             var go=GameObject.CreatePrimitive(PrimitiveType.Cylinder);go.name=name;go.transform.SetParent(area);go.transform.position=p;go.transform.localScale=new(radius*2,height*.5f,radius*2);go.transform.eulerAngles=rotation;go.GetComponent<Renderer>().sharedMaterial=m;Object.DestroyImmediate(go.GetComponent<Collider>());
         }
-        static void Stairs()
+        static readonly (float startDeg, float endDeg, float yStart, float yEnd)[] flights = new[]
+        {
+            (100f, -110f, 0.15f, 3.20f),     // Flight 0: Vestibule (y=0.15) to Library (y=3.20), North arc
+            (-110f, -310f, 3.20f, 6.40f),    // Flight 1: Library (y=3.20) to Watch Room (y=6.40), South arc
+            (50f, -110f, 6.40f, 9.60f),      // Flight 2: Watch Room (y=6.40) to Crane's Quarters (y=9.60), North arc
+            (-110f, -310f, 9.60f, 12.80f),   // Flight 3: Crane's Quarters (y=9.60) to Storeroom (y=12.80), South arc
+            (50f, -110f, 12.80f, 16.00f),    // Flight 4: Storeroom (y=12.80) to Service Landing (y=16.00), North arc
+            (-110f, -310f, 16.00f, 19.20f),  // Flight 5: Service Landing (y=16.00) to Machine Room (y=19.20), South arc
+            (50f, -110f, 19.20f, 22.40f),    // Flight 6: Machine Room (y=19.20) to Lantern Service (y=22.40), North arc
+            (-110f, -310f, 22.40f, 25.60f)   // Flight 7: Lantern Service (y=22.40) to Lantern Gallery Deck (y=25.60), South arc
+        };
+
+        static void BuildSingleFlight(int f, float stairWidth = 1.85f, int stepsPerFlight = 20)
+        {
+            var fl = flights[f];
+            BuildFlightRampCollider(f, fl.startDeg, fl.endDeg, fl.yStart, fl.yEnd, stairWidth, stepsPerFlight);
+
+            for (int s = 0; s < stepsPerFlight; s++)
+            {
+                float t0 = s / (float)stepsPerFlight;
+                float t1 = (s + 1) / (float)stepsPerFlight;
+
+                float degA = Mathf.Lerp(fl.startDeg, fl.endDeg, t0);
+                float degB = Mathf.Lerp(fl.startDeg, fl.endDeg, t1);
+                float a = degA * Mathf.Deg2Rad;
+                float b = degB * Mathf.Deg2Rad;
+
+                float y0 = Mathf.Lerp(fl.yStart, fl.yEnd, t0);
+                float y1 = Mathf.Lerp(fl.yStart, fl.yEnd, t1);
+
+                float wallR = Mathf.Lerp(4.50f, 3.25f, y1 / 25.6f);
+                float outer = wallR - 0.02f;
+                float inner = outer - stairWidth;
+
+                // Solid cast iron horizontal tread (visual only, collision handled smoothly by ramp collider)
+                Wedge("Iron Tread", inner, outer, a, b, y1, .055f, iron, false);
+
+                // Solid vertical riser closing the gap between steps
+                WedgeRiser("Stair Riser", inner, outer, a, y0, y1, .035f, iron);
+
+                // Solid nosing lip along front edge
+                Vector3 nosingInner = new(Mathf.Sin(a) * inner, y1 + .01f, Mathf.Cos(a) * inner);
+                Vector3 nosingOuter = new(Mathf.Sin(a) * outer, y1 + .01f, Mathf.Cos(a) * outer);
+                Rod("Tread Nosing", nosingInner, nosingOuter, .032f, iron);
+
+                // Inner balustrade & sweeping handrail
+                Vector3 railA = new(Mathf.Sin(a) * inner, y1 + 1.05f, Mathf.Cos(a) * inner);
+                Vector3 railB = new(Mathf.Sin(b) * inner, y1 + 1.05f + (y1 - y0), Mathf.Cos(b) * inner);
+                Rod("Baluster", new(Mathf.Sin(a) * inner, y1, Mathf.Cos(a) * inner), railA, .038f, iron);
+                Rod("Following Handrail", railA, railB, .055f, iron);
+
+                // Wall cantilever bracket anchoring into masonry wall
+                if (s % 2 == 0)
+                {
+                    Vector3 bInner = new(Mathf.Sin(b) * (inner + 0.15f), y1 - .04f, Mathf.Cos(b) * (inner + 0.15f));
+                    Vector3 bOuter = new(Mathf.Sin(b) * (outer + .25f), y1 - .12f, Mathf.Cos(b) * (outer + .25f));
+                    Rod("Cantilever Wall Bracket", bInner, bOuter, .048f, iron);
+                }
+            }
+        }
+
+        static void StaircaseA()
         {
             float stairWidth = 1.85f;
             float baseAngle = 100f * Mathf.Deg2Rad;
@@ -580,72 +691,33 @@ namespace TheLightHouse.Editor
             Rod("Stair Starter Newel", newelPos, newelPos + Vector3.up * 1.11f, .075f, iron);
             Cylinder("Stair Starter Newel Base", newelPos + Vector3.up * .01f, .12f, .03f, iron, Vector3.zero);
 
-            // Flight definitions: {startDeg, endDeg, yStart, yEnd}
-            // All 8 Flights spanning Ground (y=0.15) all the way to Lantern Gallery Deck (y=25.60)
-            (float startDeg, float endDeg, float yStart, float yEnd)[] flights = new[]
+            BuildSingleFlight(0, stairWidth);
+        }
+
+        static void StaircaseB()
+        {
+            BuildSingleFlight(1);
+        }
+
+        static void StaircaseC()
+        {
+            BuildSingleFlight(2);
+        }
+
+        static void UpperTowerStairs()
+        {
+            for (int f = 3; f <= 7; f++)
             {
-                (100f, -110f, 0.15f, 3.20f),     // Flight 0: Vestibule (y=0.15) to Library (y=3.20), North arc
-                (-110f, -310f, 3.20f, 6.40f),    // Flight 1: Library (y=3.20) to Watch Room (y=6.40), South arc
-                (50f, -110f, 6.40f, 9.60f),      // Flight 2: Watch Room (y=6.40) to Crane's Quarters (y=9.60), North arc
-                (-110f, -310f, 9.60f, 12.80f),   // Flight 3: Crane's Quarters (y=9.60) to Storeroom (y=12.80), South arc
-                (50f, -110f, 12.80f, 16.00f),    // Flight 4: Storeroom (y=12.80) to Service Landing (y=16.00), North arc
-                (-110f, -310f, 16.00f, 19.20f),  // Flight 5: Service Landing (y=16.00) to Machine Room (y=19.20), South arc
-                (50f, -110f, 19.20f, 22.40f),    // Flight 6: Machine Room (y=19.20) to Lantern Service (y=22.40), North arc
-                (-110f, -310f, 22.40f, 25.60f)   // Flight 7: Lantern Service (y=22.40) to Lantern Gallery Deck (y=25.60), South arc
-            };
-
-            const int stepsPerFlight = 20;
-            for (int f = 0; f < flights.Length; f++)
-            {
-                var fl = flights[f];
-
-                // 1. Dedicated Smooth Continuous Helical Ramp Collider (slope ~14-19°, perfectly seamless walking)
-                BuildFlightRampCollider(f, fl.startDeg, fl.endDeg, fl.yStart, fl.yEnd, stairWidth, stepsPerFlight);
-
-                // 2. High-fidelity visual cast iron treads, risers, nosing, balusters, handrails and wall brackets
-                for (int s = 0; s < stepsPerFlight; s++)
-                {
-                    float t0 = s / (float)stepsPerFlight;
-                    float t1 = (s + 1) / (float)stepsPerFlight;
-
-                    float degA = Mathf.Lerp(fl.startDeg, fl.endDeg, t0);
-                    float degB = Mathf.Lerp(fl.startDeg, fl.endDeg, t1);
-                    float a = degA * Mathf.Deg2Rad;
-                    float b = degB * Mathf.Deg2Rad;
-
-                    float y0 = Mathf.Lerp(fl.yStart, fl.yEnd, t0);
-                    float y1 = Mathf.Lerp(fl.yStart, fl.yEnd, t1);
-
-                    float wallR = Mathf.Lerp(4.50f, 3.25f, y1 / 25.6f);
-                    float outer = wallR - 0.02f;
-                    float inner = outer - stairWidth;
-
-                    // Solid cast iron horizontal tread (visual only, collision handled smoothly by ramp collider)
-                    Wedge("Iron Tread", inner, outer, a, b, y1, .055f, iron, false);
-
-                    // Solid vertical riser closing the gap between steps
-                    WedgeRiser("Stair Riser", inner, outer, a, y0, y1, .035f, iron);
-
-                    // Solid nosing lip along front edge
-                    Vector3 nosingInner = new(Mathf.Sin(a) * inner, y1 + .01f, Mathf.Cos(a) * inner);
-                    Vector3 nosingOuter = new(Mathf.Sin(a) * outer, y1 + .01f, Mathf.Cos(a) * outer);
-                    Rod("Tread Nosing", nosingInner, nosingOuter, .032f, iron);
-
-                    // Inner balustrade & sweeping handrail
-                    Vector3 railA = new(Mathf.Sin(a) * inner, y1 + 1.05f, Mathf.Cos(a) * inner);
-                    Vector3 railB = new(Mathf.Sin(b) * inner, y1 + 1.05f + (y1 - y0), Mathf.Cos(b) * inner);
-                    Rod("Baluster", new(Mathf.Sin(a) * inner, y1, Mathf.Cos(a) * inner), railA, .038f, iron);
-                    Rod("Following Handrail", railA, railB, .055f, iron);
-
-                    // Wall cantilever bracket anchoring into masonry wall
-                    if (s % 2 == 0)
-                    {
-                        Vector3 bInner = new(Mathf.Sin(b) * (inner + 0.15f), y1 - .04f, Mathf.Cos(b) * (inner + 0.15f));
-                        Vector3 bOuter = new(Mathf.Sin(b) * (outer + .25f), y1 - .12f, Mathf.Cos(b) * (outer + .25f));
-                        Rod("Cantilever Wall Bracket", bInner, bOuter, .048f, iron);
-                    }
-                }
+                BuildSingleFlight(f);
             }
+        }
+
+        static void Stairs()
+        {
+            StaircaseA();
+            StaircaseB();
+            StaircaseC();
+            UpperTowerStairs();
         }
 
         static void BuildFlightRampCollider(int f, float startDeg, float endDeg, float yStart, float yEnd, float stairWidth, int steps)
@@ -761,7 +833,7 @@ namespace TheLightHouse.Editor
             Cylinder(name + " Hoop Mid Top", pos + up * (h * .18f), r * 1.04f, .03f, barrelIron, rot);
             Cylinder(name + " Hoop Mid Bottom", pos - up * (h * .18f), r * 1.04f, .03f, barrelIron, rot);
         }
-        static void Vestibule()
+        static void VestibuleArchitecture()
         {
             // Continuous circular stone foundation plinth and flagstone floor (expanded for spacious interior)
             Cylinder("Tower Stone Foundation", new(0, .07f, 0), 4.60f, .15f, ground, Vector3.zero);
@@ -769,34 +841,16 @@ namespace TheLightHouse.Editor
             Cylinder("Entry Inlay Outer Ring", new(0, .150f, 0), 1.65f, .005f, brass, Vector3.zero);
             Cylinder("Entry Inlay Compass Center", new(0, .152f, 0), .50f, .006f, dark, Vector3.zero);
 
-            // Under-stairs barrels, rustic workbench, and cloth (placed under Flight 0 along East curved wall)
-            Barrel("UnderStairs Barrel 1", new(3.15f, .38f, 1.15f), new(0, 85, 90), .34f, .85f);
-            Barrel("UnderStairs Barrel 2", new(3.05f, .38f, 1.85f), new(0, 95, 90), .34f, .85f);
-            Barrel("UnderStairs Barrel Top", new(3.10f, .82f, 1.50f), new(0, 90, 90), .33f, .82f);
-            Barrel("UnderStairs Upright Barrel", new(2.45f, .45f, 1.95f), Vector3.zero, .34f, .88f);
+            // Architectural Stone Portal connecting Cottage to Tower at z = -4.4m
+            Vector3 portalPos = new(0, 1.4f, -4.4f);
+            Box("Vestibule Portal Left Jamb", portalPos + new Vector3(-1.15f, 0, 0), new(.30f, 2.7f, .38f), plaster, true);
+            Box("Vestibule Portal Right Jamb", portalPos + new Vector3(1.15f, 0, 0), new(.30f, 2.7f, .38f), plaster, true);
+            Box("Vestibule Portal Arched Header", portalPos + new Vector3(0, 1.35f, 0), new(2.60f, .45f, .42f), plaster, true);
+            Box("Vestibule Door Threshold", new(0, .14f, -4.4f), new(2.10f, .06f, .45f), wood, true);
+        }
 
-            // Rustic wooden workbench beside barrel stack with draped cloth
-            Vector3 benchPos = new(2.35f, 0, 1.15f);
-            Box("Stair Workbench Top", benchPos + Vector3.up * .78f, new(.65f, .06f, 1.1f), wood, true);
-            Box("Stair Workbench Shelf", benchPos + Vector3.up * .22f, new(.55f, .04f, .95f), wood);
-            for(int x=-1;x<=1;x+=2)for(int z=-1;z<=1;z+=2)
-                Box("Bench Leg", benchPos + new Vector3(x * .25f, .39f, z * .45f), new(.07f, .78f, .07f), wood);
-            Box("Bench Draped Cloth", benchPos + new Vector3(-.28f, .55f, .1f), new(.04f, .48f, .42f), darkCoat);
-            Cylinder("Work Oil Can", benchPos + new Vector3(.05f, .88f, -.25f), .08f, .16f, iron, Vector3.zero);
-            Rod("Oil Can Spout", benchPos + new Vector3(.05f, .96f, -.25f), benchPos + new Vector3(.02f, 1.10f, -.32f), .02f, brass);
-            Box("Work Lantern", benchPos + new Vector3(.08f, .95f, .22f), new(.14f, .26f, .14f), brass);
-            Box("Work Lantern Glass", benchPos + new Vector3(.08f, .95f, .22f), new(.10f, .18f, .10f), warm);
-
-            // Vintage travel trunks neatly stowed under the workbench
-            Box("Travel Trunk 1", benchPos + new Vector3(0, .14f, 0), new(.5f, .24f, .65f), leatherLuggage, true);
-            Box("Trunk 1 Brass Latch", benchPos + new Vector3(-.26f, .14f, 0), new(.03f, .06f, .08f), brass);
-
-            // Wet puddle under the stairs on stone floor
-            var puddleUnder = GameObject.CreatePrimitive(PrimitiveType.Cylinder); puddleUnder.name = "Stair Wet Puddle";
-            puddleUnder.transform.SetParent(area, false); puddleUnder.transform.position = new(2.7f, .155f, 1.5f);
-            puddleUnder.transform.localScale = new(1.4f, .002f, 1.8f);
-            puddleUnder.GetComponent<Renderer>().sharedMaterial = dark; Object.DestroyImmediate(puddleUnder.GetComponent<Collider>());
-
+        static void VestibuleEntrance()
+        {
             // Coat peg rack along North curved wall
             Box("Coat Rack Rail", new(-.8f, 1.85f, 3.65f), new(2.4f, .14f, .06f), wood);
             for (int i = 0; i < 5; i++)
@@ -868,6 +922,48 @@ namespace TheLightHouse.Editor
             Rod("Wall Sconce Arm", new(1.6f, 1.95f, 2.65f), new(1.6f, 2.05f, 2.50f), .03f, brass);
             Cylinder("Wall Sconce Lantern", new(1.6f, 2.10f, 2.50f), .09f, .22f, glass, Vector3.zero);
             Cylinder("Wall Sconce Cap", new(1.6f, 2.22f, 2.50f), .11f, .04f, brass, Vector3.zero);
+        }
+
+        static void VestibuleStorage()
+        {
+            // Dedicated Storage Alcove along West curved wall (x in [-2.6, -1.2], z in [0.2, 1.8])
+            // Keeps the East stair foot completely open with >= 1.8m clearance!
+            Vector3 benchPos = new(-2.0f, 0, 1.0f);
+            Box("Storage Workbench Top", benchPos + Vector3.up * .78f, new(1.1f, .06f, .65f), wood, true);
+            Box("Storage Workbench Shelf", benchPos + Vector3.up * .22f, new(.95f, .04f, .55f), wood);
+            for(int x=-1;x<=1;x+=2)for(int z=-1;z<=1;z+=2)
+                Box("Storage Bench Leg", benchPos + new Vector3(x * .45f, .39f, z * .25f), new(.07f, .78f, .07f), wood);
+            Box("Storage Bench Draped Cloth", benchPos + new Vector3(.1f, .55f, -.28f), new(.42f, .48f, .04f), darkCoat);
+            Cylinder("Work Oil Can", benchPos + new Vector3(-.25f, .88f, .05f), .08f, .16f, iron, Vector3.zero);
+            Rod("Oil Can Spout", benchPos + new Vector3(-.25f, .96f, .05f), benchPos + new Vector3(-.32f, 1.10f, .02f), .02f, brass);
+            Box("Work Lantern", benchPos + new Vector3(.22f, .95f, .08f), new(.14f, .26f, .14f), brass);
+            Box("Work Lantern Glass", benchPos + new Vector3(.22f, .95f, .08f), new(.10f, .18f, .10f), warm);
+
+            // Vintage travel trunks neatly stowed under the workbench
+            Box("Travel Trunk 1", benchPos + new Vector3(0, .14f, 0), new(.65f, .24f, .5f), leatherLuggage, true);
+            Box("Trunk 1 Brass Latch", benchPos + new Vector3(0, .14f, -.26f), new(.08f, .06f, .03f), brass);
+
+            // Barrels along the West curved wall
+            Barrel("Storage Paraffin Barrel 1", new(-2.65f, .38f, 0.35f), new(0, 0, 90), .34f, .85f);
+            Barrel("Storage Paraffin Barrel 2", new(-2.65f, .38f, 1.65f), new(0, 0, 90), .34f, .85f);
+            Barrel("Storage Barrel Stack Top", new(-2.65f, .82f, 1.00f), new(0, 0, 90), .33f, .82f);
+            Barrel("Storage Upright Freshwater Cask", new(-1.95f, .45f, 1.85f), Vector3.zero, .34f, .88f);
+
+            // Wet floor puddle in storage alcove
+            var puddle = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            puddle.name = "Storage Wet Puddle";
+            puddle.transform.SetParent(area, false);
+            puddle.transform.position = new(-2.2f, .155f, 1.2f);
+            puddle.transform.localScale = new(1.4f, .002f, 1.4f);
+            puddle.GetComponent<Renderer>().sharedMaterial = dark;
+            Object.DestroyImmediate(puddle.GetComponent<Collider>());
+        }
+
+        static void Vestibule()
+        {
+            VestibuleArchitecture();
+            VestibuleEntrance();
+            VestibuleStorage();
         }
 
         static void RoomFloor(int level, float y, float floorThick = 0.14f)
@@ -959,9 +1055,13 @@ namespace TheLightHouse.Editor
             Cylinder("Balustrade Newel Finial", newelPos + Vector3.up * 1.18f, 0.06f, 0.08f, brass, Vector3.zero);
         }
 
-        static void Library()
+        static void LibraryArchitecture()
         {
             RoomFloor(1, 3.2f, .14f);
+        }
+
+        static void LibraryArchiveAndWorkshop()
+        {
             Box("Library Area Rug", new(.1f, 3.21f, 1.20f), new(2.8f, .012f, 2.0f), rugFabric);
 
             // Grand Curved Floor-to-Ceiling Library Bookcase along North wall (quiet wall without stairs)
@@ -1062,85 +1162,133 @@ namespace TheLightHouse.Editor
             Rod("Chair Arm L", new(-.15f, 3.95f, .68f), new(-.15f, 4.05f, .22f), .05f, wood);
             Rod("Chair Arm R", new(.35f, 3.95f, .68f), new(.35f, 4.05f, .22f), .05f, wood);
 
+            // Workshop Repair Bench along East curved wall (safe from stairs)
+            Vector3 wBenchPos = new(1.85f, 3.2f, .85f);
+            Box("Workshop Bench Top", wBenchPos + Vector3.up * .76f, new(.65f, .06f, 1.1f), wood, true);
+            Box("Workshop Bench Shelf", wBenchPos + Vector3.up * .22f, new(.55f, .04f, .95f), wood);
+            for (int x = -1; x <= 1; x += 2) for (int z = -1; z <= 1; z += 2)
+                Box("Workshop Bench Leg", wBenchPos + new Vector3(x * .25f, .38f, z * .45f), new(.07f, .76f, .07f), wood);
+            Box("Clockwork Repair Vise", wBenchPos + new Vector3(-.22f, .86f, .25f), new(.16f, .14f, .14f), iron);
+            Cylinder("Brass Gear Spare 1", wBenchPos + new Vector3(.05f, .80f, -.25f), .09f, .015f, brass, Vector3.zero);
+            Cylinder("Brass Gear Spare 2", wBenchPos + new Vector3(.14f, .81f, -.15f), .06f, .015f, brass, Vector3.zero);
+            Box("Instrument Test Box", wBenchPos + new Vector3(.05f, .84f, .15f), new(.24f, .10f, .18f), wood);
+
             // Overhead Drop Pendant Lamp
             Rod("Library Lamp Cord", new(0, 6.3f, 1.10f), new(0, 5.05f, 1.10f), .02f, iron);
             Cylinder("Library Lamp Shade", new(0, 5.0f, 1.10f), .28f, .12f, iron, Vector3.zero);
             Cylinder("Library Lamp Bulb", new(0, 4.94f, 1.10f), .08f, .06f, warm, Vector3.zero);
         }
 
-        static void WatchRoom()
+        static void Library()
+        {
+            LibraryArchitecture();
+            LibraryArchiveAndWorkshop();
+        }
+
+        static void WatchRoomArchitecture()
         {
             RoomFloor(2, 6.4f, .14f);
-            Box("Watch Room Braided Rug", new(-.2f, 6.41f, 1.6f), new(2.2f, .012f, 2.2f), braidedRug);
-
-            // Large Prominent Nautical Station Wall Clock
-            Cylinder("Clock Iron Rim", new(0, 8.1f, 3.75f), .44f, .05f, iron, new(90, 0, 0));
-            Cylinder("Clock Dial Face", new(0, 8.1f, 3.72f), .40f, .03f, clockDial, new(90, 0, 0));
-            for (int h = 0; h < 12; h++)
-            {
-                float alpha = h * 30f * Mathf.Deg2Rad;
-                Box($"Clock Tick {h}", new(Mathf.Sin(alpha) * .34f, 8.1f + Mathf.Cos(alpha) * .34f, 3.70f), new(.022f, .055f, .012f), dark);
-            }
-            Rod("Clock Hour Hand", new(0, 8.1f, 3.69f), new(-.13f, 8.24f, 3.69f), .025f, dark);
-            Rod("Clock Minute Hand", new(0, 8.1f, 3.69f), new(.18f, 8.28f, 3.69f), .018f, dark);
-            Cylinder("Clock Hub Cap", new(0, 8.1f, 3.68f), .045f, .02f, brass, new(90, 0, 0));
-
-            // Framed Sea Navigation Charts Flanking Clock
-            Box("Depth Chart Frame", new(-1.15f, 8.1f, 3.55f), new(.68f, .52f, .04f), wood);
-            Box("Depth Chart Paper", new(-1.15f, 8.1f, 3.52f), new(.60f, .44f, .015f), parchment);
-            Box("Shipping Chart Frame", new(1.15f, 8.1f, 3.55f), new(.68f, .52f, .04f), wood);
-            Box("Shipping Chart Paper", new(1.15f, 8.1f, 3.52f), new(.60f, .44f, .015f), parchment);
 
             // Observation Window at South
             float wallR = Mathf.Lerp(4.50f, 3.25f, 6.4f / 25.6f);
             Window(new(0, 7.8f, -wallR - .07f), 1.0f, 1.4f, false);
+        }
 
-            // Chart Drafting Table & Maritime Instruments
-            Box("Drafting Table Top", new(-.25f, 7.28f, 1.6f), new(1.8f, .07f, .95f), wood, true);
-            Box("Drafting Leg L", new(-1.0f, 6.82f, 1.6f), new(.08f, .84f, .85f), wood);
-            Box("Drafting Leg R", new(.5f, 6.82f, 1.6f), new(.08f, .84f, .85f), wood);
-            Box("Drafting Stretcher", new(-.25f, 6.62f, 1.6f), new(1.4f, .06f, .12f), wood);
+        static void WatchRoomLiving()
+        {
+            float wallR = Mathf.Lerp(4.50f, 3.25f, 6.4f / 25.6f);
+
+            // Living Quarters Braided Rug centered on South living floor
+            Box("Watch Room Braided Rug", new(-.2f, 6.41f, -1.4f), new(2.4f, .012f, 2.4f), braidedRug);
+
+            // Large Prominent Nautical Station Wall Clock mounted on South wall
+            Cylinder("Clock Iron Rim", new(0, 8.1f, -wallR + .05f), .44f, .05f, iron, new(90, 0, 0));
+            Cylinder("Clock Dial Face", new(0, 8.1f, -wallR + .08f), .40f, .03f, clockDial, new(90, 0, 0));
+            for (int h = 0; h < 12; h++)
+            {
+                float alpha = h * 30f * Mathf.Deg2Rad;
+                Box($"Clock Tick {h}", new(Mathf.Sin(alpha) * .34f, 8.1f + Mathf.Cos(alpha) * .34f, -wallR + .10f), new(.022f, .055f, .012f), dark);
+            }
+            Rod("Clock Hour Hand", new(0, 8.1f, -wallR + .11f), new(-.13f, 8.24f, -wallR + .11f), .025f, dark);
+            Rod("Clock Minute Hand", new(0, 8.1f, -wallR + .11f), new(.18f, 8.28f, -wallR + .11f), .018f, dark);
+            Cylinder("Clock Hub Cap", new(0, 8.1f, -wallR + .12f), .045f, .02f, brass, new(90, 0, 0));
+
+            // Framed Sea Navigation Charts Flanking Clock on South Wall
+            Box("Depth Chart Frame", new(-1.15f, 8.1f, -wallR + .15f), new(.68f, .52f, .04f), wood);
+            Box("Depth Chart Paper", new(-1.15f, 8.1f, -wallR + .18f), new(.60f, .44f, .015f), parchment);
+            Box("Shipping Chart Frame", new(1.15f, 8.1f, -wallR + .15f), new(.68f, .52f, .04f), wood);
+            Box("Shipping Chart Paper", new(1.15f, 8.1f, -wallR + .18f), new(.60f, .44f, .015f), parchment);
+
+            // Keeper's Sturdy Timber Bedstead against Southwest curved wall
+            Vector3 bedPos = new(-1.6f, 6.4f, -2.1f);
+            Box("Keeper Bed Frame L", bedPos + new Vector3(-.55f, .25f, 0), new(.07f, .50f, 2.05f), wood, true);
+            Box("Keeper Bed Frame R", bedPos + new Vector3(.55f, .25f, 0), new(.07f, .50f, 2.05f), wood, true);
+            Box("Keeper Bed Headboard", bedPos + new Vector3(0, .60f, -1.0f), new(1.20f, .90f, .08f), wood, true);
+            Box("Keeper Bed Footboard", bedPos + new Vector3(0, .40f, 1.0f), new(1.20f, .60f, .08f), wood, true);
+            Box("Keeper Bed Mattress", bedPos + new Vector3(0, .32f, 0), new(1.05f, .28f, 1.95f), warm);
+            Box("Keeper Bed Wool Blanket", bedPos + new Vector3(0, .36f, .25f), new(1.08f, .22f, 1.35f), darkCoat);
+            Box("Keeper Bed Pillow", bedPos + new Vector3(0, .48f, -.72f), new(.75f, .14f, .42f), parchment);
+
+            // Bedside Nightstand & Oil Lamp
+            Vector3 nightPos = new(-0.75f, 6.4f, -2.6f);
+            Box("Bedside Nightstand Top", nightPos + Vector3.up * .62f, new(.50f, .05f, .50f), wood, true);
+            Box("Nightstand Body", nightPos + Vector3.up * .30f, new(.44f, .58f, .44f), wood);
+            Cylinder("Nightstand Lamp Base", nightPos + Vector3.up * .67f, .09f, .04f, brass, Vector3.zero);
+            Cylinder("Nightstand Lamp Glass", nightPos + Vector3.up * .80f, .07f, .22f, warmWindow, Vector3.zero);
+
+            // Keeper's Wardrobe Locker along West wall
+            Vector3 wardPos = new(-2.55f, 6.4f, -0.7f);
+            Box("Keeper Wardrobe Body", wardPos + Vector3.up * 1.25f, new(.65f, 2.3f, 1.15f), wood, true);
+            Box("Wardrobe Crown Cornice", wardPos + Vector3.up * 2.42f, new(.70f, .08f, 1.22f), wood);
+            Box("Wardrobe Door L", wardPos + new Vector3(.33f, 1.22f, -.26f), new(.02f, 2.05f, .52f), wood);
+            Box("Wardrobe Door R", wardPos + new Vector3(.33f, 1.22f, .26f), new(.02f, 2.05f, .52f), wood);
+            Cylinder("Wardrobe Handle L", wardPos + new Vector3(.35f, 1.20f, -.04f), .02f, .03f, brass, new(0, 0, 90));
+            Cylinder("Wardrobe Handle R", wardPos + new Vector3(.35f, 1.20f, .04f), .02f, .03f, brass, new(0, 0, 90));
+
+            // Chart Drafting Table & Maritime Instruments (centered at z = -1.25)
+            Vector3 draftPos = new(0.45f, 6.4f, -1.25f);
+            Box("Drafting Table Top", draftPos + Vector3.up * .88f, new(1.6f, .07f, .85f), wood, true);
+            Box("Drafting Leg L", draftPos + new Vector3(-.70f, .42f, 0), new(.08f, .84f, .75f), wood);
+            Box("Drafting Leg R", draftPos + new Vector3(.70f, .42f, 0), new(.08f, .84f, .75f), wood);
+            Box("Drafting Stretcher", draftPos + new Vector3(0, .22f, 0), new(1.3f, .06f, .12f), wood);
 
             // Tabletop navigation charts and instruments
-            Box("Unrolled Sea Chart", new(-.35f, 7.33f, 1.6f), new(.95f, .012f, .65f), parchment);
-            Cylinder("Chart Weight 1", new(-.78f, 7.35f, 1.32f), .035f, .03f, brass, Vector3.zero);
-            Cylinder("Chart Weight 2", new(.08f, 7.35f, 1.32f), .035f, .03f, brass, Vector3.zero);
-            Cylinder("Chart Weight 3", new(-.78f, 7.35f, 1.88f), .035f, .03f, brass, Vector3.zero);
-            Cylinder("Chart Weight 4", new(.08f, 7.35f, 1.88f), .035f, .03f, brass, Vector3.zero);
-            Cylinder("Drafting Scroll 1", new(-.3f, 7.36f, 1.95f), .045f, .60f, parchment, new(0, 0, 90));
-            Cylinder("Drafting Scroll 2", new(-.2f, 7.42f, 1.95f), .040f, .55f, parchment, new(0, 0, 90));
-            Rod("Divider Leg 1", new(-.1f, 7.35f, 1.55f), new(-.18f, 7.35f, 1.42f), .015f, brass);
-            Rod("Divider Leg 2", new(-.1f, 7.35f, 1.55f), new(-.02f, 7.35f, 1.42f), .015f, brass);
-            Box("Compass Wooden Box", new(-.65f, 7.35f, 1.58f), new(.16f, .08f, .16f), wood);
-            Cylinder("Compass Brass Dial", new(-.65f, 7.39f, 1.58f), .06f, .015f, brass, Vector3.zero);
+            Box("Unrolled Sea Chart", draftPos + new Vector3(-.10f, .93f, 0), new(.95f, .012f, .65f), parchment);
+            Cylinder("Chart Weight 1", draftPos + new Vector3(-.53f, .95f, -.28f), .035f, .03f, brass, Vector3.zero);
+            Cylinder("Chart Weight 2", draftPos + new Vector3(.33f, .95f, -.28f), .035f, .03f, brass, Vector3.zero);
+            Cylinder("Chart Weight 3", draftPos + new Vector3(-.53f, .95f, .28f), .035f, .03f, brass, Vector3.zero);
+            Cylinder("Chart Weight 4", draftPos + new Vector3(.33f, .95f, .28f), .035f, .03f, brass, Vector3.zero);
+            Cylinder("Drafting Scroll 1", draftPos + new Vector3(-.05f, .96f, .32f), .045f, .60f, parchment, new(0, 0, 90));
+            Rod("Divider Leg 1", draftPos + new Vector3(.15f, .95f, -.05f), draftPos + new Vector3(.07f, .95f, -.18f), .015f, brass);
+            Rod("Divider Leg 2", draftPos + new Vector3(.15f, .95f, -.05f), draftPos + new Vector3(.23f, .95f, -.18f), .015f, brass);
+            Box("Compass Wooden Box", draftPos + new Vector3(-.40f, .95f, -.02f), new(.16f, .08f, .16f), wood);
+            Cylinder("Compass Brass Dial", draftPos + new Vector3(-.40f, .99f, -.02f), .06f, .015f, brass, Vector3.zero);
 
             // Maritime Spyglass / Telescope on Desktop Tripod
-            Cylinder("Spyglass Main Tube", new(.35f, 7.45f, 1.55f), .035f, .35f, brass, new(-12, 25, 0));
-            Cylinder("Spyglass Lens Cell", new(.28f, 7.48f, 1.40f), .045f, .08f, brass, new(-12, 25, 0));
-            Rod("Spyglass Tripod Leg 1", new(.38f, 7.42f, 1.58f), new(.32f, 7.32f, 1.50f), .018f, wood);
-            Rod("Spyglass Tripod Leg 2", new(.38f, 7.42f, 1.58f), new(.44f, 7.32f, 1.50f), .018f, wood);
-            Rod("Spyglass Tripod Leg 3", new(.38f, 7.42f, 1.58f), new(.38f, 7.32f, 1.66f), .018f, wood);
-
-            // Watchkeeper Equipment Shelf
-            Box("Equipment Wall Shelf", new(-1.3f, 7.7f, 2.5f), new(.95f, .04f, .28f), wood);
-            Cylinder("Aneroid Barometer", new(-1.5f, 7.82f, 2.5f), .10f, .04f, brass, new(90, 0, 0));
-            Cylinder("Specimen Bottle 1", new(-1.25f, 7.80f, 2.5f), .05f, .16f, glass, Vector3.zero);
-            Cylinder("Specimen Bottle 2", new(-1.10f, 7.82f, 2.5f), .06f, .20f, glass, Vector3.zero);
-            Cylinder("Spare Hurricane Lamp", new(-.92f, 7.85f, 2.5f), .08f, .24f, brass, Vector3.zero);
+            Cylinder("Spyglass Main Tube", draftPos + new Vector3(.50f, 1.05f, -.05f), .035f, .35f, brass, new(-12, -25, 0));
+            Cylinder("Spyglass Lens Cell", draftPos + new Vector3(.43f, 1.08f, -.20f), .045f, .08f, brass, new(-12, -25, 0));
+            Rod("Spyglass Tripod Leg 1", draftPos + new Vector3(.53f, 1.02f, -.02f), draftPos + new Vector3(.47f, .92f, -.10f), .018f, wood);
+            Rod("Spyglass Tripod Leg 2", draftPos + new Vector3(.53f, 1.02f, -.02f), draftPos + new Vector3(.59f, .92f, -.10f), .018f, wood);
+            Rod("Spyglass Tripod Leg 3", draftPos + new Vector3(.53f, 1.02f, -.02f), draftPos + new Vector3(.53f, .92f, .06f), .018f, wood);
 
             // Watchkeeper Stool
-            Cylinder("Watch Stool Seat", new(.55f, 7.05f, 2.1f), .20f, .05f, wood, Vector3.zero);
+            Cylinder("Watch Stool Seat", draftPos + new Vector3(0, .65f, .60f), .20f, .05f, wood, Vector3.zero);
             for (int l = 0; l < 4; l++)
             {
                 float la = l * 90f * Mathf.Deg2Rad;
-                Rod($"Watch Stool Leg {l}", new(.55f + Mathf.Sin(la) * .14f, 7.05f, 2.1f + Mathf.Cos(la) * .14f), new(.55f + Mathf.Sin(la) * .22f, 6.4f, 2.1f + Mathf.Cos(la) * .22f), .04f, wood);
+                Rod($"Watch Stool Leg {l}", draftPos + new Vector3(Mathf.Sin(la) * .14f, .65f, .60f + Mathf.Cos(la) * .14f), draftPos + new Vector3(Mathf.Sin(la) * .22f, 0, .60f + Mathf.Cos(la) * .22f), .04f, wood);
             }
-            Cylinder("Watch Stool Footring", new(.55f, 6.62f, 2.1f), .21f, .02f, iron, Vector3.zero);
 
             // Overhead Drop Pendant Lamp
-            Rod("Watch Lamp Cord", new(-.25f, 9.5f, 1.6f), new(-.25f, 8.15f, 1.6f), .02f, iron);
-            Cylinder("Watch Lamp Shade", new(-.25f, 8.10f, 1.6f), .28f, .12f, iron, Vector3.zero);
-            Cylinder("Watch Lamp Bulb", new(-.25f, 8.04f, 1.6f), .08f, .06f, warm, Vector3.zero);
+            Rod("Watch Lamp Cord", new(-.25f, 9.5f, -1.4f), new(-.25f, 8.15f, -1.4f), .02f, iron);
+            Cylinder("Watch Lamp Shade", new(-.25f, 8.10f, -1.4f), .28f, .12f, iron, Vector3.zero);
+            Cylinder("Watch Lamp Bulb", new(-.25f, 8.04f, -1.4f), .08f, .06f, warm, Vector3.zero);
+        }
+
+        static void WatchRoom()
+        {
+            WatchRoomArchitecture();
+            WatchRoomLiving();
         }
 
         static void Landing3()
@@ -1287,10 +1435,18 @@ namespace TheLightHouse.Editor
             Cylinder("Barrel Front",origin+Vector3.up*.02f,radius*.85f,.035f,wood,Vector3.zero);
             if(horizontal){var rotation=Quaternion.Euler(90,0,0);for(int i=first;i<area.childCount;i++){var t=area.GetChild(i);t.position=origin+rotation*(t.position-origin)+new Vector3(0,radius,-height*.5f);t.rotation=rotation*t.rotation;}}
         }
-        static void Lantern()
+        static void TowerIntermediateFloors()
         {
-            var settings=AssetDatabase.LoadAssetAtPath<LighthouseLayoutSettings>("Assets/_Project/Settings/LighthouseLayoutSettings.asset");
-            float y=settings.floorHeight*settings.towerLevelCount;
+            TowerStoreroom();
+            TowerServiceLanding();
+            TowerMachineRoom();
+            TowerLanternService();
+        }
+
+        static void LanternArchitecture()
+        {
+            var settings = AssetDatabase.LoadAssetAtPath<LighthouseLayoutSettings>("Assets/_Project/Settings/LighthouseLayoutSettings.asset");
+            float y = settings.floorHeight * settings.towerLevelCount;
 
             const int segs = 32;
 
@@ -1329,7 +1485,28 @@ namespace TheLightHouse.Editor
             float landHalf = 15f * Mathf.Deg2Rad;
             Wedge("Lantern Stair Landing", 1.30f, 3.80f, landRad - landHalf, landRad + landHalf, y, 0.18f, iron, true);
 
-            // 4. GRAND ARCHED ENTRYWAY PORTAL INTO LANTERN ROOM AT +50°
+            // Safety guard railing along outer stair drop (from +105° down to +72°)
+            float guardStartRad = 105f * Mathf.Deg2Rad;
+            float guardEndRad = 72f * Mathf.Deg2Rad;
+            Vector3 gStart = new(Mathf.Sin(guardStartRad) * 1.32f, y, Mathf.Cos(guardStartRad) * 1.32f);
+            Vector3 gEnd = new(Mathf.Sin(guardEndRad) * 1.32f, y, Mathf.Cos(guardEndRad) * 1.32f);
+            Rod("Stair Guard Rail", gStart + Vector3.up * 1.05f, gEnd + Vector3.up * 1.05f, .05f, iron);
+            Rod("Stair Guard Post A", gStart, gStart + Vector3.up * 1.15f, .06f, brass);
+            Rod("Stair Guard Post B", gEnd, gEnd + Vector3.up * 1.15f, .06f, brass);
+
+            for (int level = 2; level < 8; level += 2)
+            {
+                float radius = Mathf.Lerp(5.2f, 3.8f, level / 8f);
+                Window(new(0, level * 3.2f + 1.6f, -radius - .07f), .75f, 1.1f, false);
+            }
+        }
+
+        static void LanternRoom()
+        {
+            var settings = AssetDatabase.LoadAssetAtPath<LighthouseLayoutSettings>("Assets/_Project/Settings/LighthouseLayoutSettings.asset");
+            float y = settings.floorHeight * settings.towerLevelCount;
+
+            // GRAND ARCHED ENTRYWAY PORTAL INTO LANTERN ROOM AT +50°
             float gateAngL = 28f * Mathf.Deg2Rad;
             float gateAngR = 72f * Mathf.Deg2Rad;
             float gateR = 2.40f;
@@ -1343,37 +1520,49 @@ namespace TheLightHouse.Editor
             Cylinder("Portal Lantern R Bracket", jambR + Vector3.up * 1.95f, 0.08f, 0.18f, brass, Vector3.zero);
             Cylinder("Portal Lantern R Glow", jambR + Vector3.up * 1.90f, 0.06f, 0.12f, warm, Vector3.zero);
 
-            // Safety guard railing along outer stair drop (from +105° down to +72°)
-            float guardStartRad = 105f * Mathf.Deg2Rad;
-            float guardEndRad = 72f * Mathf.Deg2Rad;
-            Vector3 gStart = new(Mathf.Sin(guardStartRad) * 1.32f, y, Mathf.Cos(guardStartRad) * 1.32f);
-            Vector3 gEnd = new(Mathf.Sin(guardEndRad) * 1.32f, y, Mathf.Cos(guardEndRad) * 1.32f);
-            Rod("Stair Guard Rail", gStart + Vector3.up * 1.05f, gEnd + Vector3.up * 1.05f, .05f, iron);
-            Rod("Stair Guard Post A", gStart, gStart + Vector3.up * 1.15f, .06f, brass);
-            Rod("Stair Guard Post B", gEnd, gEnd + Vector3.up * 1.15f, .06f, brass);
-
-            // 5. LANTERN ROOM ARCHITECTURE, GLASS & BEACON
-            for(int i=0;i<8;i++)
+            // LANTERN ROOM ARCHITECTURE, GLASS & PITCHED ROOF CAP
+            for (int i = 0; i < 8; i++)
             {
-                float a=i*Mathf.PI/4,b=(i+1)*Mathf.PI/4;
-                Vector3 p=new(Mathf.Sin(a)*2.6f,y,Mathf.Cos(a)*2.6f),q=new(Mathf.Sin(b)*2.6f,y,Mathf.Cos(b)*2.6f);
-                Rod("Lantern Iron Post",p,p+Vector3.up*3.6f,.09f,iron);
-                Rod("Lantern Lintel",p+Vector3.up*3.6f,q+Vector3.up*3.6f,.12f,iron);
+                float a = i * Mathf.PI / 4, b = (i + 1) * Mathf.PI / 4;
+                Vector3 p = new(Mathf.Sin(a) * 2.6f, y, Mathf.Cos(a) * 2.6f), q = new(Mathf.Sin(b) * 2.6f, y, Mathf.Cos(b) * 2.6f);
+                Rod("Lantern Iron Post", p, p + Vector3.up * 3.6f, .09f, iron);
+                Rod("Lantern Lintel", p + Vector3.up * 3.6f, q + Vector3.up * 3.6f, .12f, iron);
                 // Keep doorway threshold completely open at +50° portal entrance (i != 0 && i != 1)
                 if (i != 0 && i != 1)
                 {
-                    Rod("Lantern Sill",p+Vector3.up*.2f,q+Vector3.up*.2f,.12f,iron);
+                    Rod("Lantern Sill", p + Vector3.up * .2f, q + Vector3.up * .2f, .12f, iron);
                 }
-                Triangle("Lantern Pitched Cap",p+Vector3.up*3.6f,new(0,y+4.8f,0),q+Vector3.up*3.6f,roof);
+                Triangle("Lantern Pitched Cap", p + Vector3.up * 3.6f, new(0, y + 4.8f, 0), q + Vector3.up * 3.6f, roof);
             }
-            var lens=GameObject.CreatePrimitive(PrimitiveType.Sphere);lens.name="Beacon Core";lens.transform.SetParent(area);lens.transform.position=new(0,y+2.4f,0);lens.transform.localScale=new(1.2f,1.7f,1.2f);Object.DestroyImmediate(lens.GetComponent<Collider>());lens.GetComponent<Renderer>().sharedMaterial=ReferenceSurfaceLibrary.Solid("Beacon Glass",new(.7f,.86f,1f),5);
-            Cylinder("Lamp Pedestal",new(0,y+.5f,0),.4f,1,iron,Vector3.zero);
-            for(int i=0;i<8;i++)Cylinder("Fresnel Lens Ring",new(0,y+1.7f+i*.15f,0),.48f,.065f,glass,Vector3.zero);
-            for(int level=2;level<8;level+=2)
-            {
-                float radius=Mathf.Lerp(5.2f,3.8f,level/8f);
-                Window(new(0,level*3.2f+1.6f,-radius-.07f),.75f,1.1f,false);
-            }
+
+            // Maintenance spares cabinet and emergency hand-crank stand
+            Box("Lantern Tool Cabinet", new Vector3(-2.2f, y + 0.9f, -1.0f), new Vector3(.55f, 1.8f, .85f), iron, true);
+            Box("Lamp Hand-Crank Stand", new Vector3(1.8f, y + 0.5f, -1.2f), new Vector3(.45f, 1.0f, .45f), iron, true);
+            Cylinder("Crank Wheel", new Vector3(1.8f, y + 1.05f, -1.2f), .25f, .05f, brass, new Vector3(0, 0, 90));
+        }
+
+        static void LampMechanism()
+        {
+            var settings = AssetDatabase.LoadAssetAtPath<LighthouseLayoutSettings>("Assets/_Project/Settings/LighthouseLayoutSettings.asset");
+            float y = settings.floorHeight * settings.towerLevelCount;
+
+            var lens = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            lens.name = "Beacon Core";
+            lens.transform.SetParent(area);
+            lens.transform.position = new(0, y + 2.4f, 0);
+            lens.transform.localScale = new(1.2f, 1.7f, 1.2f);
+            Object.DestroyImmediate(lens.GetComponent<Collider>());
+            lens.GetComponent<Renderer>().sharedMaterial = ReferenceSurfaceLibrary.Solid("Beacon Glass", new(.7f, .86f, 1f), 5);
+            Cylinder("Lamp Pedestal", new(0, y + .5f, 0), .4f, 1, iron, Vector3.zero);
+            for (int i = 0; i < 8; i++)
+                Cylinder("Fresnel Lens Ring", new(0, y + 1.7f + i * .15f, 0), .48f, .065f, glass, Vector3.zero);
+        }
+
+        static void Lantern()
+        {
+            LanternArchitecture();
+            LanternRoom();
+            LampMechanism();
         }
         static void Coast()
         {
@@ -1431,16 +1620,19 @@ namespace TheLightHouse.Editor
             }
             EnsureTowerLight("Vestibule Light", new(0, 2.25f, 0), new Color(1f, .82f, .55f), 4.5f, 7f);
             EnsureTowerLight("Vestibule Wall Sconce", new(1.2f, 2.0f, 1.9f), new Color(1f, .75f, .45f), 2.0f, 4.5f);
+            EnsureTowerLight("Storage Alcove Light", new(-2.0f, 2.2f, 1.0f), new Color(1f, .80f, .50f), 3.0f, 5f);
             EnsureTowerLight("Library Light", new(0, 4.9f, .3f), new Color(1f, .82f, .55f), 5.0f, 7.5f);
             EnsureTowerLight("Library Desk Light", new(-.1f, 4.25f, .62f), new Color(1f, .85f, .5f), 2.5f, 3f);
             EnsureTowerLight("Library Stair Light", new(1.5f, 4.3f, 1.5f), new Color(1f, .75f, .45f), 2.0f, 4.5f);
-            EnsureTowerLight("Watch Room Light", new(-.25f, 8.0f, .5f), new Color(1f, .82f, .55f), 5.0f, 7.5f);
+            EnsureTowerLight("Archive Workshop Light", new(1.85f, 4.3f, 0.85f), new Color(1f, .82f, .50f), 2.5f, 4f);
+            EnsureTowerLight("Watch Room Light", new(-.25f, 8.0f, -1.4f), new Color(1f, .82f, .55f), 5.0f, 7.5f);
+            EnsureTowerLight("Living Room Bedside Light", new(-0.75f, 7.2f, -2.6f), new Color(1f, .82f, .48f), 2.5f, 4f);
             EnsureTowerLight("Landing 3 Light", new(0, 11.2f, 0), new Color(1f, .8f, .5f), 3.5f, 6f);
             EnsureTowerLight("House Porch Lantern", new(-5f, 2.65f, -9.6f), new Color(1f, .78f, .42f), 4.8f, 9f);
             EnsureTowerLight("House Interior Glow", new(-5f, 1.8f, -7.0f), new Color(1f, .78f, .38f), 3.5f, 6.5f);
             EnsureTowerLight("Keeper Desk Lamp Light", new(-8.6f, 1.8f, -1.9f), new Color(1f, .82f, .48f), 3.8f, 3f);
-            EnsureTowerLight("House Kitchen Light", new(-3.0f, 2.3f, -4.5f), new Color(1f, .80f, .45f), 4.5f, 7.5f);
-            EnsureTowerLight("Stove Hearth Glow", new(-2.0f, .45f, -1.1f), new Color(1f, .50f, .15f), 2.5f, 3.5f);
+            EnsureTowerLight("House Kitchen Light", new(-5.85f, 2.3f, -3.5f), new Color(1f, .80f, .45f), 4.5f, 7.5f);
+            EnsureTowerLight("Stove Hearth Glow", new(-5.45f, .45f, -1.75f), new Color(1f, .50f, .15f), 2.5f, 3.5f);
             EnsureTowerLight("Dining Table Lantern", new(-3.04f, 1.05f, -5.64f), new Color(1f, .82f, .45f), 2.8f, 4.0f);
         }
         static void EnsureTowerLight(string name, Vector3 pos, Color color, float intensity, float range)
@@ -1449,7 +1641,7 @@ namespace TheLightHouse.Editor
             if (!go)
             {
                 go = new GameObject(name, typeof(Light));
-                go.transform.SetParent(root);
+                go.transform.SetParent(Group("Lighthouse/Shared/Lighting"), false);
             }
             go.transform.position = pos;
             var l = go.GetComponent<Light>();
