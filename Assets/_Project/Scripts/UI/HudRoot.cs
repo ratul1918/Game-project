@@ -136,7 +136,17 @@ namespace TheLightHouse
         void Lamp(LampStateChangedEvent value){currentLamp=value.Current;SetLamp(value.IntensityNormalized,value.Current);}
         void Charge(float value)=>SetLamp(value,currentLamp);
         void SetLamp(float value,LampState state){if(lampFill){lampFill.fillAmount=Mathf.Clamp01(value);lampFill.color=state==LampState.Failing?theme.Warning:state==LampState.Extinguished?theme.Danger:lampColor;}if(lampState)lampState.text=state.ToString();ShowGroup(lampGroup);RestartFade(ref lampRoutine,lampGroup,value>=.999f?0f:gaugeIdleSeconds);}
-        void Objective(string value){if(objectiveText)objectiveText.text=value;ShowGroup(objectiveGroup);RestartFade(ref objectiveRoutine,objectiveGroup,objectiveVisibleSeconds);}
+        void Objective(string value)
+        {
+            if (objectiveText)
+            {
+                objectiveText.text = value != null ? value.Trim() : "";
+                objectiveText.textWrappingMode = TextWrappingModes.NoWrap;
+                objectiveText.overflowMode = TextOverflowModes.Ellipsis;
+            }
+            ShowGroup(objectiveGroup);
+            RestartFade(ref objectiveRoutine, objectiveGroup, objectiveVisibleSeconds);
+        }
         void UpdateObjectiveVisibility(){if(objectiveGroup&&Keyboard.current!=null&&Keyboard.current.anyKey.wasPressedThisFrame){ShowGroup(objectiveGroup);RestartFade(ref objectiveRoutine,objectiveGroup,objectiveVisibleSeconds);}}
         void Item(ItemCollectedEvent value){if(!inventoryText)return;if(inventoryBuilder.Length>0)inventoryBuilder.Append("  •  ");inventoryBuilder.Append(value.Id);inventoryText.text=inventoryBuilder.ToString();ShowGroup(inventoryGroup);}
         void Checkpoint(CheckpointReachedEvent value){ShowToast(ref checkpointRoutine,checkpointToast,checkpointText,$"Checkpoint — {value.Id}");}

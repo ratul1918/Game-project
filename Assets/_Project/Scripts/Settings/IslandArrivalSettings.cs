@@ -5,8 +5,8 @@ namespace TheLightHouse
     [CreateAssetMenu(menuName="The LightHouse/Island Arrival")]
     public sealed class IslandArrivalSettings : ScriptableObject
     {
-        public Vector3 playerStart=new(0,.22f,-24);
-        public Vector3 boatPosition=new(-4.6f,-.45f,-31.5f);
+        public Vector3 playerStart=new(.4f,.22f,-25f);
+        public Vector3 boatPosition=new(-5.6f,-.45f,-27.5f);
         public Vector3 departureOffset=new(-24,0,-20);
         public float boatmanHeight=1.65f;
         public Vector2 islandRadius=new(24,21);

@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6166cc1650a494b0d846afbd74229b88, type: 3}
   m_Name: IslandArrivalSettings
   m_EditorClassIdentifier: Assembly-CSharp::TheLightHouse.IslandArrivalSettings
-  playerStart: {x: 0, y: 0.22, z: -24}
-  boatPosition: {x: -4.6, y: -0.45, z: -31.5}
+  playerStart: {x: -1.1, y: 0.22, z: -33.5}
+  boatPosition: {x: -3.7, y: -0.42, z: -28.5}
   departureOffset: {x: -24, y: 0, z: -20}
   boatmanHeight: 1.65
-  islandRadius: {x: 24, y: 21}
+  islandRadius: {x: 26, y: 32}
   landHeight: 0.1
   seaLevel: -0.55
   shoreSegments: 64

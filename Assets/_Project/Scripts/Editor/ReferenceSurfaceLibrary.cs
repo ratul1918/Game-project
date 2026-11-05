@@ -34,6 +34,17 @@ namespace TheLightHouse.Editor
                     c = Color.Lerp(tint, new Color(.24f, .13f, .07f), Mathf.SmoothStep(.52f, .8f, broad) * wear);
                     value = .6f + fine * .5f;
                 }
+                else if (pattern == 3) // Wet rutted coastal mud road
+                {
+                    float distRut = Mathf.Min(Mathf.Abs(u - .28f), Mathf.Abs(u - .72f));
+                    float inRut = Mathf.Clamp01(1f - distRut / .11f);
+                    float tread = Mathf.Sin(v * 75f) * .15f;
+                    float wetPuddle = Mathf.SmoothStep(.45f, .75f, Mathf.PerlinNoise(u * 6f + 2f, v * 14f));
+                    float mudChurn = Mathf.PerlinNoise(u * 40f, v * 40f) * .3f;
+                    c = Color.Lerp(tint, new Color(.025f, .02f, .018f), inRut * .7f);
+                    if (inRut > .4f && wetPuddle > .4f) c = Color.Lerp(c, new Color(.018f, .022f, .024f), wetPuddle);
+                    value = .65f + mudChurn + (inRut > .5f ? tread : 0f) + (fine - .5f) * .35f * wear;
+                }
                 else
                 {
                     float damp = Mathf.Clamp01((.50f - broad) * 2 + (.42f - streak) * .5f) * wear;
