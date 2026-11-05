@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: LighthouseLayoutSettings
   m_EditorClassIdentifier: Assembly-CSharp::TheLightHouse.LighthouseLayoutSettings
   towerHeight: 28
-  towerBaseDiameter: 8
-  towerGalleryDiameter: 5
-  towerBaseWallThickness: 0.8
-  towerGalleryWallThickness: 0.45
+  towerBaseDiameter: 10.4
+  towerGalleryDiameter: 7.6
+  towerBaseWallThickness: 0.7
+  towerGalleryWallThickness: 0.55
   towerWallSegments: 24
   floorHeight: 3.2
   towerLevelCount: 8
@@ -28,7 +28,7 @@ MonoBehaviour:
   railingHeight: 1.1
   stairStepHeight: 0.18
   stairStepDepth: 0.28
-  stairWidth: 1.1
+  stairWidth: 1.42
   stairwellRadius: 1.05
   wallSegmentCoverage: 1.001
   houseSize: {x: 14, y: 2.8, z: 8}

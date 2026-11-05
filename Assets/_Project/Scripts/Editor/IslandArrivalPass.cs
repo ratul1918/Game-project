@@ -134,18 +134,76 @@ namespace TheLightHouse.Editor
         static void Land()
         {
             float radiusX=26f,radiusZ=32f;
-            var points=new List<Vector3>{new(0,settings.landHeight,-6)};var triangles=new List<int>();
             int count=settings.shoreSegments;
-            for(int ring=0;ring<2;ring++)for(int i=0;i<count;i++)
+            const int rings=6;
+            var points=new List<Vector3>();
+            var triangles=new List<int>();
+
+            // Center vertex
+            points.Add(new Vector3(0, settings.landHeight + 0.12f, -6f));
+
+            // Concentric terrain rings with harmonic waves and carved dock bay cove
+            for (int r = 1; r <= rings; r++)
             {
-                float angle=i*Mathf.PI*2/count;float variation=1+.035f*Mathf.Sin(angle*7)+.025f*Mathf.Cos(angle*11);float radius=ring==0?.92f:1;
-                points.Add(new(Mathf.Sin(angle)*radiusX*radius*variation,ring==0?settings.landHeight:settings.seaLevel-1.2f,-6+Mathf.Cos(angle)*radiusZ*radius*variation));
+                float t = r / (float)rings;
+                float ringFrac = r == 1 ? 0.20f : r == 2 ? 0.40f : r == 3 ? 0.65f : r == 4 ? 0.88f : r == 5 ? 0.98f : 1.06f;
+
+                for (int i = 0; i < count; i++)
+                {
+                    float angle = i * Mathf.PI * 2f / count;
+                    float variation = 1f + 0.045f * Mathf.Sin(angle * 5f) + 0.030f * Mathf.Cos(angle * 7f) + 0.018f * Mathf.Sin(angle * 11f);
+                    float px = Mathf.Sin(angle) * radiusX * ringFrac * variation;
+                    float pz = -6f + Mathf.Cos(angle) * radiusZ * ringFrac * variation;
+
+                    float py;
+                    // Dock slipway bay cove: around x = -3.2f, z < -23.0f
+                    if (px < 0.8f && pz < -23.0f)
+                    {
+                        float coveT = Mathf.Clamp01((-23.0f - pz) / 3.5f);
+                        float coveW = Mathf.Clamp01(1f - Mathf.Abs(px - (-3.2f)) / 5.2f);
+                        py = Mathf.Lerp(settings.landHeight, settings.seaLevel - 1.8f, coveT * coveW);
+                    }
+                    else if (r == rings)
+                    {
+                        // Underwater perimeter skirt
+                        py = settings.seaLevel - 1.4f;
+                    }
+                    else
+                    {
+                        // Organic natural wavy undulating ground
+                        float wave = 0.14f * Mathf.Sin(px * 0.28f) * Mathf.Cos((pz + 6f) * 0.22f) + 0.08f * Mathf.Sin((px + pz) * 0.45f);
+                        float slope = r >= 4 ? Mathf.Lerp(0f, -0.6f, (r - 4) / 2f) : 0f;
+                        py = settings.landHeight + wave * (1f - t * 0.2f) + slope;
+                    }
+
+                    points.Add(new Vector3(px, py, pz));
+                }
             }
-            for(int i=0;i<count;i++)
+
+            // Triangles from center to ring 1
+            for (int i = 0; i < count; i++)
             {
-                int j=(i+1)%count;triangles.AddRange(new[]{0,i+1,j+1});int a=i+1,b=j+1,c=count+i+1,d=count+j+1;triangles.AddRange(new[]{a,c,b,b,c,d});
+                int next = (i + 1) % count;
+                triangles.AddRange(new[] { 0, i + 1, next + 1 });
             }
-            MeshObject("Harrow Rock Island",SaveMesh("Island",points,triangles),stone,root,true);
+
+            // Triangles between concentric rings
+            for (int r = 0; r < rings - 1; r++)
+            {
+                int rowA = 1 + r * count;
+                int rowB = 1 + (r + 1) * count;
+                for (int i = 0; i < count; i++)
+                {
+                    int next = (i + 1) % count;
+                    int a = rowA + i;
+                    int b = rowA + next;
+                    int c = rowB + i;
+                    int d = rowB + next;
+                    triangles.AddRange(new[] { a, c, b, b, c, d });
+                }
+            }
+
+            MeshObject("Harrow Rock Island", SaveMesh("Island", points, triangles), stone, root, true);
 
             // Rocky shore boulders along water perimeter
             var random=new System.Random(84);
@@ -244,18 +302,16 @@ namespace TheLightHouse.Editor
             var l=lightGo.GetComponent<Light>();
             l.type=LightType.Point;l.color=new Color(1f,.78f,.40f);l.intensity=15.0f;l.range=20f;l.shadows=LightShadows.None;
 
-            // Shoreline boulders and foaming wave spray along dock edge
+            // Shoreline boulders along the water line away from the boat berth
             var random=new System.Random(42);
-            for(int i=0;i<7;i++)
+            for(int i=0;i<6;i++)
             {
-                float rx=-6.0f+(float)random.NextDouble()*2.2f,rz=-28f-(float)random.NextDouble()*7f;
+                float rx = i < 3 ? (-7.8f - (float)random.NextDouble() * 2.2f) : (0.5f + (float)random.NextDouble() * 2.5f);
+                float rz = -25f - (float)random.NextDouble() * 7f;
                 var rock=GameObject.CreatePrimitive(PrimitiveType.Sphere);rock.name="Dock Shore Rock";rock.transform.SetParent(dockGroup,false);
                 rock.transform.position=new Vector3(rx,settings.seaLevel+.15f,rz);
                 rock.transform.localScale=new Vector3(1.4f+(float)random.NextDouble()*1.2f,.8f+(float)random.NextDouble()*.6f,1.5f);
                 rock.GetComponent<Renderer>().sharedMaterial=stone;Object.DestroyImmediate(rock.GetComponent<Collider>());
-                var foam=GameObject.CreatePrimitive(PrimitiveType.Cylinder);foam.name="Wave Foam Crest";foam.transform.SetParent(rock.transform,false);
-                foam.transform.localPosition=new Vector3(0,-.1f,0);foam.transform.localScale=new Vector3(1.35f,.04f,1.35f);
-                foam.GetComponent<Renderer>().sharedMaterial=seaSpray;Object.DestroyImmediate(foam.GetComponent<Collider>());
             }
         }
 
@@ -408,8 +464,8 @@ namespace TheLightHouse.Editor
             var boat=GameObject.Find("Boat");if(!boat)return;
             foreach(var r in boat.GetComponents<Renderer>())r.enabled=false;foreach(var c in boat.GetComponents<Collider>())c.enabled=false;
             var previous=boat.transform.Find("Boat Visuals");if(previous)Object.DestroyImmediate(previous.gameObject);
-            Vector3 boatPos=new(-3.7f,-.42f,-28.5f);
-            boat.transform.localScale=Vector3.one;boat.transform.position=boatPos;boat.transform.rotation=Quaternion.Euler(0,15f,0);
+            Vector3 boatPos=new(-5.8f,settings.seaLevel+.12f,-29.8f);
+            boat.transform.localScale=Vector3.one;boat.transform.position=boatPos;boat.transform.rotation=Quaternion.Euler(1.2f,18f,-2.2f);
             var visuals=new GameObject("Boat Visuals").transform;visuals.SetParent(boat.transform,false);
             var points=new List<Vector3>();var triangles=new List<int>();const int sections=12;
             for(int i=0;i<=sections;i++)
@@ -440,8 +496,20 @@ namespace TheLightHouse.Editor
             var lightObject=new GameObject("Boat Lantern Light",typeof(Light));lightObject.transform.SetParent(visuals,false);lightObject.transform.localPosition=new(.5f,.9f,.4f);
             var light=lightObject.GetComponent<Light>();light.type=LightType.Point;light.color=new(1,.67f,.35f);light.intensity=1.8f;light.range=4;light.shadows=LightShadows.None;
 
+            // Sea foam crests around the clinker hull floating in ocean water
+            for(int f=0;f<4;f++)
+            {
+                float fz=-1.8f+f*1.2f;
+                var foamL=GameObject.CreatePrimitive(PrimitiveType.Cylinder);foamL.name=$"Boat Foam L {f}";foamL.transform.SetParent(visuals,false);
+                foamL.transform.localPosition=new(-1.25f,-.15f,fz);foamL.transform.localScale=new(.8f,.04f,1.1f);
+                foamL.GetComponent<Renderer>().sharedMaterial=seaSpray;Object.DestroyImmediate(foamL.GetComponent<Collider>());
+                var foamR=GameObject.CreatePrimitive(PrimitiveType.Cylinder);foamR.name=$"Boat Foam R {f}";foamR.transform.SetParent(visuals,false);
+                foamR.transform.localPosition=new(1.25f,-.15f,fz);foamR.transform.localScale=new(.8f,.04f,1.1f);
+                foamR.GetComponent<Renderer>().sharedMaterial=seaSpray;Object.DestroyImmediate(foamR.GetComponent<Collider>());
+            }
+
             // Mooring line to dock pile
-            Rod("Dock Mooring Line",root,boatPos+new Vector3(.8f,.45f,1.5f),new Vector3(-3.2f-1.35f,settings.landHeight+.7f,-31.0f),.035f,iron);
+            Rod("Dock Mooring Line",root,boatPos+new Vector3(.85f,.45f,1.2f),new Vector3(-4.55f,settings.landHeight+.7f,-31.0f),.035f,iron);
 
             var controller=Object.FindAnyObjectByType<Boatman>();if(controller){var so=new SerializedObject(controller);so.FindProperty("departureOffset").vector3Value=settings.departureOffset;so.ApplyModifiedPropertiesWithoutUndo();}
         }

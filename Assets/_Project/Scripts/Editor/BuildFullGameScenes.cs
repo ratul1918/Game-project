@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Events;
@@ -68,6 +69,7 @@ namespace TheLightHouse.Editor
             var matSlate = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Slate.mat");
             var matRain = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Rain.mat");
             var matGlow = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Dock Lantern Glow.mat");
+            var matFoam = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Sea Spray Foam.mat");
 
             // Sea Surface
             var sea = GameObject.CreatePrimitive(PrimitiveType.Plane);
@@ -77,20 +79,8 @@ namespace TheLightHouse.Editor
             sea.transform.localScale = new Vector3(30f, 1f, 30f);
             if (matSea) sea.GetComponent<Renderer>().sharedMaterial = matSea;
 
-            // Harrow Rock Mound (Rugged Coastal Bluff)
-            var rock = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            rock.name = "Harrow Rock Bluff Base";
-            rock.transform.SetParent(envRoot.transform);
-            rock.transform.position = new Vector3(6f, 0.5f, 22f);
-            rock.transform.localScale = new Vector3(36f, 3f, 26f);
-            if (matShale) rock.GetComponent<Renderer>().sharedMaterial = matShale;
-
-            var upperRock = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            upperRock.name = "Harrow Rock Bluff Upper";
-            upperRock.transform.SetParent(envRoot.transform);
-            upperRock.transform.position = new Vector3(7f, 2.5f, 22f);
-            upperRock.transform.localScale = new Vector3(22f, 2.5f, 18f);
-            if (matShale) upperRock.GetComponent<Renderer>().sharedMaterial = matShale;
+            // Harrow Rock Island Bluff (Wavy Organic Coastal Rock Promontory)
+            CreateOrganicWavyBluff(envRoot.transform, matShale, matFoam);
 
             // Lighthouse Masonry Tower
             var tower = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
@@ -635,6 +625,125 @@ namespace TheLightHouse.Editor
                 }
                 so.ApplyModifiedPropertiesWithoutUndo();
             }
+        }
+
+        static GameObject CreateOrganicWavyBluff(Transform parent, Material matShale, Material matFoam)
+        {
+            var root = new GameObject("Harrow Rock Island Bluff");
+            root.transform.SetParent(parent, false);
+
+            var vertices = new List<Vector3>();
+            var uvs = new List<Vector2>();
+            var triangles = new List<int>();
+
+            const int rings = 10;
+            const int angularSegments = 64;
+            Vector3 center = new Vector3(6f, 0, 22f);
+            float radiusX = 22f;
+            float radiusZ = 16f;
+            float plateauHeight = 3.6f;
+
+            for (int r = 0; r <= rings; r++)
+            {
+                float t = r / (float)rings;
+                float ringR = t;
+
+                for (int a = 0; a < angularSegments; a++)
+                {
+                    float angle = a * Mathf.PI * 2f / angularSegments;
+                    float sinA = Mathf.Sin(angle);
+                    float cosA = Mathf.Cos(angle);
+
+                    float harmonic = 1f 
+                        + 0.14f * Mathf.Sin(angle * 3f + 0.4f) 
+                        + 0.09f * Mathf.Cos(angle * 5f - 0.2f) 
+                        + 0.05f * Mathf.Sin(angle * 8f);
+
+                    float x = center.x + sinA * radiusX * ringR * harmonic;
+                    float z = center.z + cosA * radiusZ * ringR * harmonic;
+
+                    float y;
+                    if (t < 0.40f)
+                    {
+                        float plateauUndulation = 0.12f * Mathf.Sin(x * 0.4f) * Mathf.Cos(z * 0.35f);
+                        y = plateauHeight + plateauUndulation;
+                    }
+                    else if (t < 0.85f)
+                    {
+                        float cliffT = (t - 0.40f) / 0.45f;
+                        float stepped = Mathf.Floor(cliffT * 3f) / 3f;
+                        float ledge = Mathf.Lerp(cliffT, stepped, 0.45f);
+                        float cliffHeight = Mathf.Lerp(plateauHeight, 0.4f, ledge);
+                        float cragNoise = 0.28f * Mathf.Sin(angle * 7f) * Mathf.Cos(x * 0.4f) + 0.15f * Mathf.Sin(cliffHeight * 3.5f);
+                        y = cliffHeight + cragNoise;
+                    }
+                    else
+                    {
+                        float seaT = (t - 0.85f) / 0.15f;
+                        y = Mathf.Lerp(0.4f, -1.6f, seaT);
+                    }
+
+                    vertices.Add(new Vector3(x, y, z));
+                    uvs.Add(new Vector2(x * 0.15f, z * 0.15f));
+                }
+            }
+
+            for (int r = 0; r < rings; r++)
+            {
+                int row0 = r * angularSegments;
+                int row1 = (r + 1) * angularSegments;
+                for (int a = 0; a < angularSegments; a++)
+                {
+                    int nextA = (a + 1) % angularSegments;
+                    int i00 = row0 + a;
+                    int i01 = row0 + nextA;
+                    int i10 = row1 + a;
+                    int i11 = row1 + nextA;
+
+                    triangles.Add(i00);
+                    triangles.Add(i10);
+                    triangles.Add(i01);
+
+                    triangles.Add(i01);
+                    triangles.Add(i10);
+                    triangles.Add(i11);
+                }
+            }
+
+            var mesh = new Mesh { name = "MenuWavyBluff" };
+            mesh.SetVertices(vertices);
+            mesh.SetTriangles(triangles, 0);
+            mesh.SetUVs(0, uvs);
+            mesh.RecalculateNormals();
+            mesh.RecalculateTangents();
+            mesh.RecalculateBounds();
+
+            var mf = root.AddComponent<MeshFilter>();
+            mf.sharedMesh = mesh;
+            var mr = root.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = matShale;
+
+            var rnd = new System.Random(101);
+            for (int i = 0; i < 14; i++)
+            {
+                float ang = i * Mathf.PI * 2f / 14f;
+                float dist = 1f + 0.14f * Mathf.Sin(ang * 3f) + 0.09f * Mathf.Cos(ang * 5f);
+                float bx = center.x + Mathf.Sin(ang) * (radiusX * dist * 0.94f);
+                float bz = center.z + Mathf.Cos(ang) * (radiusZ * dist * 0.94f);
+                var boulder = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                boulder.name = "Menu Shore Boulder";
+                boulder.transform.SetParent(root.transform, false);
+                boulder.transform.position = new Vector3(bx, -0.65f, bz);
+                boulder.transform.localScale = new Vector3(
+                    2.4f + (float)rnd.NextDouble() * 1.6f,
+                    1.4f + (float)rnd.NextDouble() * 0.8f,
+                    2.4f + (float)rnd.NextDouble() * 1.6f
+                );
+                if (matShale) boulder.GetComponent<Renderer>().sharedMaterial = matShale;
+                Object.DestroyImmediate(boulder.GetComponent<Collider>());
+            }
+
+            return root;
         }
     }
 }
