@@ -59,7 +59,7 @@ namespace TheLightHouse.Editor
             var old=GameObject.Find(RootName);if(old)Object.DestroyImmediate(old);
             root=new GameObject(RootName).transform;
             foreach(var fog in Object.FindObjectsByType<FogCards>(FindObjectsSortMode.None))fog.gameObject.SetActive(false);
-            foreach(string name in new[]{"Beach","Sea Plane","Cliff West","Cliff East","Dock","Cliff Path","Courtyard Window L0","Shallows Window L0"})
+            foreach(string name in new[]{"Beach","Sea Plane","Cliff West","Cliff East","Dock","Cliff Path","Courtyard Window L0","Shallows Window L0","Salt Grass"})
             {
                 var go=GameObject.Find(name);if(!go)continue;
                 foreach(var r in go.GetComponents<Renderer>())r.enabled=false;
@@ -125,20 +125,8 @@ namespace TheLightHouse.Editor
         }
         static void Scrub()
         {
-            var points=new List<Vector3>();var triangles=new List<int>();var random=new System.Random(394);
-            for(int i=0;i<220;i++)
-            {
-                float x=-20+(float)random.NextDouble()*40,z=-24+(float)random.NextDouble()*34;
-                if(Mathf.Abs(x)<4 || (x>-13 && x<4 && z>-10) || (x>6 && x<15 && z>-18 && z<-10) || x*x/400+(z+6)*(z+6)/324>1)continue;
-                for(int blade=0;blade<12;blade++)
-                {
-                    float a=(float)random.NextDouble()*Mathf.PI*2,h=.18f+(float)random.NextDouble()*.4f;
-                    Vector3 p=new(x+(float)random.NextDouble()*.7f,.16f,z+(float)random.NextDouble()*.7f);
-                    Vector3 width=new(Mathf.Cos(a)*.025f,0,Mathf.Sin(a)*.025f);
-                    int k=points.Count;points.AddRange(new[]{p-width,p+new Vector3(Mathf.Sin(a)*.18f,h,Mathf.Cos(a)*.18f),p+width});triangles.AddRange(new[]{k,k+1,k+2,k+2,k+1,k});
-                }
-            }
-            MeshObject("Salt Grass",SaveMesh("Salt Grass",points,triangles),AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Coastal Scrub.mat"),root);
+            var oldGrass=GameObject.Find("Salt Grass");
+            if(oldGrass)Object.DestroyImmediate(oldGrass);
         }
         static void Sea()
         {

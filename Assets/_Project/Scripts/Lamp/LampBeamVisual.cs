@@ -33,6 +33,7 @@ namespace TheLightHouse
             if(coneRenderer)
             {
                 coneRenderer.transform.localScale=new Vector3(length,length,length);
+                if(properties==null)properties=new MaterialPropertyBlock();
                 coneRenderer.GetPropertyBlock(properties);properties.SetFloat(shaderIntensityProperty,displayedCharge);coneRenderer.SetPropertyBlock(properties);
             }
             if(glowSprite){Color color=glowSprite.color;color.a=Mathf.Lerp(unlitGlow,1f,displayedCharge);glowSprite.color=color;}

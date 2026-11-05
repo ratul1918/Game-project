@@ -75,6 +75,15 @@ namespace TheLightHouse.Editor
             leaf = ReferenceSurfaceLibrary.Create("Coastal Scrub", new(.16f,.21f,.16f), 0, .7f);
         }
 
+        public static void ApplyOpenScene()
+        {
+            Prepare();
+            AssetDatabase.StartAssetEditing();
+            try { ApplyScene(); }
+            finally { AssetDatabase.StopAssetEditing(); }
+            EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
+        }
+
         static void ApplyScene()
         {
             act = SceneManager.GetActiveScene().name; meshIndex = 0;
@@ -297,13 +306,16 @@ namespace TheLightHouse.Editor
             int count=Mathf.CeilToInt(settings.floorHeight/settings.stairStepHeight);
             float outerLevel0=settings.towerBaseDiameter*.5f-settings.towerBaseWallThickness-.03f;
             float innerLevel0=outerLevel0-settings.stairWidth;
-            // Solid stone starter curb and iron newel post anchoring foot of spiral stairs
-            Box("Spiral Stair Starter Curb",new(0,.08f,outerLevel0-.55f),new(settings.stairWidth+.12f,.16f,.44f),ground,true);
-            Rod("Stair Starter Newel",new(0,.14f,innerLevel0),new(0,1.25f,innerLevel0),.075f,iron);
-            Cylinder("Stair Starter Newel Base",new(0,.15f,innerLevel0),.12f,.03f,iron,Vector3.zero);
+            float baseAngle = 100f * Mathf.Deg2Rad;
+            // Solid stone starter curb and iron newel post anchoring foot of spiral stairs on East wall
+            Vector3 curbPos = new(Mathf.Sin(baseAngle)*(outerLevel0-.55f),.08f,Mathf.Cos(baseAngle)*(outerLevel0-.55f));
+            Box("Spiral Stair Starter Curb",curbPos,new(settings.stairWidth+.12f,.16f,.44f),ground,true);
+            Vector3 newelPos = new(Mathf.Sin(baseAngle)*innerLevel0,.14f,Mathf.Cos(baseAngle)*innerLevel0);
+            Rod("Stair Starter Newel",newelPos,newelPos+Vector3.up*1.11f,.075f,iron);
+            Cylinder("Stair Starter Newel Base",newelPos+Vector3.up*.01f,.12f,.03f,iron,Vector3.zero);
             for(int s=0;s<4;s++)
             {
-                float sa=s*Mathf.PI*2/count;
+                float sa=baseAngle - s*Mathf.PI*2/count;
                 float sy=(s+1)*settings.floorHeight/count;
                 Rod("Stair Wall Cantilever Bracket",
                     new(Mathf.Sin(sa)*innerLevel0,sy,Mathf.Cos(sa)*innerLevel0),
@@ -317,7 +329,7 @@ namespace TheLightHouse.Editor
                 float inner=outer-settings.stairWidth;
                 for(int step=0;step<count;step++)
                 {
-                    float a=step*Mathf.PI*2/count, b=(step+1)*Mathf.PI*2/count;
+                    float a=baseAngle - step*Mathf.PI*2/count, b=baseAngle - (step+1)*Mathf.PI*2/count;
                     float y=level*settings.floorHeight+(step+1)*settings.floorHeight/count;
                     Wedge("Iron Tread",inner,outer,a,b,y,.075f,grate,true);
                     Vector3 railA=new(Mathf.Sin(a)*inner,y+1.03f,Mathf.Cos(a)*inner);
@@ -332,7 +344,9 @@ namespace TheLightHouse.Editor
         {
             var points=new List<Vector3>();var tris=new List<int>();
             Vector3 P(float r,float angle,float h)=>new(Mathf.Sin(angle)*r,h,Mathf.Cos(angle)*r);
-            Vector3[] top={P(inner,a,y),P(outer,a,y),P(outer,b,y),P(inner,b,y)};
+            Vector3[] top = b > a 
+                ? new[]{P(inner,a,y),P(outer,a,y),P(outer,b,y),P(inner,b,y)}
+                : new[]{P(inner,b,y),P(outer,b,y),P(outer,a,y),P(inner,a,y)};
             void Face(Vector3 p0,Vector3 p1,Vector3 p2,Vector3 p3){int k=points.Count;points.AddRange(new[]{p0,p1,p2,p3});tris.AddRange(new[]{k,k+1,k+2,k,k+2,k+3});}
             Face(top[0],top[1],top[2],top[3]);Face(top[3]-Vector3.up*thick,top[2]-Vector3.up*thick,top[1]-Vector3.up*thick,top[0]-Vector3.up*thick);
             for(int i=0;i<4;i++){int j=(i+1)%4;Face(top[j],top[i],top[i]-Vector3.up*thick,top[j]-Vector3.up*thick);}
@@ -402,7 +416,7 @@ namespace TheLightHouse.Editor
             var lens=GameObject.CreatePrimitive(PrimitiveType.Sphere);lens.name="Beacon Core";lens.transform.SetParent(area);lens.transform.position=new(0,y+2.4f,0);lens.transform.localScale=new(1.2f,1.7f,1.2f);Object.DestroyImmediate(lens.GetComponent<Collider>());lens.GetComponent<Renderer>().sharedMaterial=ReferenceSurfaceLibrary.Solid("Beacon Glass",new(.7f,.86f,1f),5);
             Cylinder("Lamp Pedestal",new(0,y+.5f,0),.4f,1,iron,Vector3.zero);
             for(int i=0;i<8;i++)Cylinder("Fresnel Lens Ring",new(0,y+1.7f+i*.15f,0),.48f,.065f,glass,Vector3.zero);
-            for(int level=0;level<8;level+=2)
+            for(int level=2;level<8;level+=2)
             {
                 float radius=Mathf.Lerp(4,2.5f,level/8f);
                 Window(new(0,level*3.2f+1.6f,-radius-.07f),.75f,1.1f,false);

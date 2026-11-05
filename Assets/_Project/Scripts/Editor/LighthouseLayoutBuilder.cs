@@ -301,16 +301,16 @@ namespace TheLightHouse.Editor
         static void SpiralFlight(Transform parent,string name,float baseY)
         {
             Transform flight=Group(name,parent);int steps=Mathf.CeilToInt(dimensions.floorHeight/dimensions.stairStepHeight);float progress=baseY/(dimensions.floorHeight*Mathf.Max(1,dimensions.towerLevelCount));float diameter=Mathf.Lerp(dimensions.towerBaseDiameter,dimensions.towerGalleryDiameter,progress);float radius=diameter*.5f-Mathf.Lerp(dimensions.towerBaseWallThickness,dimensions.towerGalleryWallThickness,progress)-dimensions.stairWidth*.5f;
-            for(int i=0;i<steps;i++){float angle=i*360f/steps;float radians=angle*Mathf.Deg2Rad;GameObject step=Place($"{name} {i:00}",new(Mathf.Sin(radians)*radius,baseY+(i+.5f)*dimensions.stairStepHeight,Mathf.Cos(radians)*radius),new(dimensions.stairWidth,dimensions.stairStepHeight,dimensions.stairStepDepth),"Stair","Wood",flight);step.transform.rotation=Quaternion.Euler(0,-angle,0);}
+            for(int i=0;i<steps;i++){float angle=(100f-i*360f/steps);float radians=angle*Mathf.Deg2Rad;GameObject step=Place($"{name} {i:00}",new(Mathf.Sin(radians)*radius,baseY+(i+.5f)*dimensions.stairStepHeight,Mathf.Cos(radians)*radius),new(dimensions.stairWidth,dimensions.stairStepHeight,dimensions.stairStepDepth),"Stair","Wood",flight);step.transform.rotation=Quaternion.Euler(0,-angle,0);}
             Place($"{name} Landing",new(0,baseY+dimensions.floorHeight-.1f,0),new(2.6f,.2f,2.6f),"Floor","Wood",flight);
-            for(int i=0;i<6;i++){float a=i*60f;float r=a*Mathf.Deg2Rad;Place($"{name} Handrail {i}",new(Mathf.Sin(r)*3.1f,baseY+1.1f,Mathf.Cos(r)*3.1f),new(.08f,1.1f,.08f),"Wall","Metal",flight);}
+            for(int i=0;i<6;i++){float a=100f-i*60f;float r=a*Mathf.Deg2Rad;Place($"{name} Handrail {i}",new(Mathf.Sin(r)*3.1f,baseY+1.1f,Mathf.Cos(r)*3.1f),new(.08f,1.1f,.08f),"Wall","Metal",flight);}
         }
         static void StraightFlight(Transform parent,string name,Vector3 start,Vector3 end,int count){for(int i=0;i<count;i++){float t=(i+.5f)/count;Place($"{name} {i:00}",Vector3.Lerp(start,end,t),new(dimensions.stairWidth,dimensions.stairStepHeight,.5f),"Stair","Wood",parent);}}
         static void Link(Transform parent,string name,Vector3 start,Vector3 end){var link=new GameObject(name).AddComponent<NavMeshLink>();link.transform.SetParent(parent);link.startPoint=start;link.endPoint=end;link.width=dimensions.stairWidth;link.bidirectional=true;}
 
         static void BuildWindows(Transform root)
         {
-            Transform windows=Group("Windows",root);for(int level=0;level<=dimensions.towerLevelCount;level++){float t=level/(float)Mathf.Max(1,dimensions.towerLevelCount);float radius=Mathf.Lerp(dimensions.towerBaseDiameter,dimensions.towerGalleryDiameter,t)*.5f;float y=level*dimensions.floorHeight+1.5f;if(level>0)Window(windows,$"Courtyard Window L{level}",new(0,y,-radius-.03f),0);Window(windows,$"Shallows Window L{level}",new(radius+.03f,y,0),90);}
+            Transform windows=Group("Windows",root);for(int level=0;level<=dimensions.towerLevelCount;level++){float t=level/(float)Mathf.Max(1,dimensions.towerLevelCount);float radius=Mathf.Lerp(dimensions.towerBaseDiameter,dimensions.towerGalleryDiameter,t)*.5f;float y=level*dimensions.floorHeight+1.5f;if(level>0){Window(windows,$"Courtyard Window L{level}",new(0,y,-radius-.03f),0);Window(windows,$"Shallows Window L{level}",new(radius+.03f,y,0),90);}}
             Window(windows,"House Courtyard Window",new(-5,1.5f,-1.05f),0);Window(windows,"House Shallows Window",new(1.95f,1.5f,-5),90);
         }
         static void Window(Transform parent,string name,Vector3 position,float angle){GameObject frame=Place(name,position,new(1.6f,1.4f,.12f),"Window","Metal",parent);frame.transform.rotation=Quaternion.Euler(0,angle,0);frame.tag="Window";}
