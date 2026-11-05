@@ -41,6 +41,7 @@ flowchart LR
 | StalkerAI | Navigation and sound-driven state decisions | Global noise routing or story unlocks |
 | DrownedManager | Figure observation state and discrete advances | Lamp simulation or player movement |
 | StoryDirector | Current game state, beat prerequisites, unlocks, dawn transition | Low-level interaction and AI locomotion |
+| Optional network client | Authentication, WebSocket transport, server director influence | Required local gameplay state and offline fallback |
 
 ## Game state machine
 
@@ -65,6 +66,8 @@ stateDiagram-v2
 - `Finale`: courtyard sequence owns pacing; optional exploration is closed.
 - `Dawn`: hostile pursuit ends and the dock resolution runs.
 - `Ending`: gameplay input is disabled except approved UI actions.
+
+The server connection is an optional side channel. Socket callbacks cross `MainThreadDispatcher` before raising contracts or applying server director influence, and an unreachable server leaves the complete local state machine operational.
 
 Save/load and pause remain deferred. Act 2 adds a checkpoint catch flow: StalkerAI publishes PlayerSpotted
 then CatchRequested; CatchSequence locks the player and fades; PlayerHealthState restores the checkpoint

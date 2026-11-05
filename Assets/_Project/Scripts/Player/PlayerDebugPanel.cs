@@ -7,6 +7,7 @@ namespace TheLightHouse
         FirstPersonController player;
         float loudness;
         bool visible;
+        public bool IsVisible => visible;
         public void Initialize(FirstPersonController value) => player = value;
         public void Toggle() => visible = !visible;
         void OnEnable() => GameEvents.NoiseEmitted += Noise;

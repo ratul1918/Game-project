@@ -9,6 +9,7 @@ namespace TheLightHouse
         bool held;
         bool unlocked;
         public string Prompt => page && page.lockedUntilPhoto && !unlocked ? "The entry is sealed" : "Read logbook page";
+        public bool RequiresHold=>false;
         void OnEnable() => GameEvents.StoryBeatTriggered += Beat;
         void OnDisable() => GameEvents.StoryBeatTriggered -= Beat;
         void Beat(StoryBeatTriggeredEvent e) { if (e.Id == "A4-B05") { unlocked = true; journal?.UnlockFinalEntry(); } }

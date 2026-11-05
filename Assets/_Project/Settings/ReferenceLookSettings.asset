@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 964f12ada70a349f3b463ec073d979e9, type: 3}
+  m_Name: ReferenceLookSettings
+  m_EditorClassIdentifier: Assembly-CSharp::TheLightHouse.ReferenceLookSettings
+  plaster: {r: 0.32, g: 0.4, b: 0.38, a: 1}
+  wood: {r: 0.23, g: 0.19, b: 0.13, a: 1}
+  iron: {r: 0.15, g: 0.21, b: 0.22, a: 1}
+  moon: {r: 0.56, g: 0.72, b: 0.77, a: 1}
+  practical: {r: 1, g: 0.73, b: 0.4, a: 1}
+  moonIntensity: 0.42
+  practicalIntensity: 2.2
+  fogDensity: 0.018
+  surfaceWear: 0.72
+  vignette: 0.24
+  grain: 0.16
+  scrubCount: 85

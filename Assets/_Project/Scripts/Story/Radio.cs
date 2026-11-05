@@ -7,9 +7,11 @@ public sealed class Radio : MonoBehaviour,IInteractable {
 [SerializeField] float loudness=7;
 bool available;bool held;int index;
 public string Prompt=>"Operate radio";
+public bool RequiresHold=>false;
 void OnEnable()=>GameEvents.StoryBeatTriggered+=Beat;
 void OnDisable()=>GameEvents.StoryBeatTriggered-=Beat;
 void Beat(StoryBeatTriggeredEvent e){if(e.Id!="A1-B04")return;available=true;GameEvents.RequestDialogue(greeting);GetComponent<NoiseEmitter>().Emit(loudness);}
 public void Interact(){if(held||!available)return;held=true;GameEvents.RaiseStorySignal("radio");if(index>0 && reassurance.Length>0)GameEvents.RequestDialogue(reassurance[(index-1)%reassurance.Length]);index++;}
 public void StopInteract()=>held=false;
+public void ReceiveServerMessage(string id,string text){if(!string.IsNullOrEmpty(text))GameEvents.RequestDialogue(new("Marta",text));}
 }}

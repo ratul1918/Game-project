@@ -18,3 +18,9 @@ Keep the Drowned half-hidden by fog, framing and darkness. Their shapes should r
 ## Performance rules
 
 Bake static lighting, reflection probes and light probes where practical. Keep additional real-time lights few, non-shadowed unless essential, and short-ranged. Use low-count fog particles, shared materials, LODs and occlusion-friendly greybox layouts. The visual target is a stable 30–60 FPS on an M3 MacBook Air under sustained passive cooling.
+
+## November 2026 reference direction
+
+The three supplied reference images supersede the greybox appearance: salt-stained teal-grey plaster, dark timber planks and ceilings, aged iron open stairs, barrel storage, and a cluttered analogue radio desk under a shaded task lamp. Outside, use a pitched-roof keeper house beside the tapering tower, a circular iron gallery, a framed lantern, sparse coastal scrub, cold white beacon and layered storm haze. Warm light is restricted to small interior practicals. Preserve readable paths and the existing dusk-to-dawn story progression rather than forcing permanent night.
+
+`ReferenceVisualPass` applies original procedural materials and authored dressing to existing Act1–5 scenes without rebuilding story systems. Its settings live in ReferenceLookSettings. Existing scene edits and gameplay anchors are preserved; replacement architectural renderers/colliders are restricted to generated layout geometry. Reference images are composition references only, not shipped textures. Texture maps are 512px, mipmapped and shared. Decorative geometry is combined per material per area. Preview exports are actual Unity camera renders, not target screenshots.

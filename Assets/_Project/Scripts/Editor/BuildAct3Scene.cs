@@ -91,6 +91,7 @@ namespace TheLightHouse.Editor
     Beat("A3-B07","lamp-pulse","","A3-B03"),
     Beat("A3-B08","courtyard-filling","","A3-B04"),
     Beat("A3-B09","storm-end","Act 3 complete — Crane's logbook is available (Act 4 pending)","A3-B04")});
+   LighthouseLayoutBuilder.BuildSharedLayout("Act3");
    EditorSceneManager.SaveScene(scene,scenePath);AssetDatabase.SaveAssets();
    Debug.Log("Act 3 built. Bake Navigation/NavMeshSurface, save, then Play. Reduced storm visuals are enabled by default.");
   }

@@ -21,18 +21,38 @@ namespace TheLightHouse
             string next=e.Id switch {"A1-B06"=>act2Scene,"A2-B07"=>act3Scene,"A3-B09"=>act4Scene,"A4-B06"=>act5Scene,_=>""};
             if(string.IsNullOrEmpty(next))return;saves.Save();BeginTransition(next);
         }
-        public void StartNew(){saves.NewGame();BeginTransition(act1Scene);}
+        public void StartNew(){saves.NewGame();FindAnyObjectByType<RunTracker>()?.StartRun();BeginTransition(act1Scene);}
         public void Continue(){if(saves.Load())BeginTransition(string.IsNullOrEmpty(saves.Data.act)?act1Scene:saves.Data.act);else StartNew();}
         public void SkipToAct(int act){string[] scenes={act1Scene,act2Scene,act3Scene,act4Scene,act5Scene};BeginTransition(scenes[Mathf.Clamp(act-1,0,scenes.Length-1)]);}
         public void ApplyOptions(GameOptionsData options)=>saves?.SetOptions(options);
         void BeginTransition(string sceneName){if(!transitioning)StartCoroutine(Transition(sceneName));}
         IEnumerator Transition(string sceneName)
         {
-            transitioning=true;Scene previous=SceneManager.GetActiveScene();AsyncOperation load=SceneManager.LoadSceneAsync(sceneName,LoadSceneMode.Additive);if(load==null){transitioning=false;yield break;}yield return load;
-            Scene next=SceneManager.GetSceneByName(sceneName);if(next.IsValid())SceneManager.SetActiveScene(next);
-            if(previous.IsValid()&&previous.isLoaded&&previous!=next)yield return SceneManager.UnloadSceneAsync(previous);
-            if(transitionReleaseDelay>0f)yield return new WaitForSecondsRealtime(transitionReleaseDelay);
-            yield return Resources.UnloadUnusedAssets();saves?.RestoreSceneState();transitioning=false;
+            transitioning = true;
+            LoadingScreenUI.Instance?.Show(0.1f);
+            Scene previous = SceneManager.GetActiveScene();
+            AsyncOperation load = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+            if (load == null)
+            {
+                transitioning = false;
+                LoadingScreenUI.Instance?.Hide();
+                yield break;
+            }
+            while (!load.isDone)
+            {
+                LoadingScreenUI.Instance?.UpdateProgress(load.progress * 0.8f);
+                yield return null;
+            }
+            Scene next = SceneManager.GetSceneByName(sceneName);
+            if (next.IsValid()) SceneManager.SetActiveScene(next);
+            if (previous.IsValid() && previous.isLoaded && previous != next)
+                yield return SceneManager.UnloadSceneAsync(previous);
+            if (transitionReleaseDelay > 0f) yield return new WaitForSecondsRealtime(transitionReleaseDelay);
+            yield return Resources.UnloadUnusedAssets();
+            saves?.RestoreSceneState();
+            LoadingScreenUI.Instance?.UpdateProgress(1.0f);
+            LoadingScreenUI.Instance?.Hide();
+            transitioning = false;
         }
     }
 }

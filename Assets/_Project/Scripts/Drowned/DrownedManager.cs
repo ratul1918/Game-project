@@ -33,6 +33,8 @@ namespace TheLightHouse
         void Dawn(DawnReachedEvent e){dawnActive=true;frozen=true;foreach(var figure in figures)if(figure&&figure.gameObject.activeSelf)figure.ReturnToWater(finaleSettings?finaleSettings.returnDuration:6f,finaleSettings?finaleSettings.sinkDepth:2.5f);}
         public int FiguresAtDoor{get{int count=0;foreach(var figure in figures)if(figure&&figure.AtDoor)count++;return count;}}
         public void SetFrozen(bool value)=>frozen=value;
+        public void SetServerPressure(float value)=>readingSpeed=Mathf.Clamp(value,.5f,2f);
+        public void ClearServerPressure()=>readingSpeed=1f;
         void Pulse(){foreach(var figure in figures){figure.CheckVisibility(view);if(!figure.Seen)figure.StepBack();}}
         void Lamp(LampStateChangedEvent e)=>lamp=e.Current;
         void Missed()=>missedDusk=true;

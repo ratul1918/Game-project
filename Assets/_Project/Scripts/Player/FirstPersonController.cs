@@ -61,6 +61,9 @@ namespace TheLightHouse
         private float verticalVelocity;
         private float pitch;
         private float lookSensitivityMultiplier=1f;
+        private FirstPersonArms arms;
+        public float MoveSpeedMultiplier { get; set; } = 1f;
+        public FirstPersonArms Arms => arms;
         public void ApplyOptions(float sensitivityMultiplier,bool disableBobAndFov){lookSensitivityMultiplier=Mathf.Max(.01f,sensitivityMultiplier);settings.disableBobAndFov=disableBobAndFov;}
         public bool MovementEnabled
         {
@@ -75,6 +78,7 @@ namespace TheLightHouse
         private void Awake()
         {
             characterController = GetComponent<CharacterController>();
+            if (cameraTransform) pitch = Mathf.DeltaAngle(0f, cameraTransform.localEulerAngles.x);
             noiseEmitter ??= GetComponent<NoiseEmitter>();
 
             if (!settings) settings = Resources.Load<PlayerMovementSettings>("PlayerMovementSettings");
@@ -96,6 +100,7 @@ namespace TheLightHouse
                 viewCamera.nearClipPlane = settings.cameraNearClip;
             characterController.slopeLimit = settings.slopeLimit;
             characterController.skinWidth = settings.skinWidth;
+            arms = GetComponentInChildren<FirstPersonArms>();
             ResolveActions();
         }
 
@@ -180,6 +185,7 @@ namespace TheLightHouse
             }
             cameraTransform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
             transform.Rotate(Vector3.up, lookInput.x, Space.Self);
+            if (arms) arms.UpdateMotion(lookInput, Speed, Time.deltaTime);
         }
 
         private void UpdateMovement()
@@ -211,7 +217,7 @@ namespace TheLightHouse
             if (groundBefore) lastGroundedTime = Time.time;
             sprinting = canMove && !crouching && groundBefore && input.sqrMagnitude > MovementInputThreshold
                 && sprintAction != null && sprintAction.IsPressed() && stamina.CanSprint;
-            float speed = crouching ? settings.crouchSpeed : sprinting ? settings.sprintSpeed : settings.walkSpeed;
+            float speed = (crouching ? settings.crouchSpeed : sprinting ? settings.sprintSpeed : settings.walkSpeed) * MoveSpeedMultiplier;
             Vector3 target = (transform.right * input.x + transform.forward * input.y) * speed;
             float rate = input.sqrMagnitude > MovementInputThreshold ? settings.acceleration : settings.deceleration;
             horizontalVelocity = canMove ? Vector3.MoveTowards(horizontalVelocity, target,

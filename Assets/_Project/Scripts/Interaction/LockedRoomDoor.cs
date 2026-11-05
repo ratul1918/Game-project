@@ -14,6 +14,7 @@ namespace TheLightHouse
         Quaternion closed;
         bool held,locked=true,open;
         public string Prompt=>locked?"Unlock Crane's room":open?"Close Crane's room":"Open Crane's room";
+        public bool RequiresHold=>false;
         void Awake()=>closed=transform.localRotation;
         void Update()=>transform.localRotation=Quaternion.RotateTowards(transform.localRotation,closed*Quaternion.Euler(0,open?openAngle:0,0),turnSpeed*Time.deltaTime);
         public void Interact()

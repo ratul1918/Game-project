@@ -5,6 +5,7 @@ public class Pickup : MonoBehaviour,IInteractable {
 [SerializeField] string prompt="Take fuel can";
 bool taken;
 public string Prompt=>prompt;
+public bool RequiresHold=>false;
 public void Interact(){if(taken)return;taken=true;GameEvents.RaiseItemCollected(new(itemId));gameObject.SetActive(false);}
 public void StopInteract(){}
 }}

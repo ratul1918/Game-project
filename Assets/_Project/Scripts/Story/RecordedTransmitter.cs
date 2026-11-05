@@ -12,6 +12,7 @@ namespace TheLightHouse
         float nextRepeat;
         AudioSource source;
         public string Prompt=>revealed?"The recorder is stopped":"Stop the recorder";
+        public bool RequiresHold=>false;
         void Awake(){source=GetComponent<AudioSource>();source.loop=true;source.clip=loopingGreeting;source.spatialBlend=1f;}
         void Start(){if(loopingGreeting)source.Play();nextRepeat=Time.time;}
         void Update(){if(revealed||Time.time<nextRepeat)return;nextRepeat=Time.time+repeatInterval;GameEvents.RequestDialogue(new("Marta (recording)","Daniel Hale. You made good time."));GameEvents.RaiseNoiseEmitted(new(transform.position,radioNoise,gameObject));}

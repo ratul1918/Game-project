@@ -196,6 +196,15 @@ namespace TheLightHouse
         public CheckpointReachedEvent(string id,Vector3 position){Id=id;Position=position;}
     }
 
+    public readonly struct RoomEnteredEvent
+    {
+        public readonly string RoomId;
+        public readonly string DisplayName;
+        public readonly int FloorLevel;
+        public RoomEnteredEvent(string roomId,string displayName,int floorLevel)
+        { RoomId=roomId;DisplayName=displayName;FloorLevel=floorLevel; }
+    }
+
     public static class GameEvents
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -208,6 +217,7 @@ namespace TheLightHouse
             CrankActiveChanged = null;
             StaminaChanged = null;
             CatchRequested = null;
+            PlayerDeath = null;
             BreathChanged = null;
             PlayerRespawned = null;
             HidingEntered = null;
@@ -238,6 +248,9 @@ namespace TheLightHouse
             CheckpointReached = null;
             LedgerEndingRead = null;
             DawnThresholdReached = null;
+            ServerStormState = null;
+            ServerConnectionChanged = null;
+            RoomEntered = null;
         }
         public static event Action<NoiseEmittedEvent> NoiseHeard;
         public static event Action Thunder;
@@ -251,6 +264,7 @@ namespace TheLightHouse
         public static void RaiseLampPulse() => LampPulse?.Invoke();
         public static event Action<StaminaChangedEvent> StaminaChanged;
         public static event Action CatchRequested;
+        public static event Action PlayerDeath;
         public static event Action<float> BreathChanged;
         public static void RaiseBreathChanged(float normalized) => BreathChanged?.Invoke(normalized);
         public static event Action PlayerRespawned;
@@ -260,6 +274,7 @@ namespace TheLightHouse
         public static event Action FrontDoorTried;
         public static event Action<StalkerAI.StalkerState> StalkerStateChanged;
         public static void RaiseCatchRequested() => CatchRequested?.Invoke();
+        public static void RaisePlayerDeath() => PlayerDeath?.Invoke();
         public static void RaisePlayerRespawned() => PlayerRespawned?.Invoke();
         public static void RaiseHidingEntered(HidingSpot spot) => HidingEntered?.Invoke(new(spot));
         public static void RaiseHidingExited() => HidingExited?.Invoke();
@@ -301,6 +316,9 @@ namespace TheLightHouse
         public static event Action<CheckpointReachedEvent> CheckpointReached;
         public static event Action LedgerEndingRead;
         public static event Action<float> DawnThresholdReached;
+        public static event Action<ServerStormStateEvent> ServerStormState;
+        public static event Action<ServerConnectionChangedEvent> ServerConnectionChanged;
+        public static event Action<RoomEnteredEvent> RoomEntered;
         public static void RaisePageRead(PageReadEvent e) => PageRead?.Invoke(e);
         public static void RaiseLedgerRead(LedgerReadEvent e) => LedgerRead?.Invoke(e);
         public static void RaiseReadingStateChanged(ReadingStateChangedEvent e) => ReadingStateChanged?.Invoke(e);
@@ -309,6 +327,9 @@ namespace TheLightHouse
         public static void RaiseCheckpointReached(CheckpointReachedEvent e)=>CheckpointReached?.Invoke(e);
         public static void RaiseLedgerEndingRead()=>LedgerEndingRead?.Invoke();
         public static void RaiseDawnThresholdReached(float elapsed)=>DawnThresholdReached?.Invoke(elapsed);
+        public static void RaiseServerStormState(ServerStormStateEvent e)=>ServerStormState?.Invoke(e);
+        public static void RaiseServerConnectionChanged(ServerConnectionChangedEvent e)=>ServerConnectionChanged?.Invoke(e);
+        public static void RaiseRoomEntered(RoomEnteredEvent e)=>RoomEntered?.Invoke(e);
         public static void RaiseDawnReached(DawnReachedEvent e)=>DawnReached?.Invoke(e);
 
         public static void RaiseNoiseEmitted(NoiseEmittedEvent eventData)
@@ -351,5 +372,17 @@ namespace TheLightHouse
     {
         public readonly DrownedFigure Figure;
         public FigureAtDoorEvent(DrownedFigure figure) { Figure=figure; }
+    }
+    public readonly struct ServerStormStateEvent
+    {
+        public readonly float Intensity;
+        public readonly long Sequence;
+        public ServerStormStateEvent(float intensity,long sequence){Intensity=intensity;Sequence=sequence;}
+    }
+    public readonly struct ServerConnectionChangedEvent
+    {
+        public readonly string Status;
+        public readonly bool Connected;
+        public ServerConnectionChangedEvent(string status,bool connected){Status=status;Connected=connected;}
     }
 }

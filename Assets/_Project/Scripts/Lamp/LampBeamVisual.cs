@@ -10,18 +10,19 @@ namespace TheLightHouse
         [SerializeField] SpriteRenderer glowSprite;
         [SerializeField,Min(0f)] float rotationDegreesPerSecond=24f;
         [SerializeField,Min(0f)] float minimumIntensity=.2f;
-        [SerializeField,Min(0f)] float maximumIntensity=12f;
-        [SerializeField,Min(.1f)] float minimumLength=8f;
-        [SerializeField,Min(.1f)] float maximumLength=30f;
+        [SerializeField,Min(0f)] float maximumIntensity=18f;
+        [SerializeField,Min(.1f)] float minimumLength=12f;
+        [SerializeField,Min(.1f)] float maximumLength=42f;
         [SerializeField,Range(0f,1f)] float unlitGlow=.05f;
         [SerializeField,Min(.01f)] float responseSpeed=4f;
         [SerializeField] string shaderIntensityProperty="_BeamIntensity";
+        [SerializeField] bool startLit=true;
         float targetCharge=1f,displayedCharge=1f;
         MaterialPropertyBlock properties;
 
         void OnEnable(){GameEvents.LampChargeChanged+=ChargeChanged;GameEvents.LampStateChanged+=StateChanged;}
         void OnDisable(){GameEvents.LampChargeChanged-=ChargeChanged;GameEvents.LampStateChanged-=StateChanged;}
-        void Awake()=>properties=new MaterialPropertyBlock();
+        void Awake(){properties=new MaterialPropertyBlock();if(!startLit){targetCharge=0f;displayedCharge=0f;}}
         void ChargeChanged(float value)=>targetCharge=Mathf.Clamp01(value);
         void StateChanged(LampStateChangedEvent change)=>targetCharge=change.IsLit?Mathf.Clamp01(change.IntensityNormalized):0f;
         void Update()
@@ -33,6 +34,7 @@ namespace TheLightHouse
             if(coneRenderer)
             {
                 coneRenderer.transform.localScale=new Vector3(length,length,length);
+                if(properties==null)properties=new MaterialPropertyBlock();
                 coneRenderer.GetPropertyBlock(properties);properties.SetFloat(shaderIntensityProperty,displayedCharge);coneRenderer.SetPropertyBlock(properties);
             }
             if(glowSprite){Color color=glowSprite.color;color.a=Mathf.Lerp(unlitGlow,1f,displayedCharge);glowSprite.color=color;}

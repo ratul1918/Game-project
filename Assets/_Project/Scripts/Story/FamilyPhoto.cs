@@ -12,6 +12,7 @@ namespace TheLightHouse
         [SerializeField] float inspectDuration=4f;
         bool held,revealed;
         public string Prompt=>"Inspect the family photograph";
+        public bool RequiresHold=>false;
         public void Interact(){if(held||revealed||!view||!inspectionPose)return;held=true;revealed=true;StartCoroutine(Reveal());}
         public void StopInteract()=>held=false;
         IEnumerator Reveal()

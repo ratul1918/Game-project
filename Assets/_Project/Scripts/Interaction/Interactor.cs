@@ -18,6 +18,7 @@ namespace TheLightHouse
         [Header("UI")]
         [SerializeField] private InteractionPrompt interactionPrompt;
 
+        private readonly RaycastHit[] raycastHits = new RaycastHit[32];
         private InputAction interactAction;
         private IInteractable focusedInteractable;
         private bool isInteracting;
@@ -54,12 +55,13 @@ namespace TheLightHouse
                 return;
             }
 
-            if (interactAction.IsPressed())
+            if (interactAction.WasPressedThisFrame() ||
+                (focusedInteractable.RequiresHold && interactAction.IsPressed()))
             {
                 isInteracting = true;
                 focusedInteractable.Interact();
             }
-            else if (isInteracting)
+            else if (isInteracting && !interactAction.IsPressed())
             {
                 StopInteraction();
             }
@@ -85,17 +87,20 @@ namespace TheLightHouse
             }
 
             Ray ray = new(viewCamera.transform.position, viewCamera.transform.forward);
-            if (!Physics.Raycast(
-                    ray,
-                    out RaycastHit hit,
-                    interactionDistance,
-                    interactionLayers,
-                    QueryTriggerInteraction.Ignore))
+            int count = Physics.RaycastNonAlloc(ray, raycastHits, interactionDistance,
+                interactionLayers, QueryTriggerInteraction.Ignore);
+            Collider closest = null;
+            float distance = float.PositiveInfinity;
+            for (int index = 0; index < count; index++)
             {
-                return null;
+                var hit = raycastHits[index];
+                if (hit.collider.transform.IsChildOf(transform) || hit.distance >= distance) continue;
+                closest = hit.collider;
+                distance = hit.distance;
             }
+            if (closest == null) return null;
 
-            MonoBehaviour[] behaviours = hit.collider.GetComponentsInParent<MonoBehaviour>();
+            MonoBehaviour[] behaviours = closest.GetComponentsInParent<MonoBehaviour>();
             foreach (MonoBehaviour behaviour in behaviours)
             {
                 if (!behaviour.isActiveAndEnabled)

@@ -1,5 +1,10 @@
 # Game Event Contracts
 
+## Shared level and HUD additions
+
+- `RoomEntered: Action<RoomEnteredEvent>` is published by `RoomTrigger` when the player enters a generated room volume. The immutable payload carries stable `RoomId`, display-safe `DisplayName`, and integer `FloorLevel`. HUD subscribers may show a temporary room/floor label; it is not a minimap and does not own progression.
+- Noise, stamina, lamp, objective, inventory, checkpoint, journal, and interaction HUD elements remain presentation subscribers to their existing owning events. HUD settings never suppress gameplay events.
+
 ## Act 5 additions
 
 - `FinalePhaseChanged: Action<FinalePhaseChangedEvent>` publishes the current `FinalePhase` (`Flood`, `Hold`, `CraneIntervenes`, `DawnCountdown`, `Escape`) and normalized phase progress. `DrownedManager` uses Hold progress only to raise its serialized pressure multiplier.
@@ -55,6 +60,9 @@ stalker-stairs, lamp-pulse, courtyard-filling, storm-end. StoryDirector alone pu
 The contract's watched-figure freeze rule takes precedence over the request to ignore sight when extinguished.
 
 ## Act 2 additions
+
+- `PlayerDeath: Action`: CatchSequence announces a catch/death for telemetry. It does not replace
+  `CatchRequested`, which remains the gameplay request event.
 
 - `CatchRequested: Action`: StalkerAI requests a non-gory catch only after PlayerSpotted.
 - `PlayerRespawned: Action`: PlayerHealthState announces checkpoint recovery; StalkerAI returns to Patrol.
@@ -122,6 +130,7 @@ namespace TheLightHouse
         public static event Action<ItemCollectedEvent> ItemCollected;
         public static event Action<DoorStateChangedEvent> DoorStateChanged;
         public static event Action<DawnReachedEvent> DawnReached;
+        public static event Action<RoomEnteredEvent> RoomEntered;
     }
 }
 ```
@@ -319,6 +328,14 @@ Standing still, leaning, intro-locked movement and jumping while hidden emit no 
 Footsteps follow half-cycle crossings of the head-bob phase only while actually moving on the ground.
 Disabling visual bob does not change audible gameplay events.
 
+### ServerStormState
+
+`NetworkClient` publishes `Action<ServerStormStateEvent>` via `GameEvents.ServerStormState` on Unity's main thread after receiving `STORM_STATE`. The immutable payload contains normalized `float Intensity` and per-session `long Sequence`. `ServerDirectorApplier` also applies the server intensity to `StormController` while server influence is active; `StormController` falls back to its local intensity when that influence is cleared.
+
+### ServerConnectionChanged
+
+`NetworkClient` publishes `Action<ServerConnectionChangedEvent>` via `GameEvents.ServerConnectionChanged` on Unity's main thread. The payload contains display-safe `string Status` and `bool Connected`. Expected statuses are Logging in, Connecting, Online and Offline. Offline mode preserves all local gameplay.
+
 ### StaminaChanged
 
 PlayerStamina publishes `Action<StaminaChangedEvent>` via `GameEvents.StaminaChanged`.
@@ -326,3 +343,13 @@ The immutable payload contains `float Current`, `float Capacity`, and `bool Exha
 `Exhausted` describes the temporary sprint/jump lockout after reaching zero.
 Example subscription: `GameEvents.StaminaChanged += HandleStamina;`; unsubscribe on disable.
 No changes were made to the NoiseEmitted payload or existing 2/6/12 m movement bases.
+
+## Reference atmosphere presentation
+
+`ReferenceRain` consumes `GameStateChanged` only: drizzle during arrival/night, heavier rain during storm/finale, fading to zero at dawn/ending. This exterior-only visual system does not emit gameplay noise or replace StormController's lightning, wind, accessibility settings or beat timing.
+
+## Island access
+
+DoorStateChanged retains its payload and existing `tower-front-door` ID. `tower-seaward-door` identifies the separate east lighthouse entrance; `Keeper House Front Door` retains the house entrance ID. Doors continue to emit NoiseEmitted through NoiseEmitter. Door colliders move with leaves so Closed blocks traversal and Open clears the doorway. No additional arrival or departure events are introduced.
+
+Interaction raycasts ignore colliders belonging to the player, including when looking down at a handle. The closest remaining solid hit still occludes interaction; doors behind walls cannot be used.

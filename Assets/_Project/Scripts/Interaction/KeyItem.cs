@@ -8,6 +8,7 @@ namespace TheLightHouse
         [SerializeField] string prompt="Take Crane's room key";
         bool available,held,taken;
         public string Prompt=>available?prompt:"Nothing useful here yet";
+        public bool RequiresHold=>false;
         void OnEnable()=>GameEvents.StoryBeatTriggered+=Beat;
         void OnDisable()=>GameEvents.StoryBeatTriggered-=Beat;
         void Beat(StoryBeatTriggeredEvent e){if(e.Id=="A4-B04")available=true;}

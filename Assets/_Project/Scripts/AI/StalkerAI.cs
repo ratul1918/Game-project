@@ -4,7 +4,7 @@ using UnityEngine.AI;
 namespace TheLightHouse
 {
     [RequireComponent(typeof(NavMeshAgent))]
-    public sealed class StalkerAI : MonoBehaviour
+    public sealed class StalkerAI : MonoBehaviour, IDamageable
     {
         public enum StalkerState
         {
@@ -47,6 +47,9 @@ namespace TheLightHouse
         private HidingSpot checkingSpot;
         private Vector3 searchOrigin;
         private CraneHerding herding;
+        float serverHearingMultiplier=1f;
+        public void SetServerHearingMultiplier(float value)=>serverHearingMultiplier=Mathf.Clamp(value,.5f,2f);
+        public void ClearServerHearingMultiplier()=>serverHearingMultiplier=1f;
         private NavMeshAgent agent;
         [SerializeField] private StormSettings stormSettings;
         [SerializeField] private AudioClip stairFootsteps;
@@ -77,6 +80,18 @@ namespace TheLightHouse
         public StalkerState CurrentState => currentState;
         public string StateName => currentState.ToString();
         public bool PostRevealMode => postRevealMode;
+
+        public void TakeHit(float damage, Vector3 hitPoint, Vector3 hitDirection, bool isHeavy)
+        {
+            if (currentState == StalkerState.Retreat) return;
+            retreatUntil = Time.time + (isHeavy ? 4.0f : 2.0f);
+            if (agent && agent.isOnNavMesh)
+            {
+                agent.ResetPath();
+                agent.isStopped = true;
+            }
+            ChangeState(StalkerState.Retreat);
+        }
 
         private void Awake()
         {
@@ -198,7 +213,7 @@ namespace TheLightHouse
             if(!HearingEnabled)return;
             if(stormComplete)return;
             if (eventData.Source == gameObject || (actTwo && (Time.time < nextHearingTime || currentState == StalkerState.Retreat))) return;
-            float audibleRadius = Mathf.Min(hearingRange, eventData.Loudness);
+            float audibleRadius = Mathf.Min(hearingRange, eventData.Loudness*serverHearingMultiplier);
             float distanceToNoise = Vector3.Distance(transform.position, eventData.Position);
             if (actTwo) audibleRadius *= Mathf.Clamp01(hearingCurve.Evaluate(distanceToNoise / Mathf.Max(hearingRange, .01f)));
             if (distanceToNoise > audibleRadius)

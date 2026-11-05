@@ -9,6 +9,7 @@ TagManager:
   - Metal
   - Water
   - Sand
+  - Window
   layers:
   - Default
   - TransparentFX
