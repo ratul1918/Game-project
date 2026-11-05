@@ -310,7 +310,7 @@ namespace TheLightHouse.Editor
 
         static void BuildWindows(Transform root)
         {
-            Transform windows=Group("Windows",root);for(int level=0;level<=dimensions.towerLevelCount;level++){float t=level/(float)Mathf.Max(1,dimensions.towerLevelCount);float radius=Mathf.Lerp(dimensions.towerBaseDiameter,dimensions.towerGalleryDiameter,t)*.5f;float y=level*dimensions.floorHeight+1.5f;Window(windows,$"Courtyard Window L{level}",new(0,y,-radius-.03f),0);Window(windows,$"Shallows Window L{level}",new(radius+.03f,y,0),90);}
+            Transform windows=Group("Windows",root);for(int level=0;level<=dimensions.towerLevelCount;level++){float t=level/(float)Mathf.Max(1,dimensions.towerLevelCount);float radius=Mathf.Lerp(dimensions.towerBaseDiameter,dimensions.towerGalleryDiameter,t)*.5f;float y=level*dimensions.floorHeight+1.5f;if(level>0)Window(windows,$"Courtyard Window L{level}",new(0,y,-radius-.03f),0);Window(windows,$"Shallows Window L{level}",new(radius+.03f,y,0),90);}
             Window(windows,"House Courtyard Window",new(-5,1.5f,-1.05f),0);Window(windows,"House Shallows Window",new(1.95f,1.5f,-5),90);
         }
         static void Window(Transform parent,string name,Vector3 position,float angle){GameObject frame=Place(name,position,new(1.6f,1.4f,.12f),"Window","Metal",parent);frame.transform.rotation=Quaternion.Euler(0,angle,0);frame.tag="Window";}
@@ -347,6 +347,7 @@ namespace TheLightHouse.Editor
         static void RelocateGameplayAnchors(string actName)
         {
             Move("Tower Door",new(0,0,-4.15f));MoveChild("Tower Door","Door panel",new(0,1.1f,0));EnsureDoorCollider("Tower Door",dimensions.towerDoorWidth,dimensions.towerDoorHeight);
+            var oldPanel=GameObject.Find("Tower Door")?.transform.Find("Door panel");if(oldPanel)Object.DestroyImmediate(oldPanel.gameObject);
             MakeNonBlocking("Door panel");
             Move("Radio",new(-8,1,-5));Move("Hot Meal",new(-8,.9f,-6));Move("Table",new(-8,.45f,-6));Move("Steam placeholder",new(-8,1.1f,-6));
             Move("Lamp",new(0,dimensions.towerLevelCount*dimensions.floorHeight+1.1f,0));Move("Crank Station",new(2.2f,dimensions.towerLevelCount*dimensions.floorHeight+.35f,0));
@@ -360,6 +361,7 @@ namespace TheLightHouse.Editor
         static void BuildHud()
         {
             GameObject canvas=GameObject.Find("Debug Canvas");if(!canvas)return;if(!canvas.GetComponent<UiAudio>())canvas.AddComponent<UiAudio>();CanvasScaler scaler=canvas.GetComponent<CanvasScaler>();if(scaler){scaler.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;scaler.referenceResolution=new(1920,1080);scaler.screenMatchMode=CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;scaler.matchWidthOrHeight=.5f;}
+            Transform legacyObjective=canvas.transform.Find("Objective");if(legacyObjective)Object.DestroyImmediate(legacyObjective.gameObject);
             Transform previous=canvas.transform.Find("HUD Root");if(previous)Object.DestroyImmediate(previous.gameObject);RectTransform root=Rect("HUD Root",canvas.transform,Vector2.zero,Vector2.one);UITheme theme=AssetDatabase.LoadAssetAtPath<UITheme>($"{SettingsFolder}/UITheme.asset");HudSettings settings=AssetDatabase.LoadAssetAtPath<HudSettings>($"{SettingsFolder}/HudSettings.asset");HudRoot hud=root.gameObject.AddComponent<HudRoot>();Set(hud,"theme",theme);Set(hud,"settings",settings);Set(hud,"scalableRoot",root);
             GameObject noise=Panel("NoiseMeter",root,new(.03f,.06f),new(.17f,.11f),new Color(theme.Panel.r,theme.Panel.g,theme.Panel.b,.72f));CanvasGroup noiseGroup=noise.AddComponent<CanvasGroup>();noiseGroup.alpha=0;noiseGroup.blocksRaycasts=false;Image[] noiseSegments=new Image[3];for(int i=0;i<3;i++)noiseSegments[i]=Panel($"Noise {i+1}",noise.transform,new(.08f+i*.31f,.22f),new(.32f+i*.31f,.78f),theme.ColdBlueGrey).GetComponent<Image>();SetArray(hud,"noiseSegments",noiseSegments);Set(hud,"noiseRoot",noise);Set(hud,"noiseGroup",noiseGroup);
             GameObject stamina=Panel("StaminaBar",root,new(.38f,.035f),new(.62f,.06f),new Color(theme.Panel.r,theme.Panel.g,theme.Panel.b,.65f));CanvasGroup staminaGroup=stamina.AddComponent<CanvasGroup>();staminaGroup.alpha=0;staminaGroup.blocksRaycasts=false;Image staminaFill=Panel("Fill",stamina.transform,Vector2.zero,Vector2.one,theme.ColdBlueGrey).GetComponent<Image>();staminaFill.type=Image.Type.Filled;staminaFill.fillMethod=Image.FillMethod.Horizontal;Set(hud,"staminaFill",staminaFill);Set(hud,"staminaRoot",stamina);Set(hud,"staminaGroup",staminaGroup);

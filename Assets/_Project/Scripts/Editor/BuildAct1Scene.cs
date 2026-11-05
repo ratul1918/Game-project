@@ -54,9 +54,8 @@ var hum=new GameObject("Cellar Hum");hum.transform.position=cellar.transform.pos
 var canvas=GameObject.Find("Debug Canvas").transform;
 var subtitleText=Label("Subtitles",canvas,new(.5f,.08f));
 var subtitleUI=subtitleText.gameObject.AddComponent<SubtitleUI>();Set(subtitleUI,"label",subtitleText);
-var objective=Label("Objective",canvas,new(.5f,.94f));Set(objective.gameObject.AddComponent<ObjectiveUI>(),"label",objective);
 new GameObject("Game State").AddComponent<GameStateMachine>();
-var sun=new GameObject("Dusk Sun").AddComponent<Light>();sun.type=LightType.Directional;sun.transform.rotation=Quaternion.Euler(20,-30,0);
+var sun=new GameObject("Dusk Sun").AddComponent<Light>();sun.type=LightType.Directional;sun.transform.rotation=Quaternion.Euler(20,-30,0);sun.shadows=LightShadows.Soft;sun.shadowStrength=.85f;sun.shadowNormalBias=.2f;sun.shadowBias=.05f;
 var dusk=new GameObject("Dusk Timer").AddComponent<DuskTimer>();Set(dusk,"sun",sun);
 Directory.CreateDirectory(AssetFolder);AssetDatabase.Refresh();
 var beats=new StoryBeat[6];

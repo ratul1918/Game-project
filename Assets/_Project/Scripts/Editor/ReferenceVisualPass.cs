@@ -205,12 +205,13 @@ namespace TheLightHouse.Editor
             Box("Rear West",new(-7.7f,1.5f,-1),new(8.6f,3,.3f),plaster,true);
             Box("Rear Tower Connection",new(-2.7f,2.7f,-1),new(1.5f,.6f,.3f),plaster,true);
             // The tower door at z=-4 remains the route from the east side of the house.
-            Box("Office Divider",new(-5.5f,1.5f,-3.1f),new(.18f,3,4.2f),plaster,true);
-            Box("Office Divider South",new(-5.5f,1.5f,-8.2f),new(.18f,3,1.6f),plaster,true);
-            Box("Office Door Header",new(-5.5f,2.7f,-6.3f),new(.22f,.6f,2.2f),wood);
-            Box("Office Door Threshold",new(-5.5f,.16f,-6.3f),new(.28f,.045f,2.05f),wood,true);
-            Box("Office Door Jamb North",new(-5.5f,1.4f,-5.25f),new(.22f,2.6f,.14f),wood,true);
-            Box("Office Door Jamb South",new(-5.5f,1.4f,-7.35f),new(.22f,2.6f,.14f),wood,true);
+            // Office divider at x=-6.3 aligns with the west door reveal, keeping the front entrance fully clear.
+            Box("Office Divider",new(-6.3f,1.5f,-3.1f),new(.18f,3,4.2f),plaster,true);
+            Box("Office Divider South",new(-6.3f,1.5f,-8.1f),new(.18f,3,1.8f),plaster,true);
+            Box("Office Door Header",new(-6.3f,2.7f,-6.2f),new(.22f,.6f,2.0f),wood);
+            Box("Office Door Threshold",new(-6.3f,.16f,-6.2f),new(.28f,.045f,1.85f),wood,true);
+            Box("Office Door Jamb North",new(-6.3f,1.4f,-5.2f),new(.22f,2.6f,.14f),wood,true);
+            Box("Office Door Jamb South",new(-6.3f,1.4f,-7.2f),new(.22f,2.6f,.14f),wood,true);
             for(int i=0;i<5;i++){float x=-11+i*2.6f;Box("Ceiling Beam",new(x,2.77f,x>-4.3f?-6.65f:-5),new(.2f,.28f,x>-4.3f?4.7f:8),wood);}
             for(int i=0;i<3;i++) Box("Wall Baseboard",new(-9, .34f+i*.19f,-8.8f),new(5.7f,.17f,.1f),wood);
             Box("Office Baseboard West",new(-8.75f,.25f,-1.15f),new(6.4f,.16f,.08f),wood);
@@ -230,7 +231,12 @@ namespace TheLightHouse.Editor
             Box("Chimney Crown",new(-9,5.7f,-4),new(.85f,.16f,.9f),iron);
             for(int i=0;i<3;i++) Window(new(-10+i*3.6f,1.65f,-9.18f),1.05f,1.45f,false);
             Window(new(-8,1.8f,-1.18f),1.9f,1.7f,true);
-            for(int i=0;i<5;i++) Box("Facade Timber",new(-11.9f+i*3.4f,1.5f,-9.19f),new(.12f,3,.12f),wood);
+            for(int i=0;i<5;i++)
+            {
+                float x=-11.9f+i*3.4f;
+                if(x>-6f && x<-4f) continue;
+                Box("Facade Timber",new(x,1.5f,-9.19f),new(.12f,3,.12f),wood);
+            }
             for(int i=0;i<2;i++) Rod("Rain Gutter",new(-12.3f,3,-9.35f+i*8.7f),new(2.3f,3,-9.35f+i*8.7f),.13f,iron);
         }
         static void Window(Vector3 p,float w,float h,bool blinds)
@@ -433,12 +439,12 @@ namespace TheLightHouse.Editor
             {
                 var light=practicals[i];light.transform.position=i==0?new(-8.65f,1.65f,-2.4f):new(-1.4f,2.1f,1.2f);light.color=i==0?look.practical:look.moon;light.intensity=look.practicalIntensity;light.range=i==0?5:6;light.shadows=LightShadows.None;
             }
-            foreach(var light in lights.Where(l=>l.type==LightType.Directional)){light.intensity=look.moonIntensity;light.color=look.moon;light.transform.rotation=Quaternion.Euler(38,-38,0);}
+            foreach(var light in lights.Where(l=>l.type==LightType.Directional)){light.intensity=look.moonIntensity;light.color=look.moon;light.transform.rotation=Quaternion.Euler(38,-38,0);light.shadows=LightShadows.Soft;light.shadowStrength=.85f;}
             var beamOrigin=GameObject.Find("Lamp Beam Visual");if(beamOrigin)beamOrigin.transform.position=new(0,28,0);
             var beam=GameObject.Find("Soft Beam Cone");
-            if(beam) { beam.transform.localScale=Vector3.one*40; beam.GetComponent<Renderer>().sharedMaterial.SetColor("_BeamColor",new Color(.63f,.79f,.86f,.2f)); }
+            if(beam) { beam.transform.localScale=Vector3.one*22; beam.GetComponent<Renderer>().sharedMaterial.SetColor("_BeamColor",new Color(.63f,.79f,.86f,.2f)); }
             var pivot=GameObject.Find("Beam Pivot"); if(pivot) pivot.transform.localRotation=Quaternion.Euler(0,65,0);
-            var spot=lights.FirstOrDefault(l=>l.name=="Beam Spot"); if(spot){spot.color=new(.7f,.85f,1);spot.intensity=12;spot.range=40;}
+            var spot=lights.FirstOrDefault(l=>l.name=="Beam Spot"); if(spot){spot.color=new(.7f,.85f,1);spot.intensity=12;spot.range=22;}
             var glow=GameObject.Find("Lamp Glow"); if(glow)glow.GetComponent<SpriteRenderer>().color=new(.8f,.91f,1,1);
             foreach(var camera in Object.FindObjectsByType<Camera>(FindObjectsSortMode.None)){camera.GetUniversalAdditionalCameraData().renderPostProcessing=true;camera.GetUniversalAdditionalCameraData().antialiasing=AntialiasingMode.FastApproximateAntialiasing;camera.clearFlags=CameraClearFlags.Skybox;camera.backgroundColor=new(.025f,.037f,.045f);}
             foreach(string guid in AssetDatabase.FindAssets("t:VolumeProfile",new[]{"Assets/_Project/Settings"}))

@@ -25,7 +25,7 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _Exposure: 0.05
+    - _Exposure: 0.1
     m_Colors:
     - _CloudColor: {r: 0.035, g: 0.049999982, b: 0.059999965, a: 1}
   m_BuildTextureStacks: []

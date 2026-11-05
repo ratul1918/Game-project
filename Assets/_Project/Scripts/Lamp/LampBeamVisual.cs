@@ -12,11 +12,11 @@ namespace TheLightHouse
         [SerializeField,Min(0f)] float minimumIntensity=.2f;
         [SerializeField,Min(0f)] float maximumIntensity=12f;
         [SerializeField,Min(.1f)] float minimumLength=8f;
-        [SerializeField,Min(.1f)] float maximumLength=30f;
+        [SerializeField,Min(.1f)] float maximumLength=22f;
         [SerializeField,Range(0f,1f)] float unlitGlow=.05f;
         [SerializeField,Min(.01f)] float responseSpeed=4f;
         [SerializeField] string shaderIntensityProperty="_BeamIntensity";
-        float targetCharge=1f,displayedCharge=1f;
+        float targetCharge=0f,displayedCharge=0f;
         MaterialPropertyBlock properties;
 
         void OnEnable(){GameEvents.LampChargeChanged+=ChargeChanged;GameEvents.LampStateChanged+=StateChanged;}
