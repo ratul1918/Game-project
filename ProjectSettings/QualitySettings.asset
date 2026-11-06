@@ -121,12 +121,12 @@ QualitySettings:
     - Nintendo Switch 2
   - serializedVersion: 5
     name: Mac
-    pixelLightCount: 2
-    shadows: 1
-    shadowResolution: 1
+    pixelLightCount: 8
+    shadows: 2
+    shadowResolution: 2
     shadowProjection: 1
-    shadowCascades: 1
-    shadowDistance: 24
+    shadowCascades: 2
+    shadowDistance: 64
     shadowNearPlaneOffset: 3
     shadowCascade2Split: 0.33333334
     shadowCascade4Split: {x: 0.06666667, y: 0.2, z: 0.46666667}
@@ -135,7 +135,7 @@ QualitySettings:
     globalTextureMipmapLimit: 0
     textureMipmapLimitSettings: []
     anisotropicTextures: 2
-    antiAliasing: 0
+    antiAliasing: 4
     softParticles: 0
     softVegetation: 1
     realtimeReflectionProbes: 0
@@ -180,12 +180,12 @@ QualitySettings:
     - Nintendo Switch 2
   - serializedVersion: 5
     name: Low
-    pixelLightCount: 1
-    shadows: 1
-    shadowResolution: 1
+    pixelLightCount: 4
+    shadows: 2
+    shadowResolution: 2
     shadowProjection: 1
-    shadowCascades: 1
-    shadowDistance: 16
+    shadowCascades: 2
+    shadowDistance: 32
     shadowNearPlaneOffset: 3
     shadowCascade2Split: 0.33333334
     shadowCascade4Split: {x: 0.06666667, y: 0.2, z: 0.46666667}
@@ -194,7 +194,7 @@ QualitySettings:
     globalTextureMipmapLimit: 0
     textureMipmapLimitSettings: []
     anisotropicTextures: 2
-    antiAliasing: 0
+    antiAliasing: 4
     softParticles: 0
     softVegetation: 1
     realtimeReflectionProbes: 0

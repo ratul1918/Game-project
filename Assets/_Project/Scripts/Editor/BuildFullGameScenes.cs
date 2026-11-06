@@ -27,14 +27,19 @@ namespace TheLightHouse.Editor
         [MenuItem("TheLightHouse/Build Full Game Scenes")]
         public static void Build()
         {
+            var activeScene = EditorSceneManager.GetActiveScene();
+            if (activeScene.isDirty) EditorSceneManager.SaveScene(activeScene);
+
             BuildAct1Scene.BuildTo("Assets/_Project/Scenes/Act1.unity");
             BuildAct2Scene.BuildTo("Assets/_Project/Scenes/Act2.unity");
             BuildAct3Scene.BuildTo("Assets/_Project/Scenes/Act3.unity");
             BuildAct4Scene.BuildTo("Assets/_Project/Scenes/Act4.unity");
             BuildAct5Scene.BuildTo("Assets/_Project/Scenes/Act5.unity");
-            ApplyGraphics1.Apply();
             ReferenceVisualPass.ApplyAll();
             IslandArrivalPass.ApplyAll();
+            ApplyGraphics1.Apply();
+            AssetIntegrationPass.ApplyToAllScenes();
+            HarrowRockEnvironmentMasterPass.ApplyToAllScenes();
             BuildMenu();
 
             string[] paths = {

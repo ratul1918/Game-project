@@ -176,20 +176,73 @@ namespace TheLightHouse.Editor
                 b3.transform.rotation = Quaternion.Euler(0, -65f, 0);
             }
 
-            // 2. Coastal Photogrammetry Rocks at shoreline
-            if (rockPrefab && propsRoot.transform.Find("Shoreline Coastal Rock 1") == null)
+            // 2. Coastal Photogrammetry Rocks at shoreline (placed well away from boat berth at -5.8, -29.8)
+            var rockMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Models/CoastalRock_01/M_CoastalRock_01.mat");
+            if (rockPrefab)
             {
-                var r1 = Object.Instantiate(rockPrefab, propsRoot.transform);
-                r1.name = "Shoreline Coastal Rock 1";
-                r1.transform.position = new Vector3(-7.2f, -0.6f, -27.5f);
-                r1.transform.localScale = Vector3.one * 0.45f;
-                r1.transform.rotation = Quaternion.Euler(12f, 85f, -8f);
+                var existingR1 = propsRoot.transform.Find("Shoreline Coastal Rock 1");
+                GameObject r1Go = null;
+                if (existingR1)
+                {
+                    existingR1.position = new Vector3(-16.5f, -0.6f, -26.0f);
+                    existingR1.localScale = Vector3.one * 0.45f;
+                    r1Go = existingR1.gameObject;
+                }
+                else
+                {
+                    var r1 = Object.Instantiate(rockPrefab, propsRoot.transform);
+                    r1.name = "Shoreline Coastal Rock 1";
+                    r1.transform.position = new Vector3(-16.5f, -0.6f, -26.0f);
+                    r1.transform.localScale = Vector3.one * 0.45f;
+                    r1.transform.rotation = Quaternion.Euler(12f, 85f, -8f);
+                    r1Go = r1;
+                }
+                if (r1Go)
+                {
+                    var lodGroup = r1Go.GetComponent<LODGroup>();
+                    if (lodGroup) Object.DestroyImmediate(lodGroup);
+                    for (int i = r1Go.transform.childCount - 1; i >= 0; i--)
+                    {
+                        var child = r1Go.transform.GetChild(i);
+                        if (child.name != "coast_rocks_01_LOD3") Object.DestroyImmediate(child.gameObject);
+                    }
+                }
+                if (r1Go && rockMat)
+                {
+                    foreach (var mr in r1Go.GetComponentsInChildren<MeshRenderer>(true)) mr.sharedMaterial = rockMat;
+                }
 
-                var r2 = Object.Instantiate(rockPrefab, propsRoot.transform);
-                r2.name = "Shoreline Coastal Rock 2";
-                r2.transform.position = new Vector3(1.8f, -0.5f, -28.0f);
-                r2.transform.localScale = Vector3.one * 0.55f;
-                r2.transform.rotation = Quaternion.Euler(-5f, 140f, 15f);
+                var existingR2 = propsRoot.transform.Find("Shoreline Coastal Rock 2");
+                GameObject r2Go = null;
+                if (existingR2)
+                {
+                    existingR2.position = new Vector3(3.8f, -0.5f, -28.0f);
+                    existingR2.localScale = Vector3.one * 0.45f;
+                    r2Go = existingR2.gameObject;
+                }
+                else
+                {
+                    var r2 = Object.Instantiate(rockPrefab, propsRoot.transform);
+                    r2.name = "Shoreline Coastal Rock 2";
+                    r2.transform.position = new Vector3(3.8f, -0.5f, -28.0f);
+                    r2.transform.localScale = Vector3.one * 0.45f;
+                    r2.transform.rotation = Quaternion.Euler(-5f, 140f, 15f);
+                    r2Go = r2;
+                }
+                if (r2Go)
+                {
+                    var lodGroup = r2Go.GetComponent<LODGroup>();
+                    if (lodGroup) Object.DestroyImmediate(lodGroup);
+                    for (int i = r2Go.transform.childCount - 1; i >= 0; i--)
+                    {
+                        var child = r2Go.transform.GetChild(i);
+                        if (child.name != "coast_rocks_01_LOD3") Object.DestroyImmediate(child.gameObject);
+                    }
+                }
+                if (r2Go && rockMat)
+                {
+                    foreach (var mr in r2Go.GetComponentsInChildren<MeshRenderer>(true)) mr.sharedMaterial = rockMat;
+                }
             }
 
             // 3. Vintage Industrial Hanging Lamps

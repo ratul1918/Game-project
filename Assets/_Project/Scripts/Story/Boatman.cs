@@ -5,7 +5,7 @@ public sealed class Boatman : MonoBehaviour {
 [SerializeField] FirstPersonController player;
 [SerializeField] SubtitleUI subtitles;
 [SerializeField] Transform boat;
-[SerializeField] Vector3 departureOffset=new(-30,0,0);
+[SerializeField] Vector3 departureOffset=new(-5,0,-35);
 [SerializeField] float departureSeconds=12;
 [SerializeField] DialogueLine[] warnings={new("Boatman","Crane's missed three weeks of calls. Could be the set. Could be worse."),new("Boatman","Light the lamp before dark. And if you hear singing—don't answer it."),new("Daniel","When do you come back?"),new("Boatman","Morning. If the light's on.")};
 [SerializeField] bool finaleMode;
