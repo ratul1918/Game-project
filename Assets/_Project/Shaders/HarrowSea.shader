@@ -2,13 +2,13 @@ Shader "TheLightHouse/Harrow Sea"
 {
     Properties
     {
-        _DeepColor("Deep Sea Color", Color) = (0.03, 0.08, 0.12, 1.0)
-        _ShallowColor("Shallow Water Color", Color) = (0.06, 0.17, 0.21, 1.0)
-        _FoamColor("Sea Foam Color", Color) = (0.75, 0.82, 0.86, 1.0)
-        _WaveHeight("Wave Amplitude", Range(0.0, 0.5)) = 0.15
-        _WaveSpeed("Wave Speed", Range(0.1, 2.5)) = 0.9
-        _FoamDistance("Shore Foam Range", Range(0.1, 2.0)) = 0.75
-        _Smoothness("Surface Smoothness", Range(0.5, 0.98)) = 0.90
+        _DeepColor("Deep Sea Color", Color) = (0.02, 0.055, 0.095, 1.0)
+        _ShallowColor("Shallow Water Color", Color) = (0.045, 0.115, 0.165, 1.0)
+        _FoamColor("Sea Foam Color", Color) = (0.58, 0.68, 0.74, 1.0)
+        _WaveHeight("Wave Amplitude", Range(0.0, 1.2)) = 0.22
+        _WaveSpeed("Wave Speed", Range(0.1, 3.0)) = 0.95
+        _FoamDistance("Shore Foam Range", Range(0.1, 3.0)) = 0.85
+        _Smoothness("Surface Smoothness", Range(0.5, 0.99)) = 0.92
     }
     SubShader
     {
@@ -31,6 +31,7 @@ Shader "TheLightHouse/Harrow Sea"
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_fog
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -87,9 +88,12 @@ Shader "TheLightHouse/Harrow Sea"
 
                 float amp = _WaveHeight;
                 float spd = _WaveSpeed;
-                GerstnerWave(float2(0.85, 0.52), amp * 0.8, 16.0, spd * 0.9, worldPos, waveOffset, waveNormal);
-                GerstnerWave(float2(-0.45, 0.89), amp * 0.5, 9.5, spd * 1.1, worldPos, waveOffset, waveNormal);
-                GerstnerWave(float2(0.25, -0.96), amp * 0.3, 4.5, spd * 1.3, worldPos, waveOffset, waveNormal);
+                // Primary rolling North Atlantic swell
+                GerstnerWave(float2(0.82, 0.48), amp * 0.70, 24.0, spd * 0.82, worldPos, waveOffset, waveNormal);
+                // Crossing choppy storm swell
+                GerstnerWave(float2(-0.52, 0.85), amp * 0.40, 14.0, spd * 1.05, worldPos, waveOffset, waveNormal);
+                // High frequency water texture
+                GerstnerWave(float2(0.38, -0.92), amp * 0.20, 6.0, spd * 1.35, worldPos, waveOffset, waveNormal);
 
                 worldPos += waveOffset;
                 output.worldPos = worldPos;
@@ -104,54 +108,83 @@ Shader "TheLightHouse/Harrow Sea"
             {
                 float2 screenUV = input.screenPos.xy / max(0.0001, input.screenPos.w);
 
-                // Depth sampling for smooth water-shore contact
+                // Sample scene depth safely
                 float rawDepth = SampleSceneDepth(screenUV);
                 float sceneDepth = LinearEyeDepth(rawDepth, _ZBufferParams);
                 float surfaceDepth = input.screenPos.w;
-                float waterDepth = max(0.0, sceneDepth - surfaceDepth);
+                float waterDepth = sceneDepth - surfaceDepth;
 
-                // Animated high-frequency wind ripples
+                // Handle skybox or missing depth
+                if (sceneDepth > 300.0 || rawDepth <= 0.00001 || waterDepth < 0.0)
+                {
+                    waterDepth = 20.0;
+                }
+
+                // Surface normal from high-frequency wave ripple superposition
                 float t = _Time.y * _WaveSpeed;
-                float u1 = input.worldPos.x * 0.35 + input.worldPos.z * 0.22 + t * 0.65;
-                float v1 = input.worldPos.z * 0.45 - input.worldPos.x * 0.18 + t * 0.85;
-                float u2 = input.worldPos.x * 1.2 - input.worldPos.z * 0.8 - t * 1.1;
-                float v2 = input.worldPos.z * 1.4 + input.worldPos.x * 0.6 + t * 0.95;
+                float u1 = input.worldPos.x * 0.42 + input.worldPos.z * 0.26 + t * 0.70;
+                float v1 = input.worldPos.z * 0.52 - input.worldPos.x * 0.20 + t * 0.88;
+                float u2 = input.worldPos.x * 1.35 - input.worldPos.z * 0.85 - t * 1.15;
+                float v2 = input.worldPos.z * 1.55 + input.worldPos.x * 0.68 + t * 1.02;
 
                 float3 n = normalize(float3(
-                    -(sin(u1) * 0.08 + sin(u2) * 0.035),
+                    -(sin(u1) * 0.10 + sin(u2) * 0.04),
                     1.0,
-                    -(cos(v1) * 0.08 + cos(v2) * 0.035)
+                    -(cos(v1) * 0.10 + cos(v2) * 0.04)
                 ));
 
-                // Natural organic shoreline surf foam
-                float foamNoise = sin(input.worldPos.x * 1.8 + t * 1.2) * cos(input.worldPos.z * 1.8 - t * 0.9);
-                float shoreDistNorm = waterDepth / max(0.02, _FoamDistance);
-                float shoreFoam = saturate((1.0 - shoreDistNorm) * (1.0 + 0.25 * foamNoise));
-                shoreFoam = smoothstep(0.15, 0.85, shoreFoam);
+                // Soft shoreline depth fading: eliminates harsh white lines
+                float depthFade = smoothstep(0.04, 0.45, waterDepth);
 
-                float totalFoam = shoreFoam;
+                // Animated shoreline foam lapping against coastal rocks
+                float waveLapping = sin(t * 1.5 + input.worldPos.x * 0.5 + input.worldPos.z * 0.4) * 0.5 + 0.5;
+                float foamNoise = sin(input.worldPos.x * 2.5 + t * 1.2) * cos(input.worldPos.z * 2.5 - t * 0.95);
+                float shoreDist = waterDepth / max(0.08, _FoamDistance);
+                
+                // Foam only occurs where water actually contacts coastal rocks at shallow depth
+                float shoreFoam = saturate((1.0 - shoreDist) * (0.75 + 0.35 * waveLapping) * (0.85 + 0.3 * foamNoise));
+                shoreFoam = smoothstep(0.35, 0.85, shoreFoam) * depthFade;
 
-                // Lighting & cold North Atlantic reflection
+                // Prevent false foam near camera near-clip plane
+                float cameraProximityFade = saturate((surfaceDepth - 1.2) * 0.6);
+                shoreFoam *= cameraProximityFade;
+
+                // Lighting & cold North Atlantic Fresnel reflection
                 float3 viewDir = GetWorldSpaceNormalizeViewDir(input.worldPos);
-                Light light = GetMainLight();
+                Light mainLight = GetMainLight();
 
                 float NdotV = saturate(dot(n, viewDir));
                 float fresnel = pow(1.0 - NdotV, 4.0);
 
-                float3 halfDir = normalize(viewDir + light.direction);
+                // Moonlight specular reflection
+                float3 halfDir = normalize(viewDir + mainLight.direction);
                 float NdotH = saturate(dot(n, halfDir));
-                float specular = pow(NdotH, 90.0) * _Smoothness;
+                float specular = pow(NdotH, 110.0) * _Smoothness;
 
-                // Optical color depth absorption
-                float depthFactor = saturate(waterDepth / 2.5);
+                // Optical depth absorption
+                float depthFactor = saturate(waterDepth / 2.8);
                 half3 waterColor = lerp(_ShallowColor.rgb, _DeepColor.rgb, depthFactor);
-                half3 surfaceColor = lerp(waterColor, _FoamColor.rgb, totalFoam);
+                half3 surfaceColor = lerp(waterColor, _FoamColor.rgb, shoreFoam * 0.65);
 
-                half3 ambientReflection = half3(0.03, 0.06, 0.08) * fresnel;
-                surfaceColor += light.color * (specular * (1.0 - totalFoam * 0.4)) + ambientReflection;
+                half3 ambientReflection = half3(0.035, 0.065, 0.095) * fresnel;
+                surfaceColor += mainLight.color * (specular * (1.0 - shoreFoam * 0.4)) + ambientReflection;
 
-                // Soft alpha blending along shoreline
-                float alpha = saturate(waterDepth * 3.0 + totalFoam * 0.85);
+                // Additional light illumination (sweeping lighthouse beacon & cottage window glow)
+                #if defined(_ADDITIONAL_LIGHTS)
+                uint pixelLightCount = GetAdditionalLightsCount();
+                for (uint i = 0u; i < pixelLightCount; ++i)
+                {
+                    Light addLight = GetAdditionalLight(i, input.worldPos);
+                    float3 addHalf = normalize(viewDir + addLight.direction);
+                    float addNdotH = saturate(dot(n, addHalf));
+                    float addSpec = pow(addNdotH, 75.0) * _Smoothness;
+                    float addDiffuse = saturate(dot(n, addLight.direction));
+                    surfaceColor += addLight.color * (addLight.distanceAttenuation * (addDiffuse * 0.35 + addSpec * 1.9));
+                }
+                #endif
+
+                // Alpha blending: transparent at rock contact, opaque in deep water
+                float alpha = saturate(depthFade * 0.95 + shoreFoam * 0.5);
 
                 return half4(MixFog(surfaceColor, input.fogFactor), alpha);
             }

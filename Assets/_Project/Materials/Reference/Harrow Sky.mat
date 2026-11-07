@@ -25,8 +25,16 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _Exposure: 0.1
+    - _Exposure: 1.25
+    - _LightningIntensity: 0
+    - _WindSpeed: 0.06
     m_Colors:
     - _CloudColor: {r: 0.035, g: 0.049999982, b: 0.059999965, a: 1}
+    - _CloudDarkColor: {r: 0.02, g: 0.03, b: 0.044999972, a: 1}
+    - _CloudHighlightColor: {r: 0.089999996, g: 0.12999997, b: 0.16999996, a: 1}
+    - _MoonDirection: {r: -0.55, g: 0.45, b: 0.7, a: 0}
+    - _MoonGlowColor: {r: 0.27999997, g: 0.35999998, b: 0.45, a: 1}
+    - _SkyHorizonColor: {r: 0.049999982, g: 0.07499998, b: 0.09799997, a: 1}
+    - _SkyZenithColor: {r: 0.04, g: 0.064999975, b: 0.09499996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

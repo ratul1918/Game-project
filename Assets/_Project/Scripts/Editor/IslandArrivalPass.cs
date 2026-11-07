@@ -368,52 +368,8 @@ namespace TheLightHouse.Editor
                 plank.transform.localRotation = Quaternion.Euler(roll, yaw, 0f);
             }
 
-            // 3. Dark Water Puddle Planes in low depressions along embankment & fence lines
-            var puddleMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/FloorWaterPuddle.mat") ?? puddle;
-            for (int i = 0; i < 8; i++)
-            {
-                float t = (i + 0.5f) / 8f;
-                float pz = Mathf.Lerp(-32.0f, -12.0f, t) + (float)(random.NextDouble() * 1.5 - 0.75);
-                float roadT = Mathf.Clamp01((-34.0f - pz) / -23.5f);
-                float pathCenter = -0.8f + 2.2f * Mathf.Sin(roadT * Mathf.PI) - 0.4f * roadT;
-                float px = (i % 2 == 0) ? (pathCenter - 1.6f) : (pathCenter - 3.2f);
-                float roadY = Mathf.Lerp(settings.landHeight + 0.02f, settings.landHeight + 0.05f, 1f - roadT);
-                float py = (i % 2 == 0) ? (roadY - 0.005f) : (roadY - 0.05f);
-
-                var puddleQuad = GameObject.CreatePrimitive(PrimitiveType.Quad);
-                puddleQuad.name = $"Mud Puddle Pool {i}";
-                puddleQuad.transform.SetParent(detailGroup, false);
-                puddleQuad.transform.position = new Vector3(px, py + 0.015f, pz);
-                puddleQuad.transform.rotation = Quaternion.Euler(90f, (float)random.NextDouble() * 360f, 0f);
-                float sz = 1.1f + (float)random.NextDouble() * 0.9f;
-                puddleQuad.transform.localScale = new Vector3(sz * 0.7f, sz * 1.3f, 1f);
-                puddleQuad.GetComponent<Renderer>().sharedMaterial = puddleMat;
-                Object.DestroyImmediate(puddleQuad.GetComponent<Collider>());
-            }
-
-            // 4. Wet Mud Splatter Decals along fence post footings and wall bases
-            var decalMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/WetMudDecal.mat");
-            if (decalMat)
-            {
-                for (int i = 0; i < 10; i++)
-                {
-                    float pz = -33f + i * 2.4f;
-                    float roadT = Mathf.Clamp01((-34.0f - pz) / -23.5f);
-                    float pathCenter = -0.8f + 2.2f * Mathf.Sin(roadT * Mathf.PI) - 0.4f * roadT;
-                    float px = pathCenter - 1.65f;
-                    float roadY = Mathf.Lerp(settings.landHeight + 0.02f, settings.landHeight + 0.05f, 1f - roadT);
-
-                    var decalQuad = GameObject.CreatePrimitive(PrimitiveType.Quad);
-                    decalQuad.name = $"Wet Mud Decal {i}";
-                    decalQuad.transform.SetParent(detailGroup, false);
-                    decalQuad.transform.position = new Vector3(px, roadY + 0.018f, pz);
-                    decalQuad.transform.rotation = Quaternion.Euler(90f, (float)random.NextDouble() * 360f, 0f);
-                    float dSize = 0.9f + (float)random.NextDouble() * 0.6f;
-                    decalQuad.transform.localScale = new Vector3(dSize, dSize, 1f);
-                    decalQuad.GetComponent<Renderer>().sharedMaterial = decalMat;
-                    Object.DestroyImmediate(decalQuad.GetComponent<Collider>());
-                }
-            }
+            // 3. Shoreline & Embankment Dressing (no mud required at spawn)
+            // Water Puddle Pools and Wet Mud Decals removed per spawn requirements.
 
             // 5. Tufts of wet dead coastal marram grass along fence posts, stone walls, and rock bases
             var grassMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/CoastalMarramGrass.mat");
@@ -590,7 +546,7 @@ namespace TheLightHouse.Editor
                     roadTris.AddRange(new[]{a,c,b,b,c,d});
                 }
             }
-            MeshObject("Mud Cart Road",SaveMesh("CartRoad",roadVerts,roadTris,roadUVs),mudRoad,roadGroup,true);
+            MeshObject("Coastal Road Track",SaveMesh("CartRoad",roadVerts,roadTris,roadUVs),stone,roadGroup,true);
 
             // Rustic wooden post-and-rail fences on both sides of the cart road
             var fenceGroup=new GameObject("Rustic Fences").transform;fenceGroup.SetParent(root,false);
