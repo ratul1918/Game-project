@@ -77,6 +77,9 @@ Shader "TheLightHouse/CoastalIsland"
                 float _RockScale;
             CBUFFER_END
 
+            float _GlobalWetness;
+            float _GlobalWetSmoothnessBoost;
+
             TEXTURE2D(_RockTex); SAMPLER(sampler_RockTex);
             TEXTURE2D(_RockNormal); SAMPLER(sampler_RockNormal);
             TEXTURE2D(_MudTex); SAMPLER(sampler_MudTex);
@@ -177,6 +180,12 @@ Shader "TheLightHouse/CoastalIsland"
                 half3 wetSandAlbedo = _WetSandColor.rgb * (rockAlbedo.rgb * 0.65 + 0.35);
                 albedo = lerp(albedo, wetSandAlbedo, wetShoreFactor);
 
+                // Height-based dampness and moss gradient near base and cellar
+                float dampFactor = saturate((1.2 - worldPos.y) * 0.5) + step(worldPos.y, 0.0) * 0.4;
+                float effectiveWetness = saturate(_GlobalWetness + dampFactor * 0.65);
+                albedo = lerp(albedo, albedo * half3(0.65, 0.68, 0.58), dampFactor * 0.45); // Mossy damp tint
+                albedo *= (1.0 - effectiveWetness * 0.28); // Darker albedo with wetness
+
                 // Smoothness / Wetness calculation:
                 // Base mud smoothness from mask (high 0.85–0.95 in hollows/depressions)
                 float smoothness = mudMask.a;
@@ -186,6 +195,7 @@ Shader "TheLightHouse/CoastalIsland"
                 smoothness = lerp(smoothness, 0.88, pathMask * 0.75);
                 // Shoreline tidal saturation: near 0.95 specular reflection
                 smoothness = lerp(smoothness, 0.94, wetShoreFactor);
+                smoothness = saturate(smoothness + effectiveWetness * _GlobalWetSmoothnessBoost + dampFactor * 0.35);
 
                 // Ambient Occlusion
                 float ao = mudMask.g;

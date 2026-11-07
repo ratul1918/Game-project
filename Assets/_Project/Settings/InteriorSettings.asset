@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5555b5fdccc454e41b76be4e4b559b60, type: 3}
+  m_Name: InteriorSettings
+  m_EditorClassIdentifier: Assembly-CSharp::TheLightHouse.InteriorSettings
+  gridUnit: 0.5
+  floorHeight: 3.2
+  towerBaseDiameter: 9
+  centralCoreDiameter: 3
+  stepsPerFlight: 18
+  stepRise: 0.178
+  stepRun: 0.28
+  stairWidth: 1.2
+  landingDimensions: {x: 1.6, y: 1.6}
+  minHeadroom: 2.4
+  rampColliderAngle: 32.44
+  stairOnlyLevels: 3
+  cellarDepth: 5
+  vaultWidth: 2.8
+  vaultHeight: 2.6
+  vaultCorridorLength: 20
+  hiddenRoomDimensions: {x: 4, y: 4}
+  stoneWallMaterial: {fileID: 2100000, guid: adcb02e6c1eaa49ab97fc6104af14a31, type: 2}
+  flagstoneMaterial: {fileID: 2100000, guid: eee88e8ccd17e4e3f892b4fbfe24b04a, type: 2}
+  plasterMaterial: {fileID: 2100000, guid: dc4a8f3384d79410bbd43a783568a371, type: 2}
+  woodMaterial: {fileID: 2100000, guid: e6721b7dfd530469197a8bfdaa2fba15, type: 2}
+  rustMetalMaterial: {fileID: 2100000, guid: 4e2381d541c28454bb8643549d2d46a5, type: 2}
+  wetRockMaterial: {fileID: 2100000, guid: f9cdc6f6e08a846528d5284ba25e429b, type: 2}
+  sandMaterial: {fileID: 2100000, guid: 267a1ab2aebeb469690f0c4247b05ca9, type: 2}
+  paperMaterial: {fileID: 2100000, guid: e4163866ef5ea4e32a9d59579e7e2d62, type: 2}
+  wallPrefab: {fileID: 7116802155172682531, guid: d948a929345624de3b5cd8054752a219, type: 3}
+  floorSlabPrefab: {fileID: 1335692609680596473, guid: bad9bc6fee9a24669ba793395c6ddc3a, type: 3}
+  doorFramePrefab: {fileID: 5151900697733214934, guid: 17ef93490d23e483eb7cb59546eec457, type: 3}
+  stairFlightPrefab: {fileID: 4461150838880273408, guid: 2a00370feaac24381b8252e45f80ac93, type: 3}
+  landingPrefab: {fileID: 3846633909147374429, guid: d6da5751352bb4327b91714af4b4d0f2, type: 3}
+  handrailPrefab: {fileID: 1644113689221807803, guid: e2143d01a57e744a691f5797513c3338, type: 3}
+  windowFramePrefab: {fileID: 434189561431852222, guid: d42563e66cc934aad9e9f1a46abe2fb1, type: 3}
+  vaultSegmentPrefab: {fileID: 7835720755255324753, guid: 91161324ea4204075be26316027b95a8, type: 3}

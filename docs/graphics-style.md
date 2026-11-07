@@ -1,26 +1,51 @@
-# Graphics Style Guide
+# Graphics Style & Visual Architecture Guide
 
-*The LightHouse* uses desaturated realism with readable silhouettes and restrained effects. The lighthouse lamp is the dominant local light source: warm amber against cold moonlight, rain and blue-grey sea fog. Warm highlights should feel scarce and safe; shadows remain cold without crushing interaction targets into pure black.
+*The LightHouse* targets desaturated, atmospheric realism on the Apple Silicon M3 MacBook Air (8 GB unified memory), achieving a solid 30–60 FPS. The visual core balances warm amber practical lights (#FFA64D) against cold blue moonlight, coastal storm haze, and damp subterranean shadow.
 
-Keep the Drowned half-hidden by fog, framing and darkness. Their shapes should read before their surface detail does. The player should rarely see a figure under flat, even light.
+## Material & Texture Architecture (1K Budget)
 
-## Lighting and atmosphere
+All texture folders in `Assets/_Project/Art/Textures` are built into URP Lit materials with packed Metallic-Smoothness maps (Red = Metallic, Alpha = Smoothness, inverted from Roughness if necessary), 1K resolution, correct sRGB flags, and BC7/ASTC compression:
+- **StoneWall**: Tower exterior masonry, central core, interior stone reveals, cellar corridor walls and vaulting.
+- **Flagstone**: Courtyard pavers, tower vestibule floor, lantern room deck.
+- **Plaster**: Interior living quarters (Crane's room, service watchroom).
+- **Wood**: Floorboards, timber ceilings, doors, stair treads, furniture, dock planks.
+- **RustMetal**: Window astragals, railings, handrails, generator, conduits, lanterns, hardware.
+- **WetRock & Sand**: Shoreline, coastal cliffs, dock approach.
+- **Paper**: Nautical charts, harbor board ledger, logbook pages, photographs.
 
-- Prefer one dominant motivated light per composition.
-- Dusk is muted violet-grey with the last warm horizon light.
-- Night is cold, desaturated and denser near water.
-- Storm is darker and higher contrast, with brief lightning supplied by the existing storm system.
-- Finale is the densest, most oppressive state; the lamp remains the visual anchor.
-- Dawn lifts fog and contrast gradually into a pale warm-grey morning.
-- Bloom belongs primarily to the lamp and bright lightning. Film grain and vignette stay subtle.
-- Do not use motion blur or depth of field in gameplay.
+Total runtime texture memory remains strictly budgeted under 105 MB.
 
-## Performance rules
+## Surface Detailing & Triplanar Shading
 
-Bake static lighting, reflection probes and light probes where practical. Keep additional real-time lights few, non-shadowed unless essential, and short-ranged. Use low-count fog particles, shared materials, LODs and occlusion-friendly greybox layouts. The visual target is a stable 30–60 FPS on an M3 MacBook Air under sustained passive cooling.
+- **World-Space Triplanar Shading**: Applied to cliffs, shoreline boulders, and coastal rock faces to prevent texture stretching on sheer vertical drops.
+- **Dynamic Wetness Input**: Modulated by `WetLookController` to darken albedo and elevate smoothness near the sea line and throughout the subterranean cellar.
+- **Macro Breakup & Damp Gradients**: Dual-layer normal tiling and vertex-color dampness masks ground the tower base and cellar walls.
 
-## November 2026 reference direction
+## Architectural Modeling & Prop Standards
 
-The three supplied reference images supersede the greybox appearance: salt-stained teal-grey plaster, dark timber planks and ceilings, aged iron open stairs, barrel storage, and a cluttered analogue radio desk under a shaded task lamp. Outside, use a pitched-roof keeper house beside the tapering tower, a circular iron gallery, a framed lantern, sparse coastal scrub, cold white beacon and layered storm haze. Warm light is restricted to small interior practicals. Preserve readable paths and the existing dusk-to-dawn story progression rather than forcing permanent night.
+- **Edge Quality & Bevels**: Interior kit prefabs feature modeled cornices, plinths, stone reveals, and door hardware (strap hinges, latches, iron bands).
+- **Subterranean Vaulting**: 2.8 m wide by 2.6 m high vaulted corridor reinforced with modeled timber rib beams.
+- **Prop Fidelity**: Greybox placeholders replaced with shaped multi-primitive props (recorder with rotating tape reels, vacuum tube radios with emissive filaments, secret workbench, drafting desk, wardrobe) kept under 2,000 triangles per asset.
 
-`ReferenceVisualPass` applies original procedural materials and authored dressing to existing Act1–5 scenes without rebuilding story systems. Its settings live in ReferenceLookSettings. Existing scene edits and gameplay anchors are preserved; replacement architectural renderers/colliders are restricted to generated layout geometry. Reference images are composition references only, not shipped textures. Texture maps are 512px, mipmapped and shared. Decorative geometry is combined per material per area. Preview exports are actual Unity camera renders, not target screenshots.
+## Lighting Architecture & Budget
+
+- **Realtime Lights Budget**: Strictly at most 4 realtime lights active in any view.
+- **Warm Practical Lanterns**: Caged wall lanterns emitting warm amber (#FFA64D) with small radii (4.5–6.0 m) marked baked or mixed.
+- **Moonlight & Window Shafts**: Cold blue directional moonlight filtering through deep stone window reveals, complemented by cone mesh light-shaft cards with dust motes.
+- **Reflection Probes**: Low-resolution, box-projected reflection probes in every room, the cellar vault, and the lantern room.
+- **Lightmap Baking**: Progressive GPU/CPU baking with 1024 atlas limits, ContributeGI static flags, and light probe coverage.
+
+## Post-Processing & Atmosphere
+
+- **URP Volume Profiles**: Filmic ACES tonemapping, restrained bloom on the lighthouse beacon and vacuum tubes, subtle vignette, and fine-grain film grain.
+- **Atmospheric Depth**: Dust motes in window beams, drifting fog cards along the shoreline and cellar stair, and subtle dripping water particle emitters underground.
+- **Water & Shoreline**: Soft depth-faded foam along water edges, elevated threshold heights above wave crests, and wet sand specular highlights.
+
+## Audio Environment
+
+- **Reverb Zones**: 3D AudioReverbZones with stone presets in the lighthouse tower and subterranean cellar vault.
+- **Bandpass Filtering**: Low-pass and high-pass filtering applied to the reel-to-reel transmitter voice.
+
+## Asset Budget Conformance
+
+The automated `AssetBudgetChecker` (`TheLightHouse/Check Asset Budget`) scans all models, textures, audio clips, and scenes against the M3 8 GB budget. Result: **PASS — no imported assets exceed the configured budget.**

@@ -15,3 +15,7 @@ Every credited asset must also pass the import and runtime limits in `docs/perfo
 ## Reference visual pass — 2026-11-03
 
 Original procedural salt plaster, timber, iron, slate and coastal scrub textures; original house, radio desk, barrels, spiral treads and lantern gallery geometry: created for The LightHouse in this repository. Source: `ReferenceSurfaceLibrary.cs` and `ReferenceVisualPass.cs` (local source; no external download URL or third-party license). The three user-provided WhatsApp screenshots are visual references only and are not distributed as game assets.
+
+## Interior v2 and High-Quality Look — 2026-11-08
+
+Original modular interior kit prefabs, continuous ramp staircases, subterranean vaulted cellar corridor, secret room complex with functional rotating reel-to-reel transmitter (`ReelRotator`), packed Metallic-Smoothness PBR Lit materials, reflection probe arrays, and validation test suite: created for The LightHouse in this repository. Source: `InteriorKit.cs`, `InteriorKitBuilder.cs`, `InteriorLayoutBuilder.cs`, `InteriorSettings.cs`, `LightingAndAtmospherePass.cs`, `LevelPreviewCapture.cs`, `InteriorValidation.cs`, and `ReelRotator.cs`.

@@ -91,3 +91,20 @@ The cards below mirror `docs/roadmap.md`. A card is complete only when its accep
 - [x] Tune stealth readability, noise values, lamp pressure, pacing, and accessibility.
 - [x] Fix defects and performance regressions without expanding scope.
 - [x] Complete a final end-to-end playtest and release build.
+
+## Card 8 — Interior v2 and High-Quality Look (MacBook Air M3, 8 GB)
+
+- [x] Part A0: Delete legacy generated tower interior, stairs, mezzanines, cellar, and duplicate props while preserving shell, exterior, dock, and cottage layout.
+- [x] Part A1: Modular interior kit prefabs on 0.5 m grid (wall, floor slab with stairwell hole, door frame with working door, 18-step straight stair flight, landing, handrail, window frame, vault segment) with `InteriorKit` and `InteriorSettings.asset`.
+- [x] Part A2: Tapered tower interior with 3 m round core, switchback flights, >= 2.4 m headroom across all treads, Floor 1 vestibule with cellar door, Floor 2 Crane's quarters, Floor 3 service watchroom, Levels 4–6 stair tower, and Lantern room with 12-facet glazed chamber, Fresnel lens pedestal, `LampController`, `LanternInteract`, and `CrankStation`.
+- [x] Part A3: Continuous ramp colliders (~32°), flush landings, CharacterController setup (1.8m height, 0.4m radius), NavMesh baked from physics colliders, 10 hiding spots, and 6 logbook pages back in place by ID.
+- [x] Part A4: Subterranean complex with 5 m descent stair, 20 m vaulted corridor with conduit/barrels/crates, `WetFootprints` (leading in, none leading out), `CellarHum`, and hidden 4×4 m room behind sliding barrel stack with `RecordedTransmitter` (`ReelRotator`), glowing tube radios, nautical charts, `Ledger`, and ship photograph.
+- [x] Part B1: 1K URP Lit materials with packed Metallic-Smoothness maps (StoneWall, Flagstone, Plaster, Wood, RustMetal, WetRock, Sand, Paper).
+- [x] Part B2: World-space triplanar rock and cliff shaders with dynamic wetness input and damp gradients.
+- [x] Part B3: High-quality modeling with edge bevels, stone reveals, door strap hinges, rib beams, and multi-primitive props <2k triangles.
+- [x] Part B4: Lighting pass with reflection probes per room, warm caged lanterns (#FFA64D), cold moonlight, window light shaft cards, and <= 4 realtime lights.
+- [x] Part B5: Atmosphere with fog cards, light shaft dust motes, cellar dripping water, filmic tonemapping, bloom, vignette, subtle grain, and ambient occlusion.
+- [x] Part B6: Water and shoreline polish with depth-faded foam, wet sand specular, and elevated thresholds.
+- [x] Part B7: 3D audio reverb zones with stone presets for tower and cellar, bandpass filter on transmitter audio.
+- [x] Part B8: Performance enforcement with static batching, occlusion areas, and zero budget violations via `TheLightHouse/Check Asset Budget`.
+- [x] Part C: Validation test suite in `InteriorValidation.cs` passing all 8 checks, 12 eye-level preview PNGs captured in `docs/level-previews/`, and batch-mode compilation verified.
