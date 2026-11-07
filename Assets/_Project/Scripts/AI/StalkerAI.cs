@@ -39,6 +39,12 @@ namespace TheLightHouse
         [SerializeField] private int searchPointCount = 3;
         [SerializeField, Range(0, 1)] private float hidingCheckChance = .25f;
         [SerializeField] private float sampleRadius = 3f;
+
+        [Header("Sight & Light Detection")]
+        [SerializeField] private float torchLightDetectionRange = 18f;
+        [SerializeField] private float darkSightRange = 1.2f;
+        [SerializeField] private float visionFovAngle = 140f;
+        private bool isPlayerTorchOn = true;
         private float nextHearingTime;
         private int waypointIndex;
         private int searchedPoints;
@@ -97,7 +103,8 @@ namespace TheLightHouse
         {
             agent = GetComponent<NavMeshAgent>();
             herding = GetComponent<CraneHerding>();
-            baseSpeed=agent.speed;
+            baseSpeed = agent.speed;
+            if (!player) player = Object.FindAnyObjectByType<PlayerHealthState>();
         }
 
         private void OnEnable()
@@ -108,6 +115,7 @@ namespace TheLightHouse
             GameEvents.CrankActiveChanged += CrankActive;
             GameEvents.StoryBeatTriggered += StormBeat;
             GameEvents.ReadingStateChanged += Reading;
+            GameEvents.FlashlightToggled += OnFlashlightToggled;
         }
 
         private void Start()
@@ -124,6 +132,12 @@ namespace TheLightHouse
             GameEvents.CrankActiveChanged -= CrankActive;
             GameEvents.StoryBeatTriggered -= StormBeat;
             GameEvents.ReadingStateChanged -= Reading;
+            GameEvents.FlashlightToggled -= OnFlashlightToggled;
+        }
+
+        private void OnFlashlightToggled(bool isOn)
+        {
+            isPlayerTorchOn = isOn;
         }
 
         private void Reading(ReadingStateChangedEvent e){readingSpeed=e.IsReading?e.ThreatSpeed:1f;if(agent)agent.speed=baseSpeed*readingSpeed;}
@@ -131,6 +145,7 @@ namespace TheLightHouse
         private void Update()
         {
             if(stormComplete)return;
+            CheckVisualLightDetection();
             if(postRevealMode&&currentState==StalkerState.Retreat&&Time.time>=retreatUntil){ResetPatrol();return;}
             if(postRevealMode&&player&&!hummed&&Vector3.Distance(transform.position,player.transform.position)<= (actFourSettings?actFourSettings.lullabyRange:9f))
             {
@@ -307,6 +322,36 @@ namespace TheLightHouse
             searchTimeRemaining=stormSettings&&transform.position.y>=stormSettings.lanternY?stormSettings.lanternSearchTime:searchDuration;searchedPoints=0;
             if(agent.isOnNavMesh) agent.isStopped=true;
             ChangeState(StalkerState.Search);
+        }
+
+        private void CheckVisualLightDetection()
+        {
+            if (!player || player.IsCaught || playerHidden || currentState == StalkerState.Retreat || stormComplete) return;
+
+            float dist = Vector3.Distance(transform.position, player.transform.position);
+            // When torch is drawn and on, Thomas Crane detects player light reflections within line of sight from greater distances.
+            // Tucking the torch into the pocket immediately drops visual detection ranges to near zero (darkSightRange = 1.2m).
+            float effectiveRange = isPlayerTorchOn ? torchLightDetectionRange : darkSightRange;
+            if (dist > effectiveRange) return;
+
+            Vector3 eyePos = transform.position + Vector3.up * 1.7f;
+            Vector3 playerEyePos = player.transform.position + Vector3.up * 1.6f;
+            Vector3 dirToPlayer = (playerEyePos - eyePos).normalized;
+
+            // When player torch is on, light reflections expand awareness to a wide 140° frontal arc
+            if (isPlayerTorchOn || Vector3.Angle(transform.forward, dirToPlayer) <= visionFovAngle * 0.5f)
+            {
+                if (!Physics.Linecast(eyePos, playerEyePos, out var hit, LayerMask.GetMask("Default", "Environment", "Obstacle"))
+                    || hit.collider.transform.IsChildOf(player.transform))
+                {
+                    searchOrigin = player.transform.position;
+                    if (currentState != StalkerState.Hunt)
+                    {
+                        GameEvents.RaiseStorySignal("stalker-spotted-light");
+                        ChangeState(StalkerState.Hunt);
+                    }
+                }
+            }
         }
         bool Arrived() => agent.isOnNavMesh && !agent.pathPending &&
             (!agent.hasPath || agent.remainingDistance <= Mathf.Max(arrivalDistance, agent.stoppingDistance));

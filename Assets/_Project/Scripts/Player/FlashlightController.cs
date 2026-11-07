@@ -114,6 +114,8 @@ namespace TheLightHouse
 
         private void Update()
         {
+            if (GetComponentInParent<FPVFlashlightHandsController>()) return;
+
             // Keyboard 'F' key and Gamepad D-pad Up fallback checks via New Input System
             if (Keyboard.current != null && Keyboard.current.fKey.wasPressedThisFrame)
             {
@@ -129,11 +131,19 @@ namespace TheLightHouse
 
         private void LateUpdate()
         {
+            if (GetComponentInParent<FPVFlashlightHandsController>()) return;
             UpdateSway(Time.deltaTime);
         }
 
         public void Toggle()
         {
+            var fpv = GetComponentInParent<FPVFlashlightHandsController>();
+            if (fpv)
+            {
+                fpv.Toggle();
+                isOn = fpv.IsOn;
+                return;
+            }
             SetFlashlightOn(!isOn, playAudio: true);
         }
 
@@ -163,6 +173,13 @@ namespace TheLightHouse
 
         public void TriggerFlicker(float duration = 1.4f, int flickerCount = 7)
         {
+            var fpv = GetComponentInParent<FPVFlashlightHandsController>();
+            if (fpv)
+            {
+                fpv.TriggerFlicker(duration, flickerCount);
+                return;
+            }
+
             if (!gameObject.activeInHierarchy || !enabled) return;
 
             if (_flickerRoutine != null)

@@ -2835,7 +2835,7 @@ namespace TheLightHouse.Editor
                 voGo.AddComponent<VoiceoverDirector>();
             }
 
-            // 2. Setup Player Flashlight Rig
+            // 2. Setup Player FPV Rigged Arms & Flashlight
             var player = Object.FindAnyObjectByType<FirstPersonController>();
             if (player)
             {
@@ -2848,21 +2848,16 @@ namespace TheLightHouse.Editor
                         cam.gameObject.AddComponent<AudioListener>();
                     }
 
-                    var flTransform = cam.Find("Player_Flashlight");
-                    GameObject flGo = flTransform ? flTransform.gameObject : new GameObject("Player_Flashlight");
-                    flGo.transform.SetParent(cam, false);
-                    flGo.transform.localPosition = new Vector3(0.22f, -0.18f, 0.45f);
-                    flGo.transform.localRotation = Quaternion.Euler(1.5f, -1.8f, 0f);
+                    // Remove standalone unrigged flashlight if present
+                    var standaloneFl = cam.Find("Player_Flashlight");
+                    if (standaloneFl && standaloneFl.parent == cam)
+                    {
+                        Object.DestroyImmediate(standaloneFl.gameObject);
+                    }
 
-                    var flCtrl = flGo.GetComponent<FlashlightController>();
-                    if (!flCtrl) flCtrl = flGo.AddComponent<FlashlightController>();
-
-                    var oldModel = flGo.transform.Find("Flashlight_1940s_Ribbed_Mesh");
-                    if (oldModel) Object.DestroyImmediate(oldModel.gameObject);
-
-                    var model = FlashlightModelBuilder.BuildFlashlightModel(flGo.transform, out var bulbRend, out var bulbMat);
-                    flCtrl.SetupLightsAndAudio();
-                    flCtrl.AssignModelReferences(model.transform, bulbRend, bulbMat);
+                    var fpvRig = FPVArmsRigBuilder.BuildFPVArmsRig(cam, out var handsCtrl);
+                    EditorUtility.SetDirty(fpvRig);
+                    EditorUtility.SetDirty(player.gameObject);
                 }
             }
 

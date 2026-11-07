@@ -2,7 +2,7 @@
 
 ## Shared level and HUD additions
 
-- `FlashlightToggled: Action<bool>` is published by `FlashlightController` when the player toggles their handheld torch on or off. Presentation systems, Drowned awareness, and horror flicker routines subscribe to track player beam illumination.
+- `FlashlightToggled: Action<bool>` is published by `FPVFlashlightHandsController` / `FlashlightController` when the player toggles their handheld torch on or off. Presentation systems, Drowned awareness, and horror flicker routines subscribe to track player beam illumination.
 - `RoomEntered: Action<RoomEnteredEvent>` is published by `RoomTrigger` when the player enters a generated room volume. The immutable payload carries stable `RoomId`, display-safe `DisplayName`, and integer `FloorLevel`. HUD subscribers may show a temporary room/floor label; it is not a minimap and does not own progression.
 - Noise, stamina, lamp, objective, inventory, checkpoint, journal, and interaction HUD elements remain presentation subscribers to their existing owning events. HUD settings never suppress gameplay events.
 

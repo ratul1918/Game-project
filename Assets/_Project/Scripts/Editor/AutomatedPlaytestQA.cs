@@ -259,6 +259,23 @@ namespace TheLightHouse.Editor
                 phasePassed = false;
             }
 
+            // 9. FPV Rigged Arms & Animator Controller audit
+            var fpv = Object.FindAnyObjectByType<FPVFlashlightHandsController>();
+            if (!fpv)
+            {
+                report.IdentifiedBugs.Add("[Act 1] FPVFlashlightHandsController missing.");
+                phasePassed = false;
+            }
+            else
+            {
+                var anim = fpv.GetComponent<Animator>();
+                if (!anim || !anim.runtimeAnimatorController)
+                {
+                    report.IdentifiedBugs.Add("[Act 1] Animator or AnimatorController missing on FPV_Flashlight_Hands.");
+                    phasePassed = false;
+                }
+            }
+
             report.PhaseStatus["Phase 2: Arrival at Harrow Rock (Dusk)"] = phasePassed;
             if (scene.isDirty) EditorSceneManager.SaveScene(scene);
         }
