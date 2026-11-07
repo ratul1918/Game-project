@@ -705,7 +705,7 @@ namespace TheLightHouse.Editor
             light.color = new Color(1.0f, 0.68f, 0.35f); // 2700K incandescent
             light.intensity = 3.6f;
             light.range = 8.5f;
-            light.shadows = LightShadows.Soft;
+            light.shadows = LightShadows.None;
 
             // Project warm window glow onto the rock ledge outside
             var spotGo = new GameObject("Window Sill Ground Light");
@@ -1196,35 +1196,37 @@ namespace TheLightHouse.Editor
             if (lightningLight) Set(camSway, "lightningLight", lightningLight);
             if (matSky) Set(camSway, "skyboxMaterial", matSky);
 
-            // Driving Diagonal Rain Streaks across viewport (Subtle atmospheric threads)
+            // Driving Diagonal Rain Streaks across viewport (World-space downward fall to ground/ocean)
             var rainObj = new GameObject("Viewport Driving Rain Particles");
             rainObj.transform.SetParent(cameraObj.transform, false);
-            rainObj.transform.localPosition = new Vector3(0f, 6.5f, 8.5f);
+            rainObj.transform.localPosition = new Vector3(2f, 14f, 16f);
 
             var rainPS = rainObj.AddComponent<ParticleSystem>();
             var rainRend = rainObj.GetComponent<ParticleSystemRenderer>();
             rainRend.renderMode = ParticleSystemRenderMode.Stretch;
             rainRend.cameraVelocityScale = 0f;
-            rainRend.velocityScale = 0.035f;
-            rainRend.lengthScale = 3.2f;
+            rainRend.velocityScale = 0.016f;
+            rainRend.lengthScale = 1.0f;
             if (matRain) rainRend.sharedMaterial = matRain;
 
             var rMain = rainPS.main;
-            rMain.startSpeed = 26f;
-            rMain.startLifetime = 0.85f;
-            rMain.startSize = 0.022f; // Fine threads
-            rMain.maxParticles = 900;
-            rMain.startColor = new Color(0.82f, 0.90f, 0.98f, 0.18f); // Soft alpha
+            rMain.startSpeed = 0f;
+            rMain.startLifetime = 1.05f;
+            rMain.startSize = 0.012f; // Fine atmospheric threads
+            rMain.maxParticles = 1400;
+            rMain.simulationSpace = ParticleSystemSimulationSpace.World;
+            rMain.startColor = new Color(0.72f, 0.84f, 0.94f, 0.18f); // Soft alpha
             var rEmit = rainPS.emission;
-            rEmit.rateOverTime = 520f;
+            rEmit.rateOverTime = 650f;
             var rShape = rainPS.shape;
             rShape.shapeType = ParticleSystemShapeType.Box;
-            rShape.scale = new Vector3(26f, 1f, 20f);
+            rShape.scale = new Vector3(38f, 2f, 28f);
             var rVel = rainPS.velocityOverLifetime;
             rVel.enabled = true;
-            rVel.x = new ParticleSystem.MinMaxCurve(-7.5f, -9.0f);
-            rVel.y = new ParticleSystem.MinMaxCurve(-1.0f, -2.5f);
-            rVel.z = new ParticleSystem.MinMaxCurve(-0.5f, 0.5f);
+            rVel.space = ParticleSystemSimulationSpace.World;
+            rVel.x = new ParticleSystem.MinMaxCurve(-4.0f, -5.5f);
+            rVel.y = new ParticleSystem.MinMaxCurve(-20.0f, -24.0f);
+            rVel.z = new ParticleSystem.MinMaxCurve(1.0f, 2.0f);
 
             // Low-altitude wind-blown mist rolling over ocean
             var mistObj = new GameObject("Ocean Shore Mist Particles");
