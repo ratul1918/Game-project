@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
+using UnityEditor.Build.Reporting;
 using UnityEditor.Events;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -61,6 +62,56 @@ namespace TheLightHouse.Editor
         public static void BuildMenu()
         {
             MainMenuSceneBuilder.BuildMenuScene();
+        }
+
+        [MenuItem("TheLightHouse/Build Standalone Player (macOS)")]
+        public static void BuildStandalonePlayer()
+        {
+            BuildStandalone(false);
+        }
+
+        [MenuItem("TheLightHouse/Build and Run Standalone Player (macOS)")]
+        public static void BuildAndRunStandalonePlayer()
+        {
+            BuildStandalone(true);
+        }
+
+        private static void BuildStandalone(bool autoRun)
+        {
+            string buildFolder = Path.Combine(Directory.GetCurrentDirectory(), "Builds", "macOS");
+            if (!Directory.Exists(buildFolder)) Directory.CreateDirectory(buildFolder);
+            string buildPath = Path.Combine(buildFolder, "TheLightHouse.app");
+
+            string[] scenes = {
+                MenuPath,
+                "Assets/_Project/Scenes/Act1.unity",
+                "Assets/_Project/Scenes/Act2.unity",
+                "Assets/_Project/Scenes/Act3.unity",
+                "Assets/_Project/Scenes/Act4.unity",
+                "Assets/_Project/Scenes/Act5.unity"
+            };
+
+            var options = new BuildPlayerOptions
+            {
+                scenes = scenes,
+                locationPathName = buildPath,
+                target = BuildTarget.StandaloneOSX,
+                options = autoRun ? BuildOptions.AutoRunPlayer : BuildOptions.None
+            };
+
+            Debug.Log($"<color=#44AAFF>[TheLightHouse]</color> Starting Standalone macOS build to {buildPath}...");
+            BuildReport report = BuildPipeline.BuildPlayer(options);
+            BuildSummary summary = report.summary;
+
+            if (summary.result == BuildResult.Succeeded)
+            {
+                Debug.Log($"<color=#44FF88>[TheLightHouse]</color> Standalone macOS build succeeded! Size: {summary.totalSize / (1024 * 1024):F1} MB");
+                EditorUtility.RevealInFinder(buildPath);
+            }
+            else
+            {
+                Debug.LogError($"<color=#FF4444>[TheLightHouse]</color> Standalone build failed with {summary.totalErrors} errors.");
+            }
         }
 
         static Button Button(string label, Transform parent, Vector2 position, UnityEngine.Events.UnityAction action, Vector2? size = null)
