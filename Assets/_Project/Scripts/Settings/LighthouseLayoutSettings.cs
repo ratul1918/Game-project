@@ -6,14 +6,14 @@ namespace TheLightHouse
     public sealed class LighthouseLayoutSettings : ScriptableObject
     {
         [Header("Tower")]
-        [Min(8f)] public float towerHeight=28f;
+        [Min(8f)] public float towerHeight=13.5f;
         [Min(4f)] public float towerBaseDiameter=8f;
         [Min(3f)] public float towerGalleryDiameter=5f;
         [Min(.2f)] public float towerBaseWallThickness=.8f;
         [Min(.1f)] public float towerGalleryWallThickness=.45f;
         [Min(8)] public int towerWallSegments=24;
         [Min(2f)] public float floorHeight=3.2f;
-        [Min(1)] public int towerLevelCount=8;
+        [Min(1)] public int towerLevelCount=3;
         [Min(.1f)] public float ringCorniceHeight=.22f;
         [Min(.1f)] public float ringCorniceDepth=.22f;
         [Min(8)] public int lanternPaneCount=16;

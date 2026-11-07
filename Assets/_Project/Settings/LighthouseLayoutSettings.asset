@@ -12,14 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8a8edee0acbb345bfb2ae4ceb1215760, type: 3}
   m_Name: LighthouseLayoutSettings
   m_EditorClassIdentifier: Assembly-CSharp::TheLightHouse.LighthouseLayoutSettings
-  towerHeight: 28
+  towerHeight: 13.5
   towerBaseDiameter: 13
   towerGalleryDiameter: 9.6
   towerBaseWallThickness: 0.85
   towerGalleryWallThickness: 0.55
   towerWallSegments: 24
   floorHeight: 3.2
-  towerLevelCount: 8
+  towerLevelCount: 3
   ringCorniceHeight: 0.22
   ringCorniceDepth: 0.22
   lanternPaneCount: 16

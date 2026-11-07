@@ -32,6 +32,7 @@ namespace TheLightHouse.Editor
         private static Material matLanternGlow;
         private static Material matCeramic;
         private static Material matWarmWindow;
+        private static Material matColdWindow;
         private static Material matPuddle;
         private static Material matSlickCobble;
         private static Material matMahogany;
@@ -131,6 +132,15 @@ namespace TheLightHouse.Editor
             matWarmWindow.SetColor("_BaseColor", new Color(1.0f, 0.78f, 0.38f));
             matWarmWindow.EnableKeyword("_EMISSION");
             matWarmWindow.SetColor("_EmissionColor", new Color(1.0f, 0.78f, 0.38f) * 2.0f);
+
+            matColdWindow = EnsureMaterial("ColdWindowGlass", "Universal Render Pipeline/Lit");
+            matColdWindow.SetColor("_BaseColor", new Color(0.45f, 0.55f, 0.65f, 0.35f));
+            matColdWindow.SetFloat("_Surface", 1);
+            matColdWindow.SetFloat("_Blend", 0);
+            matColdWindow.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            matColdWindow.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            matColdWindow.SetFloat("_Smoothness", 0.95f);
+            matColdWindow.SetFloat("_Metallic", 0.1f);
 
             // 1. Peeling Brick Material
             matPeelingBrick = EnsureMaterial("LighthousePeelingBrick", "Universal Render Pipeline/Lit");
@@ -435,10 +445,10 @@ namespace TheLightHouse.Editor
             }
 
             // Tower Structural Iron Rivet Rings & Downward Rust Streaks
-            float[] ringHeights = new[] { 7.5f, 15.0f, 22.5f, 30.0f };
+            float[] ringHeights = new[] { 3.2f, 6.4f, 9.6f };
             foreach (float y in ringHeights)
             {
-                float radius = Mathf.Lerp(6.5f, 4.8f, y / 25.6f) + 0.04f;
+                float radius = Mathf.Lerp(6.5f, 4.8f, y / 9.6f) + 0.04f;
                 var ring = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
                 ring.name = $"Tower Rivet Ring {y:F0}m";
                 ring.transform.SetParent(towerGroup, false);
@@ -451,7 +461,7 @@ namespace TheLightHouse.Editor
             // Top Lantern Volumetric Sweeping Spotlight cutting through driving rain
             var sweepingLightGo = new GameObject("Top Lantern Sweeping Spotlight");
             sweepingLightGo.transform.SetParent(towerGroup, false);
-            sweepingLightGo.transform.position = new Vector3(0, 34.5f, 0);
+            sweepingLightGo.transform.position = new Vector3(0, 13.5f, 0);
             sweepingLightGo.transform.rotation = Quaternion.Euler(24f, 0, 0);
 
             var spot = sweepingLightGo.AddComponent<Light>();
@@ -744,428 +754,518 @@ namespace TheLightHouse.Editor
         // =========================================================================
         private static void BuildTowerInteriorAndStudy(Transform parent)
         {
-            // 1. Deactivate legacy primitive blockout from ReferenceVisualPass and hiding spots if present
-            foreach (string oldName in new[] { "Reference Visuals/Lighthouse/FirstFloor/ArchiveRoom", "Reference Visuals/Lighthouse/FirstFloor/Architecture", "ArchiveRoom" })
+            // 1. Deactivate legacy primitive blockouts, old straight slabs, and old duplicate staircases
+            foreach (string oldName in new[]
+            {
+                "Reference Visuals/Lighthouse/GroundFloor/Staircase_A",
+                "Reference Visuals/Lighthouse/FirstFloor/Staircase_B",
+                "Reference Visuals/Lighthouse/SecondFloor/Staircase_C",
+                "Reference Visuals/Lighthouse/UpperTower/Stairs_Flights3_7",
+                "Reference Visuals/Lighthouse/FirstFloor/ArchiveRoom",
+                "Reference Visuals/Lighthouse/FirstFloor/Architecture",
+                "Reference Visuals/Lighthouse/SecondFloor/Architecture",
+                "Reference Visuals/Lighthouse/SecondFloor/LivingRoom",
+                "Reference Visuals/Lighthouse/UpperTower/CraneQuarters_Level3",
+                "Reference Visuals/Lighthouse/UpperTower/IntermediateFloors",
+                "Reference Visuals/Lighthouse/GroundFloor/Storage",
+                "Lighthouse Layout/Stairs",
+                "ArchiveRoom",
+                "level2-desk"
+            })
             {
                 var go = GameObject.Find(oldName);
                 if (go)
                 {
-                    foreach (var r in go.GetComponentsInChildren<Renderer>(true))
-                        r.enabled = false;
-                    foreach (var c in go.GetComponentsInChildren<Collider>(true))
-                        c.enabled = false;
+                    foreach (var r in go.GetComponentsInChildren<Renderer>(true)) r.enabled = false;
+                    foreach (var c in go.GetComponentsInChildren<Collider>(true)) c.enabled = false;
+                    go.SetActive(false);
                 }
             }
 
-            var lvl2Desk = GameObject.Find("level2-desk");
-            if (lvl2Desk)
+            // Deactivate legacy flat floor rings that slice through the stairs
+            var towerLayout = GameObject.Find("Lighthouse Layout/Tower");
+            if (towerLayout)
             {
-                var r = lvl2Desk.GetComponent<Renderer>();
-                if (r) r.enabled = false;
-                var c = lvl2Desk.GetComponent<Collider>();
-                if (c) c.enabled = false;
-            }
-
-            var towerRoot = new GameObject("Tower Interior & Mid-Level Study Master").transform;
-            towerRoot.SetParent(parent, false);
-
-            // A. Exposed Masonry Curving Walls (y = 3.2m to 7.2m, Radius approx 5.35m)
-            var wallGroup = new GameObject("Curving Masonry Walls & Ceiling Joists").transform;
-            wallGroup.SetParent(towerRoot, false);
-
-            int wallSegments = 32;
-            float towerRadius = 5.35f;
-            for (int i = 0; i < wallSegments; i++)
-            {
-                float angle = i * (360f / wallSegments);
-                float rad = angle * Mathf.Deg2Rad;
-                Vector3 segPos = new Vector3(Mathf.Sin(rad) * towerRadius, 5.2f, Mathf.Cos(rad) * towerRadius);
-                Quaternion segRot = Quaternion.Euler(0, angle, 0);
-
-                CreatePrimitiveMesh($"Tower Wall Stone Arc {i}", PrimitiveType.Cube, wallGroup,
-                    segPos, new Vector3(1.15f, 4.2f, 0.35f), segRot, matStone, false);
-
-                // Heavy timber wall corbel supporting mezzanine deck above (only outside the stair wellhole!)
-                if (i % 2 == 0)
+                for (int t = 0; t < towerLayout.transform.childCount; t++)
                 {
-                    // Stair Flight 0 ascends along the North arc from angle 50° through 0° down to -110° (approx 40° to 250°)
-                    // Omit corbels in this sector to ensure >= 2.4m vertical headroom over every step (Ref: Screenshot 19)
-                    if (angle < 45f || angle > 250f)
+                    var child = towerLayout.transform.GetChild(t);
+                    if (child.name.StartsWith("Tower Floor"))
                     {
-                        Vector3 corbelPos = new Vector3(Mathf.Sin(rad) * (towerRadius - 0.28f), 3.12f, Mathf.Cos(rad) * (towerRadius - 0.28f));
-                        CreatePrimitiveMesh($"Deck Corbel {i}", PrimitiveType.Cube, wallGroup,
-                            corbelPos, new Vector3(0.24f, 0.36f, 0.55f), segRot, matWood, false);
+                        foreach (var r in child.GetComponentsInChildren<Renderer>(true)) r.enabled = false;
+                        foreach (var c in child.GetComponentsInChildren<Collider>(true)) c.enabled = false;
+                        child.gameObject.SetActive(false);
                     }
                 }
             }
 
-            // Overhead Mezzanine Ring Structure & Framing (Framing opening to lantern deck above)
-            float upperRingY = 6.85f;
-            CreatePrimitiveMesh("Upper Lantern Access Ring", PrimitiveType.Cylinder, wallGroup,
-                new Vector3(0, upperRingY, 0), new Vector3(5.2f, 0.12f, 5.2f), Quaternion.identity, matIron, false);
+            var towerRoot = new GameObject("Tower Interior & Circular Rooms Master").transform;
+            towerRoot.SetParent(parent, false);
 
-            // Circular inner aperture cutout framing
-            for (int spoke = 0; spoke < 8; spoke++)
+            // A. Outer Curved Masonry Wall Lining (Diameter ~10.4m, radius 5.20m, y = 0 to 9.8m)
+            var wallGroup = new GameObject("Curving Outer Masonry Walls & Shaft").transform;
+            wallGroup.SetParent(towerRoot, false);
+
+            int outerWallSegs = 32;
+            float outerWallR = 5.20f;
+            for (int i = 0; i < outerWallSegs; i++)
             {
-                float sAngle = spoke * 45f;
-                // Flight 1 ascends along South arc (135° to 315°). Omit spokes in this range to guarantee >2.5m vertical headroom!
-                if (sAngle >= 135f && sAngle <= 315f) continue;
-                float sRad = sAngle * Mathf.Deg2Rad;
-                Vector3 spokePos = new Vector3(Mathf.Sin(sRad) * 3.8f, upperRingY - 0.05f, Mathf.Cos(sRad) * 3.8f);
-                CreatePrimitiveMesh($"Radial Ceiling Girder {spoke}", PrimitiveType.Cube, wallGroup,
-                    spokePos, new Vector3(0.18f, 0.25f, 2.6f), Quaternion.Euler(0, sAngle, 0), matIron, false);
+                float ang = i * (360f / outerWallSegs);
+                // South Grand Portal at 180° (z = -6.5m)
+                if (Mathf.Abs(Mathf.DeltaAngle(ang, 180f)) < 16f) continue;
+                // West Cottage Link Portal at ~240°
+                if (Mathf.Abs(Mathf.DeltaAngle(ang, 240f)) < 16f) continue;
+
+                float rad = ang * Mathf.Deg2Rad;
+                Vector3 segPos = new Vector3(Mathf.Sin(rad) * outerWallR, 4.90f, Mathf.Cos(rad) * outerWallR);
+                Quaternion segRot = Quaternion.Euler(0, ang, 0);
+                CreatePrimitiveMesh($"Outer Tower Stone Arc {i}", PrimitiveType.Cube, wallGroup,
+                    segPos, new Vector3(1.15f, 9.80f, 0.40f), segRot, matStone, true);
             }
 
-            // B. Wooden Mezzanine Study Floor Deck & Wrought-Iron Curved Balustrade
-            var deckGroup = new GameObject("Mezzanine Study Deck & Balustrade").transform;
-            deckGroup.SetParent(towerRoot, false);
+            // B. Circular Room Floor Slabs (r = 3.08m, covering ONLY the central room - Leaving Annular Stairwell 100% Open Vertically)
+            var slabsGroup = new GameObject("Circular Room Floor Slabs").transform;
+            slabsGroup.SetParent(towerRoot, false);
 
-            // Hardwood floor platform with generous curved stairwell wellhole opening (Ref: Screenshot 19)
-            // 1. Core Study Platform (x in [-3.5, 3.5], z in [0.1, 4.3])
-            CreatePrimitiveMesh("Mezzanine Study Floor Core", PrimitiveType.Cube, deckGroup,
-                new Vector3(0f, 3.20f, 2.20f), new Vector3(7.0f, 0.14f, 4.2f), Quaternion.identity, matWood, true);
+            // Floor 1 Flagstone Ground Floor (y = 0.15m)
+            CreatePrimitiveMesh("Floor 1 Ground Flagstone Slab", PrimitiveType.Cylinder, slabsGroup,
+                new Vector3(0, 0.08f, 0), new Vector3(6.16f, 0.14f, 6.16f), Quaternion.identity, matStone, true);
 
-            // 2. Main Arrival Landing Deck connecting to study core
-            CreatePrimitiveMesh("Stair Arrival Landing Deck", PrimitiveType.Cube, deckGroup,
-                new Vector3(-4.20f, 3.20f, -0.90f), new Vector3(2.8f, 0.14f, 2.8f), Quaternion.identity, matWood, true);
+            // Floor 2 Hardwood Deck Slab (y = 3.35m)
+            CreatePrimitiveMesh("Floor 2 Hardwood Deck Slab", PrimitiveType.Cylinder, slabsGroup,
+                new Vector3(0, 3.28f, 0), new Vector3(6.16f, 0.14f, 6.16f), Quaternion.identity, matWood, true);
 
-            // 3. Seamless Transition Slab extending directly under Flight 0 top step (flush against tower curved wall)
-            CreatePrimitiveMesh("Stair Transition Deck Slab", PrimitiveType.Cube, deckGroup,
-                new Vector3(-4.60f, 3.20f, -1.65f), new Vector3(1.8f, 0.14f, 1.4f), Quaternion.identity, matWood, true);
+            // Floor 3 Slate & Iron Deck Slab (y = 6.55m)
+            CreatePrimitiveMesh("Floor 3 Slate & Iron Deck Slab", PrimitiveType.Cylinder, slabsGroup,
+                new Vector3(0, 6.48f, 0), new Vector3(6.16f, 0.14f, 6.16f), Quaternion.identity, matSlate, true);
 
-            // Inner Curved Wrought-Iron Guardrail along void edge overlooking staircase (South perimeter of mezzanine)
-            // Runs from x = -2.40f to x = +2.60f, leaving a wide open gateway for x < -2.40f directly onto stair landing deck!
-            int railPosts = 20;
-            for (int p = 0; p <= railPosts; p++)
+            // C. 3-TIER STACK OF FULLY ENCLOSED CIRCULAR CENTRAL ROOMS
+            // Floor 1: Entrance Hall / Utility & Pantry (holds cellar trapdoor / arched cellar entrance)
+            // Floor 2: Keeper’s Study / Living Quarter (solid mahogany desk, charts, logbook, bookcases, rug)
+            // Floor 3: Watchroom & Battery/Fuel Staging (battery bank racks, fuel cans, barometer, telegraph)
+            float[] floorHeights = new[] { 0.15f, 3.35f, 6.55f };
+            float[] doorAngles = new[] { 210f, 90f, 330f }; // Floor 1 faces SW near cottage, Floor 2 faces East, Floor 3 faces NW
+            string[] roomNames = new[] { "Floor 1 Entrance Hall & Pantry", "Floor 2 Keeper Study", "Floor 3 Watchroom & Battery Deck" };
+
+            float roomWallR = 2.95f;
+            float roomWallThick = 0.25f;
+            int roomSegs = 32;
+
+            for (int k = 0; k < 3; k++)
             {
-                float t = p / (float)railPosts;
-                float px = Mathf.Lerp(-2.40f, 2.60f, t);
-                float pz = 0.20f - 0.25f * Mathf.Sin(t * Mathf.PI);
-                Vector3 postPos = new Vector3(px, 3.21f, pz);
+                float yBase = floorHeights[k];
+                float dAng = doorAngles[k];
 
-                // Vertical baluster rod
-                CreatePrimitiveMesh($"Baluster {p}", PrimitiveType.Cylinder, deckGroup,
-                    postPos + Vector3.up * 0.52f, new Vector3(0.038f, 0.52f, 0.038f), Quaternion.identity, matIron, false);
+                var roomGroup = new GameObject(roomNames[k]).transform;
+                roomGroup.SetParent(towerRoot, false);
 
-                // Main posts with ornamental cap
-                if (p == 0 || p == railPosts || p % 5 == 0)
+                // 1. Vertical Circular Partition Walls enclosing the room completely from floor to ceiling slab
+                for (int s = 0; s < roomSegs; s++)
                 {
-                    CreatePrimitiveMesh($"Main Post {p}", PrimitiveType.Cylinder, deckGroup,
-                        postPos + Vector3.up * 0.55f, new Vector3(0.08f, 0.55f, 0.08f), Quaternion.identity, matIron, false);
+                    float sAng = s * (360f / roomSegs);
+                    // Leave doorway opening (clear width ~1.05m)
+                    if (Mathf.Abs(Mathf.DeltaAngle(sAng, dAng)) < 11.5f) continue;
+
+                    float sRad = sAng * Mathf.Deg2Rad;
+                    Vector3 segPos = new Vector3(Mathf.Sin(sRad) * roomWallR, yBase + 1.60f, Mathf.Cos(sRad) * roomWallR);
+                    Quaternion segRot = Quaternion.Euler(0, sAng, 0);
+                    float tangW = 2f * Mathf.PI * roomWallR / roomSegs * 1.05f;
+
+                    CreatePrimitiveMesh($"Room {k + 1} Wall Arc {s}", PrimitiveType.Cube, roomGroup,
+                        segPos, new Vector3(tangW, 3.20f, roomWallThick), segRot, matStone, true);
                 }
 
-                // Curved top handrail segment
-                if (p < railPosts)
+                // 2. Doorway Frame & Rustic Wooden Plank Door
+                float dRad = dAng * Mathf.Deg2Rad;
+                Vector3 doorCenter = new Vector3(Mathf.Sin(dRad) * roomWallR, yBase, Mathf.Cos(dRad) * roomWallR);
+                Quaternion doorRot = Quaternion.Euler(0, dAng, 0);
+                Vector3 rightDir = doorRot * Vector3.right;
+
+                // Door Lintel
+                CreatePrimitiveMesh($"Floor {k + 1} Door Lintel", PrimitiveType.Cube, roomGroup,
+                    doorCenter + Vector3.up * 2.22f, new Vector3(1.22f, 0.22f, 0.32f), doorRot, matWood, true);
+                // Left & Right Jambs (Clear width = 0.96m, Height = 2.15m)
+                CreatePrimitiveMesh($"Floor {k + 1} Door Jamb L", PrimitiveType.Cube, roomGroup,
+                    doorCenter + Vector3.up * 1.08f - rightDir * 0.54f, new Vector3(0.14f, 2.16f, 0.30f), doorRot, matWood, true);
+                CreatePrimitiveMesh($"Floor {k + 1} Door Jamb R", PrimitiveType.Cube, roomGroup,
+                    doorCenter + Vector3.up * 1.08f + rightDir * 0.54f, new Vector3(0.14f, 2.16f, 0.30f), doorRot, matWood, true);
+                // Threshold Sill
+                CreatePrimitiveMesh($"Floor {k + 1} Door Threshold", PrimitiveType.Cube, roomGroup,
+                    doorCenter + Vector3.up * 0.04f, new Vector3(1.10f, 0.08f, 0.38f), doorRot, matStone, true);
+
+                // Hinged Rustic Wooden Plank Door
+                var doorHinge = new GameObject($"Floor {k + 1} Door");
+                doorHinge.transform.SetParent(roomGroup, false);
+                doorHinge.transform.position = doorCenter - rightDir * 0.46f;
+                doorHinge.transform.rotation = doorRot;
+
+                var doorLeaf = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                doorLeaf.name = $"Floor_{k + 1}_Door_Panel";
+                doorLeaf.transform.SetParent(doorHinge.transform, false);
+                doorLeaf.transform.localPosition = new Vector3(0.46f, 1.08f, 0f);
+                doorLeaf.transform.localScale = new Vector3(0.92f, 2.10f, 0.055f);
+                doorLeaf.GetComponent<Renderer>().sharedMaterial = matWood;
+                var leafBc = doorLeaf.GetComponent<BoxCollider>();
+                if (leafBc) { leafBc.center = Vector3.zero; leafBc.size = Vector3.one; }
+
+                // Attach Door & NoiseEmitter components
+                doorHinge.AddComponent<NoiseEmitter>();
+                var doorScript = doorHinge.AddComponent<Door>();
+                var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+                doorScript.GetType().GetField("doorId", flags)?.SetValue(doorScript, $"tower-floor-{k + 1}-door");
+                doorScript.GetType().GetField("openAngle", flags)?.SetValue(doorScript, -100f);
+                doorScript.GetType().GetField("turnSpeed", flags)?.SetValue(doorScript, 130f);
+
+                // 3. Flat Stone Landing Platform (1.6m x 1.6m at entrance of each door)
+                var landingGroup = new GameObject($"Floor {k + 1} Stair Landing Platform").transform;
+                landingGroup.SetParent(towerRoot, false);
+
+                int landDivs = 8;
+                float halfSpan = 14f;
+                for (int d = 0; d < landDivs; d++)
                 {
-                    float nextT = (p + 1) / (float)railPosts;
-                    float npx = Mathf.Lerp(-2.40f, 2.60f, nextT);
-                    float npz = 0.20f - 0.25f * Mathf.Sin(nextT * Mathf.PI);
-                    Vector3 nextPos = new Vector3(npx, 3.21f, npz);
-                    Vector3 mid = (postPos + nextPos) * 0.5f + Vector3.up * 1.05f;
-                    Vector3 diff = nextPos - postPos;
-                    float len = diff.magnitude;
-                    Quaternion rot = Quaternion.LookRotation(diff);
-                    CreatePrimitiveMesh($"Handrail Seg {p}", PrimitiveType.Cylinder, deckGroup,
-                        mid, new Vector3(0.055f, len * 0.5f, 0.055f), rot * Quaternion.Euler(90f, 0, 0), matIron, false);
+                    float lAng = (dAng - halfSpan) + (d + 0.5f) * (2f * halfSpan / landDivs);
+                    float lRad = lAng * Mathf.Deg2Rad;
+                    float lMidR = (3.12f + 4.65f) * 0.5f;
+                    Vector3 lPos = new Vector3(Mathf.Sin(lRad) * lMidR, yBase - 0.06f, Mathf.Cos(lRad) * lMidR);
+                    Quaternion lRot = Quaternion.Euler(0, lAng, 0);
+                    float lTang = 2f * Mathf.PI * lMidR * (2f * halfSpan / 360f) / landDivs * 1.08f;
+                    CreatePrimitiveMesh($"Landing {k + 1} Slab {d}", PrimitiveType.Cube, landingGroup,
+                        lPos, new Vector3(lTang, 0.12f, 1.53f), lRot, matStone, true);
+                }
+
+                // Landing Balustrade Guarding Outer Void Edge & Newel Post
+                for (int b = 0; b <= 4; b++)
+                {
+                    float bAng = (dAng - halfSpan) + b * (2f * halfSpan / 4f);
+                    float bRad = bAng * Mathf.Deg2Rad;
+                    Vector3 bPos = new Vector3(Mathf.Sin(bRad) * 4.65f, yBase, Mathf.Cos(bRad) * 4.65f);
+                    CreatePrimitiveMesh($"Landing Rail Post {b}", PrimitiveType.Cylinder, landingGroup,
+                        bPos + Vector3.up * 0.55f, new Vector3(0.04f, 0.55f, 0.04f), Quaternion.identity, matIron, false);
+                }
+                Vector3 newelP = new Vector3(Mathf.Sin((dAng + halfSpan) * Mathf.Deg2Rad) * 4.65f, yBase, Mathf.Cos((dAng + halfSpan) * Mathf.Deg2Rad) * 4.65f);
+                CreatePrimitiveMesh($"Landing {k + 1} Newel", PrimitiveType.Cylinder, landingGroup,
+                    newelP + Vector3.up * 0.60f, new Vector3(0.09f, 0.60f, 0.09f), Quaternion.identity, matBrass, false);
+                CreatePrimitiveMesh($"Landing {k + 1} Finial", PrimitiveType.Sphere, landingGroup,
+                    newelP + Vector3.up * 1.25f, new Vector3(0.12f, 0.12f, 0.12f), Quaternion.identity, matBrass, false);
+            }
+
+            // D. SPECIFIC ROOM NARRATIVE INTERIOR FURNISHINGS
+            // -------------------------------------------------------------
+            // FLOOR 1: ENTRANCE HALL / UTILITY & PANTRY
+            // -------------------------------------------------------------
+            var f1Group = new GameObject("Floor 1 Interior Pantry & Utility Furnishings").transform;
+            f1Group.SetParent(towerRoot, false);
+
+            // Arched Cellar Entrance Portal connecting to underground tunnels (Ref: Screenshot 1 & 2)
+            Vector3 cellarArchPos = new Vector3(-1.85f, 0.15f, 1.65f);
+            Quaternion cellarArchRot = Quaternion.Euler(0, -42f, 0);
+            CreatePrimitiveMesh("Cellar Arch Jamb Left", PrimitiveType.Cube, f1Group,
+                cellarArchPos + cellarArchRot * new Vector3(-0.55f, 1.20f, 0), new Vector3(0.24f, 2.40f, 0.35f), cellarArchRot, matStone, true);
+            CreatePrimitiveMesh("Cellar Arch Jamb Right", PrimitiveType.Cube, f1Group,
+                cellarArchPos + cellarArchRot * new Vector3(0.55f, 1.20f, 0), new Vector3(0.24f, 2.40f, 0.35f), cellarArchRot, matStone, true);
+            CreatePrimitiveMesh("Cellar Arch Lintel Beam", PrimitiveType.Cube, f1Group,
+                cellarArchPos + cellarArchRot * new Vector3(0f, 2.40f, 0), new Vector3(1.40f, 0.28f, 0.40f), cellarArchRot, matWood, true);
+
+            // Pantry Supply Shelves along Northeast curved inner wall
+            float pz = 1.85f;
+            for (int s = 0; s < 3; s++)
+            {
+                float sy = 0.70f + s * 0.65f;
+                CreatePrimitiveMesh($"Pantry Shelf {s + 1}", PrimitiveType.Cube, f1Group,
+                    new Vector3(1.20f, sy, pz), new Vector3(2.40f, 0.05f, 0.45f), Quaternion.Euler(0, 15f, 0), matWood, true);
+                for (int c = 0; c < 5; c++)
+                {
+                    float cx = 0.35f + c * 0.42f;
+                    CreatePrimitiveMesh($"Provisions Can {s}_{c}", PrimitiveType.Cylinder, f1Group,
+                        new Vector3(cx, sy + 0.12f, pz + 0.05f), new Vector3(0.12f, 0.12f, 0.12f), Quaternion.identity, matBrass, false);
                 }
             }
 
-            // Landing Newel Post capping the start of the railing at the gateway
-            Vector3 gatewayNewelPos = new Vector3(-2.40f, 3.21f, 0.20f);
-            CreatePrimitiveMesh("Balustrade Landing Newel", PrimitiveType.Cylinder, deckGroup,
-                gatewayNewelPos + Vector3.up * 0.58f, new Vector3(0.10f, 0.58f, 0.10f), Quaternion.identity, matBrass, false);
-            CreatePrimitiveMesh("Balustrade Newel Finial", PrimitiveType.Sphere, deckGroup,
-                gatewayNewelPos + Vector3.up * 1.18f, new Vector3(0.12f, 0.12f, 0.12f), Quaternion.identity, matBrass, false);
+            // Heavy Utility Wooden Crates & Oak Maritime Casks
+            CreatePrimitiveMesh("Maritime Supply Crate 1", PrimitiveType.Cube, f1Group,
+                new Vector3(0.85f, 0.45f, -1.65f), new Vector3(0.75f, 0.60f, 0.75f), Quaternion.Euler(0, 22f, 0), matWood, true);
+            CreatePrimitiveMesh("Maritime Supply Crate 2", PrimitiveType.Cube, f1Group,
+                new Vector3(1.55f, 0.42f, -1.45f), new Vector3(0.65f, 0.54f, 0.65f), Quaternion.Euler(0, -12f, 0), matWood, true);
+            CreatePrimitiveMesh("Utility Barrel 1", PrimitiveType.Cylinder, f1Group,
+                new Vector3(-0.95f, 0.55f, -1.85f), new Vector3(0.60f, 0.45f, 0.60f), Quaternion.identity, matWood, true);
+            CreatePrimitiveMesh("Utility Barrel 2", PrimitiveType.Cylinder, f1Group,
+                new Vector3(-1.60f, 0.50f, -1.45f), new Vector3(0.55f, 0.40f, 0.55f), Quaternion.identity, matWood, true);
 
-            // C. Mid-Level Study Platform: Persian Rug & Solid Mahogany Writing Desk
-            var studyGroup = new GameObject("Study Writing Desk & Instruments").transform;
-            studyGroup.SetParent(towerRoot, false);
+            // Wall Tool Pegboard & Coiled Hawser Rope
+            CreatePrimitiveMesh("Wall Tool Board", PrimitiveType.Cube, f1Group,
+                new Vector3(-2.20f, 1.65f, 0.20f), new Vector3(0.08f, 1.20f, 1.80f), Quaternion.identity, matWood, false);
+            CreatePrimitiveMesh("Coiled Hawser Rope", PrimitiveType.Cylinder, f1Group,
+                new Vector3(-2.15f, 1.70f, 0.45f), new Vector3(0.38f, 0.08f, 0.38f), Quaternion.Euler(0, 0, 90f), matParchment, false);
 
-            // Persian Carpet / Area Rug (sitting on top of wooden floor)
-            CreatePrimitiveMesh("Persian Study Rug", PrimitiveType.Cube, studyGroup,
-                new Vector3(0f, 3.27f, 1.75f), new Vector3(4.2f, 0.015f, 3.2f), Quaternion.identity, matRug, false);
+            // Ceiling Bulkhead Fixture (Floor 1)
+            var f1LightGo = new GameObject("Floor 1 Bulkhead Light");
+            f1LightGo.transform.SetParent(f1Group, false);
+            f1LightGo.transform.position = new Vector3(0f, 3.10f, 0f);
+            var f1Light = f1LightGo.AddComponent<Light>();
+            f1Light.type = LightType.Point;
+            f1Light.color = new Color(1.0f, 0.76f, 0.42f);
+            f1Light.range = 6.5f;
+            f1Light.intensity = 2.2f;
+            f1Light.shadows = LightShadows.Soft;
 
-            // Mahogany Desk Center Coordinates
-            Vector3 deskPos = new Vector3(0f, 3.21f, 1.60f);
+            // -------------------------------------------------------------
+            // FLOOR 2: KEEPER’S STUDY / LIVING QUARTER
+            // -------------------------------------------------------------
+            var f2Group = new GameObject("Floor 2 Interior Study Furnishings").transform;
+            f2Group.SetParent(towerRoot, false);
+
+            float f2Y = 3.35f;
+
+            // Persian Carpet / Area Rug
+            CreatePrimitiveMesh("Persian Study Rug", PrimitiveType.Cube, f2Group,
+                new Vector3(0f, f2Y + 0.015f, 0.20f), new Vector3(3.8f, 0.012f, 3.2f), Quaternion.identity, matRug, false);
+
+            // Solid Mahogany Writing Desk Center Coordinates
+            Vector3 deskPos = new Vector3(0f, f2Y, 0.35f);
 
             // Solid Mahogany Desktop
-            CreatePrimitiveMesh("Mahogany Desk Top", PrimitiveType.Cube, studyGroup,
+            CreatePrimitiveMesh("Mahogany Desk Top", PrimitiveType.Cube, f2Group,
                 deskPos + new Vector3(0f, 0.75f, 0f), new Vector3(2.0f, 0.08f, 1.05f), Quaternion.identity, matMahogany, true);
-
-            // Left & Right Drawered Pedestals
-            CreatePrimitiveMesh("Desk Pedestal Left", PrimitiveType.Cube, studyGroup,
+            // Pedestals Left & Right
+            CreatePrimitiveMesh("Desk Pedestal Left", PrimitiveType.Cube, f2Group,
                 deskPos + new Vector3(-0.74f, 0.36f, 0f), new Vector3(0.48f, 0.70f, 0.92f), Quaternion.identity, matMahogany, true);
-            CreatePrimitiveMesh("Desk Pedestal Right", PrimitiveType.Cube, studyGroup,
+            CreatePrimitiveMesh("Desk Pedestal Right", PrimitiveType.Cube, f2Group,
                 deskPos + new Vector3(0.74f, 0.36f, 0f), new Vector3(0.48f, 0.70f, 0.92f), Quaternion.identity, matMahogany, true);
-            CreatePrimitiveMesh("Desk Modesty Panel", PrimitiveType.Cube, studyGroup,
+            CreatePrimitiveMesh("Desk Modesty Panel", PrimitiveType.Cube, f2Group,
                 deskPos + new Vector3(0f, 0.38f, 0.38f), new Vector3(1.0f, 0.66f, 0.04f), Quaternion.identity, matMahogany, false);
 
             // Solid Brass Drawer Pulls
             for (int d = 0; d < 3; d++)
             {
                 float dy = 0.58f - d * 0.22f;
-                CreatePrimitiveMesh($"Brass Pull L{d}", PrimitiveType.Cube, studyGroup,
+                CreatePrimitiveMesh($"Brass Pull L{d}", PrimitiveType.Cube, f2Group,
                     deskPos + new Vector3(-0.74f, dy, -0.47f), new Vector3(0.14f, 0.035f, 0.025f), Quaternion.identity, matBrass, false);
-                CreatePrimitiveMesh($"Brass Pull R{d}", PrimitiveType.Cube, studyGroup,
+                CreatePrimitiveMesh($"Brass Pull R{d}", PrimitiveType.Cube, f2Group,
                     deskPos + new Vector3(0.74f, dy, -0.47f), new Vector3(0.14f, 0.035f, 0.025f), Quaternion.identity, matBrass, false);
             }
 
-            // D. Desk Clues & High-Detail Props
-            // 1. Sea Charts: Open Navigation Chart of Harrow Rock & Shoals
-            CreatePrimitiveMesh("Nautical Chart Spread", PrimitiveType.Quad, studyGroup,
+            // Open Maritime Navigation Chart of Harrow Rock & Shoals
+            CreatePrimitiveMesh("Nautical Chart Spread", PrimitiveType.Quad, f2Group,
                 deskPos + new Vector3(0.08f, 0.795f, -0.05f), new Vector3(0.78f, 0.55f, 1f), Quaternion.Euler(90f, 4f, 0f), matNauticalChart, false);
 
-            // Rolled Parchment Charts in brass retention rings
-            CreatePrimitiveMesh("Rolled Chart 1", PrimitiveType.Cylinder, studyGroup,
-                deskPos + new Vector3(-0.72f, 0.83f, 0.22f), new Vector3(0.07f, 0.42f, 0.07f), Quaternion.Euler(0, 32f, 90f), matParchment, false);
-            CreatePrimitiveMesh("Rolled Chart 2", PrimitiveType.Cylinder, studyGroup,
-                deskPos + new Vector3(-0.75f, 0.88f, 0.18f), new Vector3(0.06f, 0.38f, 0.06f), Quaternion.Euler(0, -15f, 90f), matParchment, false);
-            CreatePrimitiveMesh("Brass Chart Cylinder", PrimitiveType.Cylinder, studyGroup,
-                deskPos + new Vector3(-0.80f, 0.82f, -0.20f), new Vector3(0.08f, 0.45f, 0.08f), Quaternion.Euler(0, 78f, 90f), matBrass, false);
+            // Brass Navigational Calipers / Drafting Dividers
+            Vector3 caliperP = deskPos + new Vector3(0.16f, 0.803f, -0.06f);
+            CreatePrimitiveMesh("Calipers Hinge Disk", PrimitiveType.Cylinder, f2Group,
+                caliperP, new Vector3(0.045f, 0.008f, 0.045f), Quaternion.identity, matBrass, false);
+            CreatePrimitiveMesh("Calipers Leg Left", PrimitiveType.Cylinder, f2Group,
+                caliperP + new Vector3(-0.045f, 0.003f, 0.09f), new Vector3(0.010f, 0.10f, 0.010f), Quaternion.Euler(0, -18f, 90f), matBrass, false);
+            CreatePrimitiveMesh("Calipers Leg Right", PrimitiveType.Cylinder, f2Group,
+                caliperP + new Vector3(0.045f, 0.003f, 0.09f), new Vector3(0.010f, 0.10f, 0.010f), Quaternion.Euler(0, 18f, 90f), matBrass, false);
 
-            // 2. Brass Navigational Calipers / Drafting Dividers Resting on the Chart
-            Vector3 caliperPos = deskPos + new Vector3(0.16f, 0.803f, -0.06f);
-            CreatePrimitiveMesh("Calipers Hinge Disk", PrimitiveType.Cylinder, studyGroup,
-                caliperPos, new Vector3(0.045f, 0.008f, 0.045f), Quaternion.identity, matBrass, false);
-            CreatePrimitiveMesh("Calipers Leg Left", PrimitiveType.Cylinder, studyGroup,
-                caliperPos + new Vector3(-0.045f, 0.003f, 0.09f), new Vector3(0.010f, 0.10f, 0.010f), Quaternion.Euler(0, -18f, 90f), matBrass, false);
-            CreatePrimitiveMesh("Calipers Leg Right", PrimitiveType.Cylinder, studyGroup,
-                caliperPos + new Vector3(0.045f, 0.003f, 0.09f), new Vector3(0.010f, 0.10f, 0.010f), Quaternion.Euler(0, 18f, 90f), matBrass, false);
-            CreatePrimitiveMesh("Brass Parallel Ruler", PrimitiveType.Cube, studyGroup,
-                deskPos + new Vector3(-0.10f, 0.801f, -0.28f), new Vector3(0.42f, 0.012f, 0.065f), Quaternion.Euler(0, 6f, 0), matBrass, false);
+            // Open Handwritten Keeper's Logbook
+            Vector3 logP = deskPos + new Vector3(-0.38f, 0.801f, -0.08f);
+            CreatePrimitiveMesh("Logbook Cover", PrimitiveType.Cube, f2Group,
+                logP, new Vector3(0.55f, 0.018f, 0.38f), Quaternion.Euler(0, 12f, 0), matWood, false);
+            CreatePrimitiveMesh("Logbook Left Page", PrimitiveType.Cube, f2Group,
+                logP + new Vector3(-0.13f, 0.012f, 0f), new Vector3(0.25f, 0.012f, 0.34f), Quaternion.Euler(0, 12f, 0), matLedger, false);
+            CreatePrimitiveMesh("Logbook Right Page", PrimitiveType.Cube, f2Group,
+                logP + new Vector3(0.13f, 0.012f, 0f), new Vector3(0.25f, 0.012f, 0.34f), Quaternion.Euler(0, 12f, 0), matLedger, false);
 
-            // 3. Open Keeper's Logbook with handwritten entries
-            Vector3 logbookPos = deskPos + new Vector3(-0.38f, 0.801f, -0.08f);
-            CreatePrimitiveMesh("Logbook Cover", PrimitiveType.Cube, studyGroup,
-                logbookPos, new Vector3(0.55f, 0.018f, 0.38f), Quaternion.Euler(0, 12f, 0), matWood, false);
-            CreatePrimitiveMesh("Logbook Left Page", PrimitiveType.Cube, studyGroup,
-                logbookPos + new Vector3(-0.13f, 0.012f, 0f), new Vector3(0.25f, 0.012f, 0.34f), Quaternion.Euler(0, 12f, 0), matLedger, false);
-            CreatePrimitiveMesh("Logbook Right Page", PrimitiveType.Cube, studyGroup,
-                logbookPos + new Vector3(0.13f, 0.012f, 0f), new Vector3(0.25f, 0.012f, 0.34f), Quaternion.Euler(0, 12f, 0), matLedger, false);
+            // Vintage Brass Oil Lamp with Clear Glass Chimney
+            Vector3 oilLampP = deskPos + new Vector3(0.68f, 0.795f, 0.22f);
+            CreatePrimitiveMesh("Oil Lamp Brass Base", PrimitiveType.Cylinder, f2Group,
+                oilLampP + Vector3.up * 0.04f, new Vector3(0.18f, 0.08f, 0.18f), Quaternion.identity, matBrass, false);
+            CreatePrimitiveMesh("Oil Lamp Font Reservoir", PrimitiveType.Sphere, f2Group,
+                oilLampP + Vector3.up * 0.14f, new Vector3(0.16f, 0.12f, 0.16f), Quaternion.identity, matBrass, false);
+            CreatePrimitiveMesh("Oil Lamp Glass Chimney", PrimitiveType.Cylinder, f2Group,
+                oilLampP + Vector3.up * 0.36f, new Vector3(0.10f, 0.25f, 0.10f), Quaternion.identity, matSpecimenJar, false);
 
-            // 4. Unlit Vintage Brass Oil Lamp with Clear Glass Chimney
-            Vector3 lampPos = deskPos + new Vector3(0.68f, 0.795f, 0.22f);
-            CreatePrimitiveMesh("Oil Lamp Brass Base", PrimitiveType.Cylinder, studyGroup,
-                lampPos + Vector3.up * 0.04f, new Vector3(0.18f, 0.08f, 0.18f), Quaternion.identity, matBrass, false);
-            CreatePrimitiveMesh("Oil Lamp Font Reservoir", PrimitiveType.Sphere, studyGroup,
-                lampPos + Vector3.up * 0.14f, new Vector3(0.16f, 0.12f, 0.16f), Quaternion.identity, matBrass, false);
-            CreatePrimitiveMesh("Oil Lamp Burner Collar", PrimitiveType.Cylinder, studyGroup,
-                lampPos + Vector3.up * 0.22f, new Vector3(0.08f, 0.05f, 0.08f), Quaternion.identity, matBrass, false);
-            CreatePrimitiveMesh("Oil Lamp Glass Chimney", PrimitiveType.Cylinder, studyGroup,
-                lampPos + Vector3.up * 0.36f, new Vector3(0.10f, 0.25f, 0.10f), Quaternion.identity, matSpecimenJar, false);
-            CreatePrimitiveMesh("Oil Lamp Cotton Wick", PrimitiveType.Cylinder, studyGroup,
-                lampPos + Vector3.up * 0.25f, new Vector3(0.02f, 0.06f, 0.02f), Quaternion.identity, matWood, false);
+            // Terrestrial Globe on Brass Armillary Stand
+            Vector3 globeP = deskPos + new Vector3(-0.65f, 0.795f, -0.22f);
+            CreatePrimitiveMesh("Globe Wooden Base", PrimitiveType.Cylinder, f2Group,
+                globeP + Vector3.up * 0.025f, new Vector3(0.18f, 0.04f, 0.18f), Quaternion.identity, matMahogany, false);
+            CreatePrimitiveMesh("Globe Sphere", PrimitiveType.Sphere, f2Group,
+                globeP + Vector3.up * 0.25f, new Vector3(0.24f, 0.24f, 0.24f), Quaternion.Euler(23.5f, 35f, 0f), matParchment, false);
 
-            // 5. Terrestrial Globe on Brass Armillary Stand
-            Vector3 globePos = deskPos + new Vector3(-0.65f, 0.795f, -0.22f);
-            CreatePrimitiveMesh("Globe Wooden Base", PrimitiveType.Cylinder, studyGroup,
-                globePos + Vector3.up * 0.025f, new Vector3(0.18f, 0.04f, 0.18f), Quaternion.identity, matMahogany, false);
-            CreatePrimitiveMesh("Globe Brass Axis Stem", PrimitiveType.Cylinder, studyGroup,
-                globePos + Vector3.up * 0.12f, new Vector3(0.03f, 0.15f, 0.03f), Quaternion.identity, matBrass, false);
-            CreatePrimitiveMesh("Globe Sphere", PrimitiveType.Sphere, studyGroup,
-                globePos + Vector3.up * 0.25f, new Vector3(0.24f, 0.24f, 0.24f), Quaternion.Euler(23.5f, 35f, 0f), matParchment, false);
-            CreatePrimitiveMesh("Globe Meridian Ring", PrimitiveType.Cylinder, studyGroup,
-                globePos + Vector3.up * 0.25f, new Vector3(0.28f, 0.015f, 0.28f), Quaternion.Euler(0, 0, 90f), matBrass, false);
+            // Glazed Dark Stoneware Inkwell & Feather Quill
+            Vector3 inkP = deskPos + new Vector3(0.36f, 0.795f, -0.25f);
+            CreatePrimitiveMesh("Ceramic Inkwell", PrimitiveType.Cylinder, f2Group,
+                inkP + Vector3.up * 0.035f, new Vector3(0.075f, 0.07f, 0.075f), Quaternion.identity, matCeramic, false);
+            CreatePrimitiveMesh("Goose Quill", PrimitiveType.Cylinder, f2Group,
+                inkP + new Vector3(-0.02f, 0.15f, 0.02f), new Vector3(0.012f, 0.24f, 0.012f), Quaternion.Euler(24f, 0, 15f), matParchment, false);
 
-            // 6. Glazed Dark Stoneware Inkwell & Feather Quill
-            var matInkwell = EnsureMaterial("MaritimeInkwellGlaze", "Universal Render Pipeline/Lit");
-            matInkwell.SetColor("_BaseColor", new Color(0.12f, 0.13f, 0.15f));
-            matInkwell.SetFloat("_Smoothness", 0.92f);
-            matInkwell.SetFloat("_Metallic", 0.15f);
-
-            Vector3 inkPos = deskPos + new Vector3(0.36f, 0.795f, -0.25f);
-            CreatePrimitiveMesh("Ceramic Inkwell", PrimitiveType.Cylinder, studyGroup,
-                inkPos + Vector3.up * 0.035f, new Vector3(0.075f, 0.07f, 0.075f), Quaternion.identity, matInkwell, false);
-            CreatePrimitiveMesh("Goose Quill", PrimitiveType.Cylinder, studyGroup,
-                inkPos + new Vector3(-0.02f, 0.15f, 0.02f), new Vector3(0.012f, 0.24f, 0.012f), Quaternion.Euler(24f, 0, 15f), matParchment, false);
-
-            // 7. Stack of Maritime Volumes on Corner of Desk
-            Vector3 bookStackPos = deskPos + new Vector3(0.66f, 0.795f, -0.22f);
-            CreatePrimitiveMesh("Port Almanac 1", PrimitiveType.Cube, studyGroup,
-                bookStackPos + Vector3.up * 0.025f, new Vector3(0.28f, 0.05f, 0.36f), Quaternion.Euler(0, 8f, 0), matBookRed, false);
-            CreatePrimitiveMesh("Port Almanac 2", PrimitiveType.Cube, studyGroup,
-                bookStackPos + Vector3.up * 0.075f, new Vector3(0.26f, 0.045f, 0.34f), Quaternion.Euler(0, -6f, 0), matBookBlue, false);
-            CreatePrimitiveMesh("Admiralty Ledger 3", PrimitiveType.Cube, studyGroup,
-                bookStackPos + Vector3.up * 0.12f, new Vector3(0.24f, 0.04f, 0.32f), Quaternion.Euler(0, 14f, 0), matParchment, false);
-
-            // 8. Carved Maritime Desk Armchair (Facing Desk, slightly turned)
-            Vector3 chairPos = deskPos + new Vector3(0.18f, 0.06f, -0.68f);
+            // Carved Maritime Desk Armchair
+            Vector3 chairP = deskPos + new Vector3(0.18f, 0.06f, -0.68f);
             Quaternion chairRot = Quaternion.Euler(0, 15f, 0);
-            CreatePrimitiveMesh("Armchair Seat", PrimitiveType.Cube, studyGroup,
-                chairPos + new Vector3(0f, 0.44f, 0f), new Vector3(0.62f, 0.08f, 0.58f), chairRot, matMahogany, true);
-            // 4 Turned Legs
-            CreatePrimitiveMesh("Chair Leg FL", PrimitiveType.Cylinder, studyGroup,
-                chairPos + chairRot * new Vector3(-0.25f, 0.22f, 0.23f), new Vector3(0.06f, 0.42f, 0.06f), chairRot, matMahogany, false);
-            CreatePrimitiveMesh("Chair Leg FR", PrimitiveType.Cylinder, studyGroup,
-                chairPos + chairRot * new Vector3(0.25f, 0.22f, 0.23f), new Vector3(0.06f, 0.42f, 0.06f), chairRot, matMahogany, false);
-            CreatePrimitiveMesh("Chair Leg BL", PrimitiveType.Cylinder, studyGroup,
-                chairPos + chairRot * new Vector3(-0.25f, 0.22f, -0.23f), new Vector3(0.06f, 0.42f, 0.06f), chairRot, matMahogany, false);
-            CreatePrimitiveMesh("Chair Leg BR", PrimitiveType.Cylinder, studyGroup,
-                chairPos + chairRot * new Vector3(0.25f, 0.22f, -0.23f), new Vector3(0.06f, 0.42f, 0.06f), chairRot, matMahogany, false);
-            // Backrest & Armrests
-            CreatePrimitiveMesh("Chair Back Top Rail", PrimitiveType.Cube, studyGroup,
-                chairPos + chairRot * new Vector3(0f, 1.15f, -0.24f), new Vector3(0.58f, 0.12f, 0.06f), chairRot, matMahogany, false);
-            for (int s = -2; s <= 2; s++)
+            CreatePrimitiveMesh("Armchair Seat", PrimitiveType.Cube, f2Group,
+                chairP + new Vector3(0f, 0.44f, 0f), new Vector3(0.62f, 0.08f, 0.58f), chairRot, matMahogany, true);
+            CreatePrimitiveMesh("Chair Back Top Rail", PrimitiveType.Cube, f2Group,
+                chairP + chairRot * new Vector3(0f, 1.15f, -0.24f), new Vector3(0.58f, 0.12f, 0.06f), chairRot, matMahogany, false);
+
+            // Tall Curved Wooden Bookcases with Volumes & Specimen Jars (West wall)
+            float bz = 2.15f;
+            CreatePrimitiveMesh("Bookcase Upright L", PrimitiveType.Cube, f2Group,
+                new Vector3(-1.85f, f2Y + 1.35f, bz), new Vector3(0.12f, 2.70f, 0.48f), Quaternion.identity, matWood, true);
+            CreatePrimitiveMesh("Bookcase Upright R", PrimitiveType.Cube, f2Group,
+                new Vector3(1.85f, f2Y + 1.35f, bz), new Vector3(0.12f, 2.70f, 0.48f), Quaternion.identity, matWood, true);
+            for (int s = 0; s < 4; s++)
             {
-                CreatePrimitiveMesh($"Chair Slat {s}", PrimitiveType.Cube, studyGroup,
-                    chairPos + chairRot * new Vector3(s * 0.11f, 0.80f, -0.24f), new Vector3(0.045f, 0.65f, 0.025f), chairRot, matMahogany, false);
+                float sy = f2Y + 0.35f + s * 0.65f;
+                CreatePrimitiveMesh($"Bookcase Shelf {s + 1}", PrimitiveType.Cube, f2Group,
+                    new Vector3(0f, sy, bz), new Vector3(3.60f, 0.06f, 0.45f), Quaternion.identity, matWood, false);
             }
-            CreatePrimitiveMesh("Chair Arm L", PrimitiveType.Cube, studyGroup,
-                chairPos + chairRot * new Vector3(-0.28f, 0.72f, 0.02f), new Vector3(0.06f, 0.04f, 0.48f), chairRot, matMahogany, false);
-            CreatePrimitiveMesh("Chair Arm R", PrimitiveType.Cube, studyGroup,
-                chairPos + chairRot * new Vector3(0.28f, 0.72f, 0.02f), new Vector3(0.06f, 0.04f, 0.48f), chairRot, matMahogany, false);
-
-            // E. Tall Curved Wooden Bookcases Packed with Maritime Volumes & Specimen Jars (North Wall)
-            var shelfGroup = new GameObject("Curved North Wall Bookcases & Library").transform;
-            shelfGroup.SetParent(towerRoot, false);
-
-            float bz = 4.35f;
-            // Uprights
-            CreatePrimitiveMesh("Bookcase Upright L", PrimitiveType.Cube, shelfGroup,
-                new Vector3(-1.85f, 4.55f, bz), new Vector3(0.12f, 2.70f, 0.48f), Quaternion.identity, matWood, true);
-            CreatePrimitiveMesh("Bookcase Upright R", PrimitiveType.Cube, shelfGroup,
-                new Vector3(1.85f, 4.55f, bz), new Vector3(0.12f, 2.70f, 0.48f), Quaternion.identity, matWood, true);
-            CreatePrimitiveMesh("Bookcase Divider 1", PrimitiveType.Cube, shelfGroup,
-                new Vector3(-0.62f, 4.55f, bz), new Vector3(0.09f, 2.70f, 0.45f), Quaternion.identity, matWood, false);
-            CreatePrimitiveMesh("Bookcase Divider 2", PrimitiveType.Cube, shelfGroup,
-                new Vector3(0.62f, 4.55f, bz), new Vector3(0.09f, 2.70f, 0.45f), Quaternion.identity, matWood, false);
-            CreatePrimitiveMesh("Bookcase Crown", PrimitiveType.Cube, shelfGroup,
-                new Vector3(0f, 5.92f, bz), new Vector3(3.95f, 0.14f, 0.55f), Quaternion.identity, matWood, false);
-
-            // Shelves 1 to 4
-            float[] shelfHeights = new[] { 3.32f, 3.95f, 4.60f, 5.25f };
-            for (int s = 0; s < shelfHeights.Length; s++)
-            {
-                CreatePrimitiveMesh($"Bookcase Shelf {s + 1}", PrimitiveType.Cube, shelfGroup,
-                    new Vector3(0f, shelfHeights[s], bz), new Vector3(3.68f, 0.06f, 0.45f), Quaternion.identity, matWood, false);
-            }
-
-            // Books on Shelf 2 (y = 3.95m): 28 dense leatherbound volumes
+            // Dense Books & Specimen Jars
             Material[] bookMats = new[] { matBookRed, matBookGreen, matBookBlue, matBookGold };
-            for (int b = 0; b < 28; b++)
+            for (int b = 0; b < 20; b++)
             {
-                float bx = -1.70f + b * 0.125f;
-                if (Mathf.Abs(bx - (-0.62f)) < 0.08f || Mathf.Abs(bx - 0.62f) < 0.08f) continue;
-                float bh = 0.25f + (b % 5) * 0.035f;
-                float bd = 0.24f + (b % 3) * 0.02f;
+                float bx = -1.40f + b * 0.14f;
                 Material bm = bookMats[b % bookMats.Length];
-                CreatePrimitiveMesh($"Book S2_{b}", PrimitiveType.Cube, shelfGroup,
-                    new Vector3(bx, 3.98f + bh * 0.5f, bz - 0.02f), new Vector3(0.085f, bh, bd), Quaternion.identity, bm, false);
-                CreatePrimitiveMesh($"Spine S2_{b}", PrimitiveType.Cube, shelfGroup,
-                    new Vector3(bx, 3.98f + bh * 0.5f, bz - 0.14f), new Vector3(0.08f, bh * 0.88f, 0.02f), Quaternion.identity, matBookGold, false);
+                CreatePrimitiveMesh($"Book S2_{b}", PrimitiveType.Cube, f2Group,
+                    new Vector3(bx, f2Y + 1.15f, bz - 0.02f), new Vector3(0.085f, 0.28f, 0.24f), Quaternion.identity, bm, false);
+            }
+            for (int j = 0; j < 5; j++)
+            {
+                float jx = -1.20f + j * 0.60f;
+                CreatePrimitiveMesh($"Specimen Jar {j + 1}", PrimitiveType.Cylinder, f2Group,
+                    new Vector3(jx, f2Y + 2.45f, bz), new Vector3(0.18f, 0.18f, 0.18f), Quaternion.identity, matSpecimenJar, false);
             }
 
-            // Books on Shelf 3 (y = 4.60m): 26 dense maritime almanacs
-            for (int b = 0; b < 26; b++)
+            // Low-Hanging Industrial Pendant Lamp with Warm Amber Glow
+            var f2LightGo = new GameObject("Study Pendant Light");
+            f2LightGo.transform.SetParent(f2Group, false);
+            f2LightGo.transform.position = new Vector3(0f, f2Y + 2.30f, 0.35f);
+
+            CreatePrimitiveMesh("Lamp Hood", PrimitiveType.Cylinder, f2LightGo.transform,
+                new Vector3(0, 0.08f, 0), new Vector3(0.48f, 0.10f, 0.48f), Quaternion.identity, matIron, false);
+            CreatePrimitiveMesh("Lamp Bulb", PrimitiveType.Sphere, f2LightGo.transform,
+                new Vector3(0, -0.04f, 0), new Vector3(0.16f, 0.18f, 0.16f), Quaternion.identity, matLanternGlow, false);
+
+            var f2Spot = f2LightGo.AddComponent<Light>();
+            f2Spot.type = LightType.Spot;
+            f2Spot.spotAngle = 72f;
+            f2Spot.innerSpotAngle = 36f;
+            f2Spot.range = 5.8f;
+            f2Spot.intensity = 3.6f;
+            f2Spot.color = new Color(1.0f, 0.74f, 0.40f);
+            f2Spot.shadows = LightShadows.Soft;
+
+            var f2Fill = new GameObject("Study Fill Light");
+            f2Fill.transform.SetParent(f2LightGo.transform, false);
+            var f2FillLight = f2Fill.AddComponent<Light>();
+            f2FillLight.type = LightType.Point;
+            f2FillLight.color = new Color(1.0f, 0.72f, 0.38f);
+            f2FillLight.range = 5.2f;
+            f2FillLight.intensity = 1.4f;
+
+            // -------------------------------------------------------------
+            // FLOOR 3: WATCHROOM & BATTERY / FUEL STAGING ROOM
+            // -------------------------------------------------------------
+            var f3Group = new GameObject("Floor 3 Interior Watchroom Furnishings").transform;
+            f3Group.SetParent(towerRoot, false);
+
+            float f3Y = 6.55f;
+
+            // Heavy Timber Battery Bank Racks holding Vintage Glass Jar Cells
+            Vector3 battPos = new Vector3(-1.20f, f3Y, 1.40f);
+            Quaternion battRot = Quaternion.Euler(0, -25f, 0);
+            CreatePrimitiveMesh("Battery Rack Frame", PrimitiveType.Cube, f3Group,
+                battPos + battRot * new Vector3(0, 0.55f, 0), new Vector3(2.20f, 1.10f, 0.55f), battRot, matWood, true);
+            for (int r = 0; r < 2; r++)
             {
-                float bx = -1.65f + b * 0.13f;
-                if (Mathf.Abs(bx - (-0.62f)) < 0.08f || Mathf.Abs(bx - 0.62f) < 0.08f) continue;
-                float bh = 0.22f + ((b * 2) % 4) * 0.03f;
-                Material bm = bookMats[(b * 3) % bookMats.Length];
-                CreatePrimitiveMesh($"Book S3_{b}", PrimitiveType.Cube, shelfGroup,
-                    new Vector3(bx, 4.63f + bh * 0.5f, bz - 0.02f), new Vector3(0.09f, bh, 0.22f), Quaternion.identity, bm, false);
-            }
-
-            // Shelf 1 (y = 3.32m): Heavy port ledgers & chart cylinders
-            CreatePrimitiveMesh("Harbor Port Ledgers", PrimitiveType.Cube, shelfGroup,
-                new Vector3(-1.15f, 3.52f, bz - 0.02f), new Vector3(0.72f, 0.32f, 0.32f), Quaternion.identity, matParchment, false);
-            CreatePrimitiveMesh("Logbook Stacks", PrimitiveType.Cube, shelfGroup,
-                new Vector3(1.15f, 3.55f, bz - 0.02f), new Vector3(0.80f, 0.36f, 0.30f), Quaternion.identity, matWood, false);
-
-            // Shelf 4 (y = 5.25m): 6 Glass Specimen Jars with preserved marine specimens
-            float[] jarX = new[] { -1.35f, -0.92f, -0.32f, 0.32f, 0.92f, 1.35f };
-            float[] jarH = new[] { 0.34f, 0.28f, 0.36f, 0.30f, 0.35f, 0.29f };
-            float[] jarR = new[] { 0.12f, 0.09f, 0.13f, 0.10f, 0.12f, 0.09f };
-            for (int j = 0; j < jarX.Length; j++)
-            {
-                Vector3 jPos = new Vector3(jarX[j], 5.28f, bz - 0.05f);
-                CreatePrimitiveMesh($"Specimen Jar {j}", PrimitiveType.Cylinder, shelfGroup,
-                    jPos + Vector3.up * jarH[j] * 0.5f, new Vector3(jarR[j] * 2f, jarH[j] * 0.5f, jarR[j] * 2f), Quaternion.identity, matSpecimenJar, false);
-                CreatePrimitiveMesh($"Jar Cork {j}", PrimitiveType.Cylinder, shelfGroup,
-                    jPos + Vector3.up * (jarH[j] + 0.03f), new Vector3(jarR[j] * 1.5f, 0.03f, jarR[j] * 1.5f), Quaternion.identity, matWood, false);
-                Material specMat = (j % 2 == 0) ? matBookGreen : matBookGold;
-                CreatePrimitiveMesh($"Preserved Specimen {j}", PrimitiveType.Sphere, shelfGroup,
-                    jPos + Vector3.up * (jarH[j] * 0.45f), new Vector3(jarR[j] * 1.1f, jarH[j] * 0.4f, jarR[j] * 1.1f), Quaternion.Euler(15f, 30f * j, 0), specMat, false);
-            }
-
-            // F. Overhead Lighting & Atmospheric Dust Motes
-            var pendantLightGo = new GameObject("Study Low-Hanging Industrial Pendant Bulb");
-            pendantLightGo.transform.SetParent(towerRoot, false);
-            pendantLightGo.transform.position = deskPos + new Vector3(0f, 1.70f, 0f); // y = 4.91m
-
-            // Chain connecting fixture to upper girder
-            CreatePrimitiveMesh("Lamp Suspension Chain", PrimitiveType.Cylinder, pendantLightGo.transform,
-                new Vector3(0f, 0.95f, 0f), new Vector3(0.035f, 0.95f, 0.035f), Quaternion.identity, matIron, false);
-
-            // Instantiate Industrial Hanging Lamp FBX model
-            var lampPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Art/Models/IndustrialHangingLamp/IndustrialHangingLamp.fbx");
-            if (lampPrefab)
-            {
-                var lampInstance = Object.Instantiate(lampPrefab, pendantLightGo.transform);
-                lampInstance.name = "IndustrialHangingLamp_Mesh";
-                lampInstance.transform.localPosition = new Vector3(0, -0.32f, 0);
-                lampInstance.transform.localRotation = Quaternion.Euler(90f, 0, 0);
-                lampInstance.transform.localScale = Vector3.one * 55.0f; // Scale from FBX units to realistic 0.55m fixture
-
-                var lampMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Models/IndustrialHangingLamp/M_IndustrialLamp.mat");
-                if (lampMat)
+                for (int c = 0; c < 4; c++)
                 {
-                    foreach (var rend in lampInstance.GetComponentsInChildren<Renderer>())
-                        rend.sharedMaterial = lampMat;
+                    Vector3 cellP = battPos + battRot * new Vector3(-0.75f + c * 0.50f, 0.30f + r * 0.52f, 0f);
+                    CreatePrimitiveMesh($"Battery Jar {r}_{c}", PrimitiveType.Cylinder, f3Group,
+                        cellP, new Vector3(0.24f, 0.18f, 0.24f), Quaternion.identity, matSpecimenJar, false);
+                    CreatePrimitiveMesh($"Lead Terminal {r}_{c}", PrimitiveType.Cylinder, f3Group,
+                        cellP + Vector3.up * 0.19f, new Vector3(0.04f, 0.06f, 0.04f), Quaternion.identity, matIron, false);
                 }
             }
-            else
+
+            // Reserve Fuel Staging Plinth & Red Steel Fuel Jerry Cans
+            Vector3 fuelPlinthPos = new Vector3(1.65f, f3Y + 0.12f, 0.85f);
+            CreatePrimitiveMesh("Fuel Staging Plinth", PrimitiveType.Cube, f3Group,
+                fuelPlinthPos, new Vector3(1.20f, 0.24f, 0.85f), Quaternion.identity, matIron, true);
+
+            var matFuelRed = EnsureMaterial("MaritimeJerryCanRed", "Universal Render Pipeline/Lit");
+            matFuelRed.SetColor("_BaseColor", new Color(0.72f, 0.16f, 0.14f));
+            matFuelRed.SetFloat("_Smoothness", 0.45f);
+            matFuelRed.SetFloat("_Metallic", 0.65f);
+
+            for (int f = 0; f < 3; f++)
             {
-                CreatePrimitiveMesh("Lamp Metal Hood", PrimitiveType.Cylinder, pendantLightGo.transform,
-                    new Vector3(0f, 0.12f, 0f), new Vector3(0.55f, 0.12f, 0.55f), Quaternion.identity, matIron, false);
-                CreatePrimitiveMesh("Lamp Glowing Bulb", PrimitiveType.Sphere, pendantLightGo.transform,
-                    new Vector3(0f, -0.04f, 0f), new Vector3(0.18f, 0.22f, 0.18f), Quaternion.identity, matLanternGlow, false);
+                CreatePrimitiveMesh($"Reserve Fuel Can {f + 1}", PrimitiveType.Cube, f3Group,
+                    fuelPlinthPos + new Vector3(-0.35f + f * 0.35f, 0.32f, 0f), new Vector3(0.24f, 0.42f, 0.36f), Quaternion.identity, matFuelRed, true);
             }
 
-            // Warm Amber Spotlight Illuminating Study Writing Desk
-            var pendantSpot = pendantLightGo.AddComponent<Light>();
-            pendantSpot.type = LightType.Spot;
-            pendantSpot.spotAngle = 68f;
-            pendantSpot.innerSpotAngle = 32f;
-            pendantSpot.range = 6.8f;
-            pendantSpot.intensity = 3.8f;
-            pendantSpot.color = new Color(1.0f, 0.74f, 0.40f); // 2300K Rich Amber Gold
-            pendantSpot.shadows = LightShadows.Soft;
+            // Maritime Barometer & Telegraph Station Workbench
+            Vector3 benchPos = new Vector3(0f, f3Y, -1.65f);
+            CreatePrimitiveMesh("Watchroom Workbench Top", PrimitiveType.Cube, f3Group,
+                benchPos + new Vector3(0f, 0.75f, 0f), new Vector3(2.20f, 0.08f, 0.85f), Quaternion.identity, matWood, true);
+            CreatePrimitiveMesh("Workbench Leg L", PrimitiveType.Cube, f3Group,
+                benchPos + new Vector3(-0.95f, 0.36f, 0f), new Vector3(0.12f, 0.72f, 0.70f), Quaternion.identity, matWood, true);
+            CreatePrimitiveMesh("Workbench Leg R", PrimitiveType.Cube, f3Group,
+                benchPos + new Vector3(0.95f, 0.36f, 0f), new Vector3(0.12f, 0.72f, 0.70f), Quaternion.identity, matWood, true);
 
-            // Ambient Fill Point Light
-            var pendantFill = new GameObject("Study Ambient Fill Light");
-            pendantFill.transform.SetParent(pendantLightGo.transform, false);
-            var pFill = pendantFill.AddComponent<Light>();
-            pFill.type = LightType.Point;
-            pFill.range = 4.8f;
-            pFill.intensity = 1.25f;
-            pFill.color = new Color(1.0f, 0.72f, 0.38f);
-            pFill.shadows = LightShadows.None;
+            // Brass Wall Barometer
+            CreatePrimitiveMesh("Maritime Wall Barometer", PrimitiveType.Cylinder, f3Group,
+                benchPos + new Vector3(0f, 1.45f, -0.40f), new Vector3(0.34f, 0.06f, 0.34f), Quaternion.Euler(90f, 0, 0), matBrass, false);
 
-            // Atmospheric Dust Motes Emitter attached to light fixture
-            var motesEmitter = pendantLightGo.AddComponent<DustMotesEmitter>();
-            motesEmitter.SetupParticles();
+            // Telegraph Morse Instrument on bench
+            CreatePrimitiveMesh("Telegraph Baseplate", PrimitiveType.Cube, f3Group,
+                benchPos + new Vector3(-0.45f, 0.81f, 0f), new Vector3(0.32f, 0.04f, 0.18f), Quaternion.identity, matWood, false);
+            CreatePrimitiveMesh("Telegraph Sounder Coil", PrimitiveType.Cylinder, f3Group,
+                benchPos + new Vector3(-0.48f, 0.87f, 0.04f), new Vector3(0.08f, 0.09f, 0.08f), Quaternion.identity, matBrass, false);
+            CreatePrimitiveMesh("Telegraph Key Lever", PrimitiveType.Cube, f3Group,
+                benchPos + new Vector3(-0.38f, 0.85f, -0.02f), new Vector3(0.16f, 0.025f, 0.03f), Quaternion.Euler(0, 0, 6f), matBrass, false);
 
-            // G. Caged Bulkhead Sconces along Spiral Stair Steps (Casting raking vertical shadows on stone)
+            // Warning Indicator Glow Lamps (Green & Red)
+            CreatePrimitiveMesh("Watchroom Indicator Green", PrimitiveType.Sphere, f3Group,
+                benchPos + new Vector3(0.65f, 1.15f, -0.38f), new Vector3(0.08f, 0.08f, 0.08f), Quaternion.identity, matIndicatorGreen, false);
+            CreatePrimitiveMesh("Watchroom Indicator Red", PrimitiveType.Sphere, f3Group,
+                benchPos + new Vector3(0.85f, 1.15f, -0.38f), new Vector3(0.08f, 0.08f, 0.08f), Quaternion.identity, matIndicatorRed, false);
+
+            // Watchroom Bulkhead Lighting
+            var f3LightGo = new GameObject("Watchroom Bulkhead Light");
+            f3LightGo.transform.SetParent(f3Group, false);
+            f3LightGo.transform.position = new Vector3(0f, f3Y + 3.05f, 0f);
+            var f3Light = f3LightGo.AddComponent<Light>();
+            f3Light.type = LightType.Point;
+            f3Light.color = new Color(0.95f, 0.85f, 0.65f);
+            f3Light.range = 6.2f;
+            f3Light.intensity = 2.0f;
+
+            // E. OUTER SPIRAL STAIRCASE (Side-Winding along outer stone wall)
+            // -------------------------------------------------------------
+            // Corridor Width: 1.35m (from r = 3.25m to r = 4.60m)
+            // Flight 1: Floor 1 (225°) -> Floor 2 (75°), rising y = 0.15m to 3.35m
+            // Flight 2: Floor 2 (105°) -> Floor 3 (315°), rising y = 3.35m to 6.55m
+            // Flight 3: Floor 3 (345°) -> Lantern Gallery (165°), rising y = 6.55m to 9.75m (Final Half-Spiral!)
+            BuildSpiralFlight(towerRoot, 1, 225f, 75f + 360f, 0.15f, 3.35f, 22);
+            BuildSpiralFlight(towerRoot, 2, 105f, 315f, 3.35f, 6.55f, 22);
+            BuildSpiralFlight(towerRoot, 3, 345f, 165f + 360f, 6.55f, 9.75f, 18);
+
+            // F. TOP OPEN LANTERN ROOM & BEACON DECK (y = 9.75m)
+            // -------------------------------------------------------------
+            BuildLanternGalleryAndBeacon(towerRoot, 9.75f);
+
+            // G. CONTINUOUS SMOOTH CURVED RAMP MESHCOLLIDER
+            // -------------------------------------------------------------
+            BuildContinuousSpiralRampMesh(towerRoot);
+
+            // H. Caged Bulkhead Sconces along Spiral Stair Flight Wall
             Vector3[] bulkheadPositions = new[]
             {
-                new Vector3(4.35f, 2.10f, 1.10f),
-                new Vector3(3.20f, 4.40f, 3.80f),
-                new Vector3(-2.60f, 6.70f, 4.10f)
+                new Vector3(Mathf.Sin(330f * Mathf.Deg2Rad) * 4.90f, 1.80f, Mathf.Cos(330f * Mathf.Deg2Rad) * 4.90f),
+                new Vector3(Mathf.Sin(30f * Mathf.Deg2Rad) * 4.90f, 2.70f, Mathf.Cos(30f * Mathf.Deg2Rad) * 4.90f),
+                new Vector3(Mathf.Sin(210f * Mathf.Deg2Rad) * 4.90f, 5.00f, Mathf.Cos(210f * Mathf.Deg2Rad) * 4.90f),
+                new Vector3(Mathf.Sin(270f * Mathf.Deg2Rad) * 4.90f, 5.90f, Mathf.Cos(270f * Mathf.Deg2Rad) * 4.90f),
+                new Vector3(Mathf.Sin(90f * Mathf.Deg2Rad) * 4.90f, 8.20f, Mathf.Cos(90f * Mathf.Deg2Rad) * 4.90f)
             };
 
             for (int b = 0; b < bulkheadPositions.Length; b++)
             {
-                var bhGroup = new GameObject($"Caged Bulkhead Sconce {b + 1}");
+                var bhGroup = new GameObject($"Stair Bulkhead Sconce {b + 1}");
                 bhGroup.transform.SetParent(towerRoot, false);
                 bhGroup.transform.position = bulkheadPositions[b];
 
                 CreatePrimitiveMesh("Bulkhead Baseplate", PrimitiveType.Cube, bhGroup.transform,
                     Vector3.zero, new Vector3(0.24f, 0.32f, 0.08f), Quaternion.identity, matIron, false);
-
-                CreatePrimitiveMesh("Bulkhead Cage Guard", PrimitiveType.Cylinder, bhGroup.transform,
-                    new Vector3(0f, 0f, 0.12f), new Vector3(0.18f, 0.14f, 0.18f), Quaternion.Euler(90f, 0, 0), matIron, false);
-
                 CreatePrimitiveMesh("Bulkhead Bulb", PrimitiveType.Sphere, bhGroup.transform,
                     new Vector3(0f, 0f, 0.10f), new Vector3(0.12f, 0.14f, 0.12f), Quaternion.identity, matLanternGlow, false);
 
@@ -1178,6 +1278,292 @@ namespace TheLightHouse.Editor
             }
         }
 
+        private static void BuildSpiralFlight(Transform parent, int flightIdx, float startDeg, float endDeg, float startY, float endY, int steps)
+        {
+            var flightGroup = new GameObject($"Outer Spiral Stair Flight {flightIdx}").transform;
+            flightGroup.SetParent(parent, false);
+
+            float rIn = 3.25f;
+            float rOut = 4.60f;
+            float stairW = rOut - rIn; // Exactly 1.35m clearance
+            float rMid = (rIn + rOut) * 0.5f;
+
+            Vector3 prevRailTop = Vector3.zero;
+
+            for (int s = 0; s < steps; s++)
+            {
+                float t = s / (float)steps;
+                float nextT = (s + 1) / (float)steps;
+
+                float angA = Mathf.Lerp(startDeg, endDeg, t);
+                float angB = Mathf.Lerp(startDeg, endDeg, nextT);
+                float radA = angA * Mathf.Deg2Rad;
+                float radB = angB * Mathf.Deg2Rad;
+                float midRad = (radA + radB) * 0.5f;
+
+                float yA = Mathf.Lerp(startY, endY, t);
+                float yB = Mathf.Lerp(startY, endY, nextT);
+
+                Vector3 stepPos = new Vector3(Mathf.Sin(midRad) * rMid, yA + 0.025f, Mathf.Cos(midRad) * rMid);
+                Quaternion stepRot = Quaternion.Euler(0, (angA + angB) * 0.5f, 0);
+
+                float tangLen = Mathf.Abs(radB - radA) * rMid * 1.05f;
+
+                // Visual Step Tread (NO COLLIDER - Smooth character movement handled by continuous ramp MeshCollider)
+                CreatePrimitiveMesh($"Tread {flightIdx}_{s}", PrimitiveType.Cube, flightGroup,
+                    stepPos, new Vector3(tangLen, 0.05f, stairW), stepRot, matIron, false);
+
+                // Visual Step Riser (NO COLLIDER)
+                Vector3 riserPos = new Vector3(Mathf.Sin(radB) * rMid, (yA + yB) * 0.5f, Mathf.Cos(radB) * rMid);
+                CreatePrimitiveMesh($"Riser {flightIdx}_{s}", PrimitiveType.Cube, flightGroup,
+                    riserPos, new Vector3(0.04f, yB - yA, stairW), Quaternion.Euler(0, angB, 0), matIron, false);
+
+                // Inner Baluster Rod (at r = 3.25m)
+                Vector3 balPos = new Vector3(Mathf.Sin(radA) * rIn, yA, Mathf.Cos(radA) * rIn);
+                Vector3 balTop = balPos + Vector3.up * 1.05f;
+                CreatePrimitiveMesh($"Baluster {flightIdx}_{s}", PrimitiveType.Cylinder, flightGroup,
+                    balPos + Vector3.up * 0.525f, new Vector3(0.035f, 0.525f, 0.035f), Quaternion.identity, matIron, false);
+
+                // Continuous Following Handrail
+                if (s > 0)
+                {
+                    Vector3 midRail = (prevRailTop + balTop) * 0.5f;
+                    Vector3 diff = balTop - prevRailTop;
+                    float rLen = diff.magnitude;
+                    Quaternion rRot = Quaternion.LookRotation(diff);
+                    CreatePrimitiveMesh($"Handrail {flightIdx}_{s}", PrimitiveType.Cylinder, flightGroup,
+                        midRail, new Vector3(0.05f, rLen * 0.5f, 0.05f), rRot * Quaternion.Euler(90f, 0, 0), matIron, false);
+                }
+                prevRailTop = balTop;
+
+                // Wall Cantilever Anchor Bracket into outer stone wall
+                if (s % 2 == 0)
+                {
+                    Vector3 cbPos = new Vector3(Mathf.Sin(midRad) * (rOut + 0.18f), yA - 0.08f, Mathf.Cos(midRad) * (rOut + 0.18f));
+                    CreatePrimitiveMesh($"Cantilever Bracket {flightIdx}_{s}", PrimitiveType.Cube, flightGroup,
+                        cbPos, new Vector3(0.06f, 0.16f, 0.38f), stepRot, matIron, false);
+                }
+            }
+        }
+
+        private static void BuildLanternGalleryAndBeacon(Transform parent, float deckY)
+        {
+            var lanternGroup = new GameObject("Lantern Room & Beacon Deck Master").transform;
+            lanternGroup.SetParent(parent, false);
+
+            float glassR = 3.80f;
+            float deckRadius = 4.85f;
+
+            // 1. Central Circular Beacon Deck (y = 9.75m, radius 3.10m, matches central room radius)
+            CreatePrimitiveMesh("Lantern Central Beacon Deck", PrimitiveType.Cylinder, lanternGroup,
+                new Vector3(0, deckY - 0.08f, 0), new Vector3(3.10f * 2f, 0.16f, 3.10f * 2f), Quaternion.identity, matIron, true);
+
+            // 2. Outer Balcony Walkway Ring (y = 9.75m, r = 3.10m to 4.85m)
+            // Sector 195° to 345° has floor slabs.
+            // Sector 345° to 195° is the OPEN STAIRWELL WELLHOLE where Flight 3 ascends from Floor 3 up to the Arrival Landing at 165°-195°!
+            // Keeping 345° to 165° open gives complete vertical head clearance for the ascending spiral flight.
+            int walkwaySteps = 12;
+            float walkStart = 195f;
+            float walkEnd = 345f;
+            float walkSpan = walkEnd - walkStart;
+            for (int w = 0; w < walkwaySteps; w++)
+            {
+                float angA = walkStart + (w * walkSpan / walkwaySteps);
+                float angB = walkStart + ((w + 1) * walkSpan / walkwaySteps);
+                float midAng = (angA + angB) * 0.5f;
+                float midRad = midAng * Mathf.Deg2Rad;
+                float midR = (3.10f + deckRadius) * 0.5f;
+                float arcW = (midR * (angB - angA) * Mathf.Deg2Rad) * 1.05f;
+                Vector3 wPos = new Vector3(Mathf.Sin(midRad) * midR, deckY - 0.08f, Mathf.Cos(midRad) * midR);
+                Quaternion wRot = Quaternion.Euler(0, midAng, 0);
+
+                CreatePrimitiveMesh($"Lantern Outer Walkway Segment {w}", PrimitiveType.Cube, lanternGroup,
+                    wPos, new Vector3(arcW, 0.16f, (deckRadius - 3.10f) * 1.05f), wRot, matIron, true);
+            }
+
+            // Balustrade safety railing along the open stairwell wellhole on the inner rim (r = 3.10m, 345° to 165°)
+            int wellPosts = 14;
+            for (int wp = 0; wp <= wellPosts; wp++)
+            {
+                float ang = 345f + (wp * (180f / wellPosts));
+                float rad = ang * Mathf.Deg2Rad;
+                Vector3 pPos = new Vector3(Mathf.Sin(rad) * 3.10f, deckY, Mathf.Cos(rad) * 3.10f);
+                CreatePrimitiveMesh($"Wellhole Baluster {wp}", PrimitiveType.Cylinder, lanternGroup,
+                    pPos + Vector3.up * 0.55f, new Vector3(0.04f, 0.55f, 0.04f), Quaternion.identity, matIron, false);
+
+                if (wp < wellPosts)
+                {
+                    float nxtAng = 345f + ((wp + 1) * (180f / wellPosts));
+                    float midAng = (ang + nxtAng) * 0.5f;
+                    float midRad = midAng * Mathf.Deg2Rad;
+                    float segLen = Vector3.Distance(pPos, new Vector3(Mathf.Sin(nxtAng * Mathf.Deg2Rad) * 3.10f, deckY, Mathf.Cos(nxtAng * Mathf.Deg2Rad) * 3.10f));
+                    Vector3 rMid = new Vector3(Mathf.Sin(midRad) * 3.10f, deckY + 1.05f, Mathf.Cos(midRad) * 3.10f);
+                    CreatePrimitiveMesh($"Wellhole Rail {wp}", PrimitiveType.Cube, lanternGroup,
+                        rMid, new Vector3(0.05f, 0.06f, segLen * 1.05f), Quaternion.Euler(0, midAng + 90f, 0), matBrass, false);
+                }
+            }
+
+            // Outer Balcony Walkway Guardrail
+            int railPosts = 24;
+            for (int r = 0; r < railPosts; r++)
+            {
+                float ang = r * (360f / railPosts);
+                float rad = ang * Mathf.Deg2Rad;
+                Vector3 rPos = new Vector3(Mathf.Sin(rad) * (deckRadius - 0.15f), deckY, Mathf.Cos(rad) * (deckRadius - 0.15f));
+                CreatePrimitiveMesh($"Balcony Rail Post {r}", PrimitiveType.Cylinder, lanternGroup,
+                    rPos + Vector3.up * 0.55f, new Vector3(0.045f, 0.55f, 0.045f), Quaternion.identity, matIron, false);
+            }
+            CreatePrimitiveMesh("Balcony Rail Top Ring", PrimitiveType.Cylinder, lanternGroup,
+                new Vector3(0, deckY + 1.10f, 0), new Vector3((deckRadius - 0.15f) * 2f, 0.05f, (deckRadius - 0.15f) * 2f), Quaternion.identity, matIron, false);
+
+            // 3. Panoramic 360-degree Glass Lantern Windows & Bronze Mullions
+            int paneCount = 16;
+            for (int p = 0; p < paneCount; p++)
+            {
+                float ang = p * (360f / paneCount);
+                float rad = ang * Mathf.Deg2Rad;
+                Vector3 gPos = new Vector3(Mathf.Sin(rad) * glassR, deckY + 1.45f, Mathf.Cos(rad) * glassR);
+                Quaternion gRot = Quaternion.Euler(0, ang, 0);
+
+                // Bronze Vertical Mullion
+                CreatePrimitiveMesh($"Lantern Mullion {p}", PrimitiveType.Cube, lanternGroup,
+                    gPos, new Vector3(0.08f, 2.70f, 0.10f), gRot, matBrass, true);
+
+                // Clear / Cold Window Glass Pane
+                float tangW = 2f * Mathf.PI * glassR / paneCount;
+                CreatePrimitiveMesh($"Lantern Glass Pane {p}", PrimitiveType.Cube, lanternGroup,
+                    gPos, new Vector3(tangW, 2.65f, 0.03f), gRot, matColdWindow, true);
+            }
+
+            // 4. Copper Lantern Dome Roof Cap (y = 12.6m to 13.5m)
+            CreatePrimitiveMesh("Copper Lantern Dome", PrimitiveType.Cylinder, lanternGroup,
+                new Vector3(0, deckY + 2.85f, 0), new Vector3(glassR * 2.1f, 0.35f, glassR * 2.1f), Quaternion.identity, matSlate, false);
+            CreatePrimitiveMesh("Copper Dome Cap", PrimitiveType.Sphere, lanternGroup,
+                new Vector3(0, deckY + 3.45f, 0), new Vector3(glassR * 1.8f, 1.20f, glassR * 1.8f), Quaternion.identity, matSlate, false);
+
+            // 5. Central Revolving Fresnel Lens Pedestal & Beacon Mechanism
+            Vector3 beaconPos = new Vector3(0, deckY, 0);
+            CreatePrimitiveMesh("Beacon Iron Pedestal", PrimitiveType.Cylinder, lanternGroup,
+                beaconPos + Vector3.up * 0.45f, new Vector3(1.20f, 0.45f, 1.20f), Quaternion.identity, matIron, true);
+            CreatePrimitiveMesh("Fresnel Brass Housing", PrimitiveType.Cylinder, lanternGroup,
+                beaconPos + Vector3.up * 1.05f, new Vector3(0.95f, 0.40f, 0.95f), Quaternion.identity, matBrass, true);
+            CreatePrimitiveMesh("Beacon Concentric Glass Lens", PrimitiveType.Cylinder, lanternGroup,
+                beaconPos + Vector3.up * 1.25f, new Vector3(0.85f, 0.60f, 0.85f), Quaternion.identity, matSpecimenJar, false);
+
+            // 6. Relocate Narrative Gameplay Anchors directly onto the Beacon Deck!
+            var lampGo = GameObject.Find("Lamp");
+            if (lampGo)
+            {
+                lampGo.transform.position = new Vector3(0, deckY + 1.10f, 0);
+            }
+
+            var crankGo = GameObject.Find("Crank Station");
+            if (crankGo)
+            {
+                crankGo.transform.position = new Vector3(-1.80f, deckY + 0.15f, 1.20f);
+                var bc = crankGo.GetComponent<BoxCollider>();
+                if (bc)
+                {
+                    bc.size = new Vector3(0.85f, 1.10f, 0.85f);
+                    bc.center = new Vector3(0, 0.55f, 0);
+                }
+            }
+
+            // Sweeping Beacon Light atop Fresnel lens
+            var beaconLightGo = new GameObject("Beacon Chamber Radiant Light");
+            beaconLightGo.transform.SetParent(lanternGroup, false);
+            beaconLightGo.transform.position = new Vector3(0, deckY + 1.25f, 0);
+            var bLight = beaconLightGo.AddComponent<Light>();
+            bLight.type = LightType.Point;
+            bLight.color = new Color(1.0f, 0.92f, 0.75f);
+            bLight.range = 14f;
+            bLight.intensity = 5.5f;
+            bLight.shadows = LightShadows.Soft;
+        }
+
+        private static void BuildContinuousSpiralRampMesh(Transform parent)
+        {
+            var rampGo = new GameObject("Continuous Spiral Stair Ramp MeshCollider");
+            rampGo.transform.SetParent(parent, false);
+            rampGo.tag = "Stone";
+
+            var verts = new List<Vector3>();
+            var tris = new List<int>();
+
+            float rIn = 3.20f;
+            float rOut = 4.65f;
+
+            void SampleSpiralPath(float startDeg, float endDeg, float startY, float endY, int samples)
+            {
+                for (int i = 0; i <= samples; i++)
+                {
+                    float t = i / (float)samples;
+                    float deg = Mathf.Lerp(startDeg, endDeg, t);
+                    float rad = deg * Mathf.Deg2Rad;
+                    float y = Mathf.Lerp(startY, endY, t);
+
+                    Vector3 pIn = new Vector3(Mathf.Sin(rad) * rIn, y, Mathf.Cos(rad) * rIn);
+                    Vector3 pOut = new Vector3(Mathf.Sin(rad) * rOut, y, Mathf.Cos(rad) * rOut);
+
+                    int baseIdx = verts.Count;
+                    verts.Add(pIn);
+                    verts.Add(pOut);
+
+                    if (baseIdx >= 2)
+                    {
+                        int prevIn = baseIdx - 2;
+                        int prevOut = baseIdx - 1;
+                        int curIn = baseIdx;
+                        int curOut = baseIdx + 1;
+
+                        // Quad: double-sided faces to guarantee raycasts from above and below hit cleanly
+                        // Top face (normals up)
+                        tris.Add(prevIn);
+                        tris.Add(prevOut);
+                        tris.Add(curIn);
+
+                        tris.Add(prevOut);
+                        tris.Add(curOut);
+                        tris.Add(curIn);
+
+                        // Bottom face
+                        tris.Add(prevIn);
+                        tris.Add(curIn);
+                        tris.Add(prevOut);
+
+                        tris.Add(prevOut);
+                        tris.Add(curIn);
+                        tris.Add(curOut);
+                    }
+                }
+            }
+
+            // Continuous sample path:
+            // 1. Floor 1 Landing (195° to 225°, y = 0.15m)
+            SampleSpiralPath(195f, 225f, 0.15f, 0.15f, 6);
+            // 2. Flight 1 (225° to 435° / 75°, y = 0.15m -> 3.35m)
+            SampleSpiralPath(225f, 435f, 0.15f, 3.35f, 42);
+            // 3. Floor 2 Landing (75° to 105°, y = 3.35m)
+            SampleSpiralPath(75f, 105f, 3.35f, 3.35f, 6);
+            // 4. Flight 2 (105° to 315°, y = 3.35m -> 6.55m)
+            SampleSpiralPath(105f, 315f, 3.35f, 6.55f, 42);
+            // 5. Floor 3 Landing (315° to 345°, y = 6.55m)
+            SampleSpiralPath(315f, 345f, 6.55f, 6.55f, 6);
+            // 6. Flight 3 Final Half-Spiral (345° to 525° / 165°, y = 6.55m -> 9.75m)
+            SampleSpiralPath(345f, 525f, 6.55f, 9.75f, 36);
+            // 7. Lantern Gallery Arrival (165° to 195°, y = 9.75m)
+            SampleSpiralPath(165f, 195f, 9.75f, 9.75f, 6);
+
+            var mesh = new Mesh();
+            mesh.name = "ContinuousSpiralRampMesh";
+            mesh.vertices = verts.ToArray();
+            mesh.triangles = tris.ToArray();
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+
+            var mc = rampGo.AddComponent<MeshCollider>();
+            mc.sharedMesh = mesh;
+        }
         private static GameObject CreatePrimitiveMesh(string name, PrimitiveType type, Transform parent, Vector3 localPos, Vector3 localScale, Quaternion localRot, Material mat, bool collider = false)
         {
             var go = GameObject.CreatePrimitive(type);
@@ -1195,6 +1581,17 @@ namespace TheLightHouse.Editor
             {
                 var col = go.GetComponent<Collider>();
                 if (col) Object.DestroyImmediate(col);
+            }
+            else if (type == PrimitiveType.Cylinder)
+            {
+                var cap = go.GetComponent<CapsuleCollider>();
+                if (cap) Object.DestroyImmediate(cap);
+                var mf = go.GetComponent<MeshFilter>();
+                if (mf && mf.sharedMesh)
+                {
+                    var mc = go.AddComponent<MeshCollider>();
+                    mc.sharedMesh = mf.sharedMesh;
+                }
             }
             return go;
         }
