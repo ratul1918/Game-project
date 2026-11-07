@@ -72,7 +72,14 @@ EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveS
 Debug.Log("Act 1 built. Bake Navigation/NavMeshSurface, then Play.");
 }
 static StoryBeat Beat(string id,StoryTrigger trigger,string signal,string objective,DialogueLine[] lines){string path=AssetFolder+"/"+id+".asset";var beat=AssetDatabase.LoadAssetAtPath<StoryBeat>(path);if(beat)return beat;if(!beat){beat=ScriptableObject.CreateInstance<StoryBeat>();AssetDatabase.CreateAsset(beat,path);}beat.id=id;beat.trigger=trigger;beat.triggerId=signal;beat.objective=objective;beat.lines=lines;EditorUtility.SetDirty(beat);return beat;}
-static GameObject Cube(string name,Vector3 position,Vector3 scale){var go=GameObject.CreatePrimitive(PrimitiveType.Cube);go.name=name;go.transform.position=position;go.transform.localScale=scale;return go;}
+static GameObject Cube(string name,Vector3 position,Vector3 scale){
+    var go=GameObject.CreatePrimitive(PrimitiveType.Cube);
+    go.name=name;go.transform.position=position;go.transform.localScale=scale;
+    var mat=AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/PBR/PBR_WeatheredPlanks.mat") ?? new Material(Shader.Find("Universal Render Pipeline/Lit"));
+    var r=go.GetComponent<Renderer>();
+    if(r) r.sharedMaterial=mat;
+    return go;
+}
 static Text Label(string name,Transform parent,Vector2 anchor){var go=new GameObject(name,typeof(RectTransform),typeof(CanvasRenderer),typeof(Text));go.transform.SetParent(parent,false);var rect=go.GetComponent<RectTransform>();rect.anchorMin=rect.anchorMax=anchor;rect.sizeDelta=new(1400,100);var text=go.GetComponent<Text>();text.font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");text.fontSize=26;text.alignment=TextAnchor.MiddleCenter;text.raycastTarget=false;return text;}
 static void Set(Object target,string name,Object value){var so=new SerializedObject(target);so.FindProperty(name).objectReferenceValue=value;so.ApplyModifiedPropertiesWithoutUndo();}
 static void Set(Object target,string name,bool value){var so=new SerializedObject(target);so.FindProperty(name).boolValue=value;so.ApplyModifiedPropertiesWithoutUndo();}

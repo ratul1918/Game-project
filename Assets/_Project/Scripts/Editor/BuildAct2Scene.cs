@@ -152,7 +152,14 @@ namespace TheLightHouse.Editor
             asset=ScriptableObject.CreateInstance<StoryBeat>();asset.id=id;asset.trigger=StoryTrigger.Signal;asset.triggerId=signal;asset.objective=objective;asset.lines=System.Array.Empty<DialogueLine>();
             AssetDatabase.CreateAsset(asset,path);return asset;
         }
-        static GameObject Cube(string name,Vector3 position,Vector3 scale){var go=GameObject.CreatePrimitive(PrimitiveType.Cube);go.name=name;go.transform.position=position;go.transform.localScale=scale;return go;}
+        static GameObject Cube(string name,Vector3 position,Vector3 scale){
+            var go=GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name=name;go.transform.position=position;go.transform.localScale=scale;
+            var mat=AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/PBR/PBR_WeatheredPlanks.mat") ?? new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            var r=go.GetComponent<Renderer>();
+            if(r) r.sharedMaterial=mat;
+            return go;
+        }
         static void Part(string name,Vector3 position,Vector3 scale,Transform parent){Cube(name,position,scale).transform.SetParent(parent,true);}
         static void Set(Object target,string name,Object value){var so=new SerializedObject(target);so.FindProperty(name).objectReferenceValue=value;so.ApplyModifiedPropertiesWithoutUndo();}
         static void Set(Object target,string name,bool value){var so=new SerializedObject(target);so.FindProperty(name).boolValue=value;so.ApplyModifiedPropertiesWithoutUndo();}

@@ -83,10 +83,26 @@ namespace TheLightHouse.Editor
         public static Material Solid(string name, Color color, float emission = 0)
         {
             var m = AssetDatabase.LoadAssetAtPath<Material>($"{Folder}/{name}.mat");
-            if (!m) { m = new Material(Shader.Find("Universal Render Pipeline/Lit")); AssetDatabase.CreateAsset(m, $"{Folder}/{name}.mat"); }
+            if (!m)
+            {
+                var shader = Shader.Find("Universal Render Pipeline/Lit");
+                m = new Material(shader);
+                AssetDatabase.CreateAsset(m, $"{Folder}/{name}.mat");
+            }
+            else if (m.shader == null || m.shader.name != "Universal Render Pipeline/Lit")
+            {
+                m.shader = Shader.Find("Universal Render Pipeline/Lit");
+            }
             m.color = color;
-            if (emission > 0) { m.EnableKeyword("_EMISSION"); m.SetColor("_EmissionColor", color * emission); }
-            m.enableInstancing = true; EditorUtility.SetDirty(m); return m;
+            if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", color);
+            if (emission > 0)
+            {
+                m.EnableKeyword("_EMISSION");
+                m.SetColor("_EmissionColor", color * emission);
+            }
+            m.enableInstancing = true;
+            EditorUtility.SetDirty(m);
+            return m;
         }
     }
 }

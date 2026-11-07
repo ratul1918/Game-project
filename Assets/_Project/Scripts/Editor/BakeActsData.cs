@@ -73,7 +73,7 @@ namespace TheLightHouse.Editor
 
         public static void BakeNavMeshSurfaces(int act)
         {
-            var surfaces = UnityEngine.Object.FindObjectsByType<NavMeshSurface>();
+            var surfaces = UnityEngine.Object.FindObjectsByType<NavMeshSurface>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             if (surfaces == null || surfaces.Length == 0)
             {
                 Debug.LogWarning($"Act {act}: No NavMeshSurface found in scene.");
@@ -89,6 +89,8 @@ namespace TheLightHouse.Editor
 
             foreach (var surface in surfaces)
             {
+                surface.useGeometry = UnityEngine.AI.NavMeshCollectGeometry.PhysicsColliders;
+                surface.collectObjects = Unity.AI.Navigation.CollectObjects.All;
                 string assetPath = $"{dir}/NavMesh-{surface.gameObject.name}.asset";
                 surface.BuildNavMesh();
                 if (surface.navMeshData != null)

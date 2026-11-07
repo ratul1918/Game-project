@@ -3,10 +3,10 @@ namespace TheLightHouse {
 public sealed class DuskTimer : MonoBehaviour {
 [SerializeField,Min(1)] float duskSeconds=300;
 [SerializeField] Light sun;
-[SerializeField] Color duskAmbient=new(.5f,.4f,.35f);
-[SerializeField] Color darkAmbient=new(.06f,.07f,.12f);
-[SerializeField] float duskIntensity=1f;
-[SerializeField] float darkIntensity=.1f;
+[SerializeField] Color duskAmbient = new(0.10f, 0.13f, 0.17f);
+[SerializeField] Color darkAmbient = new(0.025f, 0.035f, 0.055f);
+[SerializeField] float duskIntensity = 0.45f;
+[SerializeField] float darkIntensity = 0.12f;
 float elapsed; bool active; bool lit; bool expired;
 public bool IsActive=>active&&!expired;
 public float Progress=>Mathf.Clamp01(elapsed/Mathf.Max(1f,duskSeconds));

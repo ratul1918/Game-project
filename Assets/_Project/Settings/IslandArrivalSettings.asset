@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TheLightHouse.IslandArrivalSettings
   playerStart: {x: -1.1, y: 0.22, z: -33.5}
   boatPosition: {x: -5.8, y: -0.43, z: -29.8}
-  departureOffset: {x: -24, y: 0, z: -20}
+  departureOffset: {x: -5, y: 0, z: -35}
   boatmanHeight: 1.65
   islandRadius: {x: 26, y: 32}
   landHeight: 0.1

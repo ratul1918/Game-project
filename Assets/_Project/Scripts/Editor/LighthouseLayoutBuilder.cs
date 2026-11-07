@@ -294,18 +294,18 @@ namespace TheLightHouse.Editor
             GameObject support=GameObject.CreatePrimitive(PrimitiveType.Cylinder);support.name="Tower Central Support";support.transform.SetParent(stairs);support.transform.position=new(0,dimensions.towerLevelCount*dimensions.floorHeight*.5f,0);support.transform.localScale=new(.35f,dimensions.towerLevelCount*dimensions.floorHeight*.5f,.35f);support.GetComponent<Renderer>().sharedMaterial=Materials["Metal"];GameObjectUtility.SetStaticEditorFlags(support,StaticEditorFlags.BatchingStatic|StaticEditorFlags.OccludeeStatic|StaticEditorFlags.NavigationStatic);
             for(int level=0;level<dimensions.towerLevelCount;level++)SpiralFlight(stairs,$"Spiral L{level}",level*dimensions.floorHeight);
             for(int level=0;level<dimensions.towerLevelCount;level++)Link(stairs,$"Spiral Link {level}",new(0,level*dimensions.floorHeight+dimensions.floorHeight-.2f,0),new(0,(level+1)*dimensions.floorHeight+.1f,0));
-            StraightFlight(stairs,"Cellar Stair",new(-8,-3.2f,-5),new(-8,0,-5),16);
-            Link(stairs,"Cellar Link",new(-8,-3.2f,-5),new(-8,0,-5));
+            StraightFlight(stairs,"Cellar Stair",new(-8f,0.05f,-5f),new(-8f,-3.2f,-0.5f),18);
+            Link(stairs,"Cellar Link",new(-8f,0.05f,-5f),new(-8f,-3.2f,-0.5f));
         }
 
         static void SpiralFlight(Transform parent,string name,float baseY)
         {
             Transform flight=Group(name,parent);int steps=Mathf.CeilToInt(dimensions.floorHeight/dimensions.stairStepHeight);float progress=baseY/(dimensions.floorHeight*Mathf.Max(1,dimensions.towerLevelCount));float diameter=Mathf.Lerp(dimensions.towerBaseDiameter,dimensions.towerGalleryDiameter,progress);float radius=diameter*.5f-Mathf.Lerp(dimensions.towerBaseWallThickness,dimensions.towerGalleryWallThickness,progress)-dimensions.stairWidth*.5f;
-            for(int i=0;i<steps;i++){float angle=(100f-i*360f/steps);float radians=angle*Mathf.Deg2Rad;GameObject step=Place($"{name} {i:00}",new(Mathf.Sin(radians)*radius,baseY+(i+.5f)*dimensions.stairStepHeight,Mathf.Cos(radians)*radius),new(dimensions.stairWidth,dimensions.stairStepHeight,dimensions.stairStepDepth),"Stair","Wood",flight);step.transform.rotation=Quaternion.Euler(0,-angle,0);}
+            for(int i=0;i<steps;i++){float angle=(100f-i*360f/steps);float radians=angle*Mathf.Deg2Rad;GameObject step=Place($"{name} {i:00}",new(Mathf.Sin(radians)*radius,baseY+(i+.5f)*dimensions.stairStepHeight,Mathf.Cos(radians)*radius),new(dimensions.stairWidth,dimensions.stairStepHeight,dimensions.stairStepDepth),"Stair","Wood",flight);step.transform.rotation=Quaternion.Euler(0,-angle,0);var sc=step.GetComponent<Collider>();if(sc)Object.DestroyImmediate(sc);}
             Place($"{name} Landing",new(0,baseY+dimensions.floorHeight-.1f,0),new(2.6f,.2f,2.6f),"Floor","Wood",flight);
-            for(int i=0;i<6;i++){float a=100f-i*60f;float r=a*Mathf.Deg2Rad;Place($"{name} Handrail {i}",new(Mathf.Sin(r)*3.1f,baseY+1.1f,Mathf.Cos(r)*3.1f),new(.08f,1.1f,.08f),"Wall","Metal",flight);}
+            for(int i=0;i<6;i++){float a=100f-i*60f;float r=a*Mathf.Deg2Rad;GameObject hr=Place($"{name} Handrail {i}",new(Mathf.Sin(r)*3.1f,baseY+1.1f,Mathf.Cos(r)*3.1f),new(.08f,1.1f,.08f),"Wall","Metal",flight);var hc=hr.GetComponent<Collider>();if(hc)Object.DestroyImmediate(hc);}
         }
-        static void StraightFlight(Transform parent,string name,Vector3 start,Vector3 end,int count){for(int i=0;i<count;i++){float t=(i+.5f)/count;Place($"{name} {i:00}",Vector3.Lerp(start,end,t),new(dimensions.stairWidth,dimensions.stairStepHeight,.5f),"Stair","Wood",parent);}}
+        static void StraightFlight(Transform parent,string name,Vector3 start,Vector3 end,int count){for(int i=0;i<count;i++){float t=(i+.5f)/count;GameObject step=Place($"{name} {i:00}",Vector3.Lerp(start,end,t),new(dimensions.stairWidth,dimensions.stairStepHeight,.5f),"Stair","Wood",parent);var c=step.GetComponent<Collider>();if(c)Object.DestroyImmediate(c);}}
         static void Link(Transform parent,string name,Vector3 start,Vector3 end){var link=new GameObject(name).AddComponent<NavMeshLink>();link.transform.SetParent(parent);link.startPoint=start;link.endPoint=end;link.width=dimensions.stairWidth;link.bidirectional=true;}
 
         static void BuildWindows(Transform root)
@@ -319,7 +319,7 @@ namespace TheLightHouse.Editor
         {
             Transform rooms=Group("Room Triggers",root);
             Room(rooms,"entry-hall","Entry Hall",0,new(-5,1.4f,-5),new(3,2.8f,3));Room(rooms,"keeper-room","Keeper's Room",0,new(-8,1.4f,-5),new(3,2.8f,3));Room(rooms,"kitchen-pantry","Kitchen & Pantry",0,new(-3,1.4f,-5),new(2.5f,2.8f,3));Room(rooms,"generator-room","Generator Room",0,new(-1,1.4f,-3),new(2,2.8f,2));
-            Room(rooms,"cellar","Cellar",-1,new(-5,-1.8f,-5),new(8,2.7f,7));Room(rooms,"hidden-room","Hidden Room",-1,new(-12,-1.8f,-5),new(4,2.7f,5));Room(rooms,"flooded-corridor","Flooded Corridor",-1,new(1,-1.8f,-5),new(3,2.7f,8));
+            Room(rooms,"cellar","Cellar",-1,new(-8,-1.8f,2),new(4,2.7f,6));Room(rooms,"hidden-room","Hidden Room",-1,new(-8,-1.8f,7),new(5,2.7f,5));Room(rooms,"flooded-corridor","Flooded Corridor",-1,new(1,-1.8f,-5),new(3,2.7f,8));
             Room(rooms,"bedroom-library","Bedroom & Library",2,new(0,dimensions.floorHeight*2+1.4f,0),new(5,2.8f,5));Room(rooms,"crane-room","Crane's Room",3,new(-1.5f,dimensions.floorHeight*3+1.4f,0),new(3,2.8f,5));Room(rooms,"upper-landing","Upper Landing",3,new(1.5f,dimensions.floorHeight*3+1.4f,0),new(2,2.8f,5));Room(rooms,"lantern-room","Lantern Room",8,new(0,dimensions.towerLevelCount*dimensions.floorHeight+1.4f,0),new(4.5f,2.8f,4.5f));
         }
         static void Room(Transform parent,string id,string display,int floor,Vector3 position,Vector3 size){var go=new GameObject(display+" Trigger");go.transform.SetParent(parent);go.transform.position=position;var box=go.AddComponent<BoxCollider>();box.isTrigger=true;box.size=size;var room=go.AddComponent<RoomTrigger>();Set(room,"roomId",id);Set(room,"displayName",display);Set(room,"floorLevel",floor);}
@@ -351,15 +351,24 @@ namespace TheLightHouse.Editor
             MakeNonBlocking("Door panel");
             Move("Radio",new(-8,1,-5));Move("Hot Meal",new(-8,.9f,-6));Move("Table",new(-8,.45f,-6));Move("Steam placeholder",new(-8,1.1f,-6));
             Move("Lamp",new(0,dimensions.towerLevelCount*dimensions.floorHeight+1.1f,0));Move("Crank Station",new(2.2f,dimensions.towerLevelCount*dimensions.floorHeight+.35f,0));
-            Move("Locked Cellar Door",new(-8,-1.7f,-5));Move("Wet footprints (Act 2)",new(-6,-3.15f,-5));Move("Cellar Hum",new(-6,-1.8f,-5));Move("Reserve Fuel Can",new(-3,-2.75f,-5));
-            Move("hidden shelf",new(-10,-2.2f,-5));Move("Marta reel-to-reel recorder",new(-12,-2.65f,-4));Move("Harbor board ledger",new(-12,-2.65f,-6));
+            Move("Locked Cellar Door",new(-8f,1.1f,-5f));Move("Wet footprints (Act 2)",new(-8f,0.05f,-6f));Move("Cellar Hum",new(-8f,-1.8f,2f));Move("Reserve Fuel Can",new(-9f,-3.2f,2f));
+            Move("hidden shelf",new(-8f,-2.2f,4.5f));Move("Marta reel-to-reel recorder",new(-8.75f,-2.25f,8.86f));Move("Harbor board ledger",new(-8.15f,-2.32f,8.58f));
             Move("Crane's Room Door",new(-1.5f,dimensions.floorHeight*3,-2.4f));Move("Family Photo",new(-2.5f,dimensions.floorHeight*3+1.4f,1));Move("Crane's Desk",new(-1.5f,dimensions.floorHeight*3+.35f,1.2f));Move("Crane Room Key",new(10,.4f,-14));
             Move("Boat",new(-3.5f,.15f,-29));Move("Shoreline ending trigger",new(0,1,-27));
             GameObject player=GameObject.Find("Player");if(player)player.transform.position=actName=="Act1"?new(0,.15f,-29):new(0,dimensions.towerLevelCount*dimensions.floorHeight-.8f,-1.5f);
         }
 
+        public static void RebuildHudInCurrentScene()
+        {
+            BuildHud();
+        }
+
         static void BuildHud()
         {
+            if (!Object.FindAnyObjectByType<UnityEngine.EventSystems.EventSystem>())
+            {
+                new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem), typeof(UnityEngine.InputSystem.UI.InputSystemUIInputModule));
+            }
             GameObject canvas=GameObject.Find("Debug Canvas");if(!canvas)return;if(!canvas.GetComponent<UiAudio>())canvas.AddComponent<UiAudio>();CanvasScaler scaler=canvas.GetComponent<CanvasScaler>();if(scaler){scaler.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;scaler.referenceResolution=new(1920,1080);scaler.screenMatchMode=CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;scaler.matchWidthOrHeight=.5f;}
             Transform legacyObjective=canvas.transform.Find("Objective");if(legacyObjective)Object.DestroyImmediate(legacyObjective.gameObject);
             Transform previous=canvas.transform.Find("HUD Root");if(previous)Object.DestroyImmediate(previous.gameObject);RectTransform root=Rect("HUD Root",canvas.transform,Vector2.zero,Vector2.one);UITheme theme=AssetDatabase.LoadAssetAtPath<UITheme>($"{SettingsFolder}/UITheme.asset");HudSettings settings=AssetDatabase.LoadAssetAtPath<HudSettings>($"{SettingsFolder}/HudSettings.asset");HudRoot hud=root.gameObject.AddComponent<HudRoot>();Set(hud,"theme",theme);Set(hud,"settings",settings);Set(hud,"scalableRoot",root);
@@ -387,11 +396,18 @@ namespace TheLightHouse.Editor
         static void BuildPauseMenu(Transform canvas,UITheme theme)
         {
             Transform old=canvas.Find("Pause Menu");if(old)Object.DestroyImmediate(old.gameObject);PauseMenu existing=canvas.GetComponent<PauseMenu>();if(existing)Object.DestroyImmediate(existing);GameObject panel=Panel("Pause Menu",canvas,new(.32f,.18f),new(.68f,.82f),new Color(theme.Panel.r,theme.Panel.g,theme.Panel.b,.97f));PauseMenu pause=canvas.gameObject.AddComponent<PauseMenu>();Set(pause,"panel",panel);Set(pause,"player",Object.FindAnyObjectByType<FirstPersonController>());Set(pause,"interactor",Object.FindAnyObjectByType<Interactor>());Set(pause,"journal",Object.FindAnyObjectByType<JournalUI>());
-            Text("Title",panel.transform,new(.08f,.84f),new(.92f,.96f),"PAUSED",38,theme);string[] names={"Resume","Journal","Options","Save","Quit to MainMenu"};for(int i=0;i<names.Length;i++){Button button=Button(names[i],panel.transform,new(.15f,.68f-i*.12f),new(.85f,.77f-i*.12f),theme);switch(i){case 0:UnityEventTools.AddPersistentListener(button.onClick,pause.Resume);break;case 1:UnityEventTools.AddPersistentListener(button.onClick,pause.OpenJournal);break;case 2:UnityEventTools.AddPersistentListener(button.onClick,pause.OpenOptions);break;case 3:UnityEventTools.AddPersistentListener(button.onClick,pause.Save);break;case 4:UnityEventTools.AddPersistentListener(button.onClick,pause.QuitToMainMenu);break;}}
-            GameObject options=Panel("Options",panel.transform,new(.04f,.03f),new(.96f,.83f),theme.Panel);HudSettings hudSettings=AssetDatabase.LoadAssetAtPath<HudSettings>($"{SettingsFolder}/HudSettings.asset");HudSettingsPanel controller=options.AddComponent<HudSettingsPanel>();Set(controller,"settings",hudSettings);Set(controller,"hud",Object.FindAnyObjectByType<HudRoot>());Set(controller,"subtitles",Object.FindAnyObjectByType<SubtitleUI>());Text("Options Label",options.transform,new(.05f,.88f),new(.95f,.98f),"HUD OPTIONS",25,theme);
+            Text("Title",panel.transform,new(.08f,.84f),new(.92f,.96f),"PAUSED",38,theme);
+            TMP_Text saveStatus = Text("SaveStatus", panel.transform, new(.15f, .07f), new(.85f, .13f), "", 18, theme);
+            saveStatus.color = theme.Accent;
+            Set(pause, "saveStatus", saveStatus);
+            string[] names={"Resume","Journal","Options","Save","Quit to MainMenu"};for(int i=0;i<names.Length;i++){Button button=Button(names[i],panel.transform,new(.15f,.68f-i*.12f),new(.85f,.77f-i*.12f),theme);switch(i){case 0:UnityEventTools.AddPersistentListener(button.onClick,pause.Resume);break;case 1:UnityEventTools.AddPersistentListener(button.onClick,pause.OpenJournal);break;case 2:UnityEventTools.AddPersistentListener(button.onClick,pause.OpenOptions);break;case 3:UnityEventTools.AddPersistentListener(button.onClick,pause.Save);break;case 4:UnityEventTools.AddPersistentListener(button.onClick,pause.QuitToMainMenu);break;}}
+            GameObject options=Panel("HUD Options Panel",panel.transform,new(.02f,.02f),new(.98f,.98f),new Color(0.04f,0.08f,0.07f,1f));HudSettings hudSettings=AssetDatabase.LoadAssetAtPath<HudSettings>($"{SettingsFolder}/HudSettings.asset");HudSettingsPanel controller=options.AddComponent<HudSettingsPanel>();Set(controller,"settings",hudSettings);Set(controller,"hud",Object.FindAnyObjectByType<HudRoot>());Set(controller,"subtitles",Object.FindAnyObjectByType<SubtitleUI>());Text("Options Label",options.transform,new(.05f,.88f),new(.95f,.98f),"HUD OPTIONS",25,theme);
             string[] labels={"Noise","Stamina","Lamp","Objective","Inventory","Interaction","Toasts","Room names","Composure","Minimal HUD"};bool[] values={true,true,true,true,true,true,true,true,false,false};for(int i=0;i<labels.Length;i++){int column=i/5;int row=i%5;Toggle toggle=OptionToggle(labels[i],options.transform,new(.05f+column*.48f,.74f-row*.13f),new(.47f+column*.48f,.84f-row*.13f),theme,values[i]);switch(i){case 0:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetNoise);break;case 1:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetStamina);break;case 2:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetLamp);break;case 3:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetObjective);break;case 4:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetInventory);break;case 5:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetInteraction);break;case 6:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetToasts);break;case 7:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetRoomNames);break;case 8:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetComposure);break;case 9:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetMinimal);break;}}
-            Slider scale=OptionSlider("HUD Scale",options.transform,new(.08f,.04f),new(.92f,.12f),theme,.7f,1.5f,1f);UnityEventTools.AddPersistentListener(scale.onValueChanged,controller.SetHudScale);options.SetActive(false);Set(pause,"optionsPanel",options);
-            TextAsset credits=AssetDatabase.LoadAssetAtPath<TextAsset>($"{SettingsFolder}/Credits.txt");if(credits)Text("Credits",options.transform,new(.05f,.13f),new(.95f,.2f),credits.text,12,theme).alignment=TextAlignmentOptions.Left;
+            Slider scale=OptionSlider("HUD Scale",options.transform,new(.08f,.11f),new(.92f,.18f),theme,.7f,1.5f,1f);UnityEventTools.AddPersistentListener(scale.onValueChanged,controller.SetHudScale);
+            Button backBtn = Button("Back", options.transform, new(.32f, .02f), new(.68f, .08f), theme);
+            UnityEventTools.AddPersistentListener(backBtn.onClick, pause.CloseOptions);
+            options.SetActive(false);Set(pause,"optionsPanel",options);
+            Text("Credits",options.transform,new(.05f,.08f),new(.95f,.11f),"Audio & Fonts by Kenney (CC0 1.0)",13,theme).alignment=TextAlignmentOptions.Center;
         }
 
         static Button Button(string label,Transform parent,Vector2 min,Vector2 max,UITheme theme){GameObject go=Panel(label,parent,min,max,theme.Accent);Button button=go.AddComponent<Button>();button.targetGraphic=go.GetComponent<Image>();Text("Label",go.transform,Vector2.zero,Vector2.one,label,22,theme);return button;}

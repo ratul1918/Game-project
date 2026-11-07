@@ -112,7 +112,14 @@ namespace TheLightHouse.Editor
             beat.id=id;beat.trigger=StoryTrigger.Signal;beat.triggerId=signal;beat.objective=objective;beat.prerequisiteId="";beat.lines=System.Array.Empty<DialogueLine>();EditorUtility.SetDirty(beat);return beat;
         }
         static void PlacePage(string name,Vector3 position,LogbookPage page,LogbookJournal journal){var go=Cube(name,position,new(.45f,.08f,.65f));var pickup=go.AddComponent<LogbookPickup>();Set(pickup,"page",page);Set(pickup,"journal",journal);}
-        static GameObject Cube(string name,Vector3 position,Vector3 scale){var go=GameObject.CreatePrimitive(PrimitiveType.Cube);go.name=name;go.transform.position=position;go.transform.localScale=scale;return go;}
+        static GameObject Cube(string name,Vector3 position,Vector3 scale){
+            var go=GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name=name;go.transform.position=position;go.transform.localScale=scale;
+            var mat=AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/PBR/PBR_WeatheredPlanks.mat") ?? new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            var r=go.GetComponent<Renderer>();
+            if(r) r.sharedMaterial=mat;
+            return go;
+        }
         static GameObject Panel(string name,Transform parent,Vector2 min,Vector2 max){var go=new GameObject(name,typeof(RectTransform),typeof(CanvasRenderer),typeof(Image));go.transform.SetParent(parent,false);var rect=go.GetComponent<RectTransform>();rect.anchorMin=min;rect.anchorMax=max;rect.offsetMin=rect.offsetMax=Vector2.zero;go.GetComponent<Image>().color=new Color(.03f,.04f,.045f,.94f);return go;}
         static Text Text(string name,Transform parent,Vector2 min,Vector2 max,int size,TextAnchor anchor){var go=new GameObject(name,typeof(RectTransform),typeof(CanvasRenderer),typeof(Text));go.transform.SetParent(parent,false);var rect=go.GetComponent<RectTransform>();rect.anchorMin=min;rect.anchorMax=max;rect.offsetMin=rect.offsetMax=Vector2.zero;var text=go.GetComponent<Text>();text.font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");text.fontSize=size;text.alignment=anchor;text.color=Color.white;text.raycastTarget=false;return text;}
         static Slider Slider(string name,Transform parent,Vector2 min,Vector2 max){var root=Panel(name,parent,min,max);var slider=root.AddComponent<Slider>();slider.minValue=0;slider.maxValue=1;var fill=Panel("Fill",root.transform,Vector2.zero,Vector2.one).GetComponent<RectTransform>();fill.GetComponent<Image>().color=new Color(.8f,.75f,.35f,1);slider.fillRect=fill;return slider;}

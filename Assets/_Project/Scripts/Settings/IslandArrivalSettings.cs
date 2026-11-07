@@ -7,7 +7,7 @@ namespace TheLightHouse
     {
         public Vector3 playerStart=new(.4f,.22f,-25f);
         public Vector3 boatPosition=new(-5.6f,-.45f,-27.5f);
-        public Vector3 departureOffset=new(-24,0,-20);
+        public Vector3 departureOffset=new(-5,0,-35);
         public float boatmanHeight=1.65f;
         public Vector2 islandRadius=new(24,21);
         public float landHeight=.1f;

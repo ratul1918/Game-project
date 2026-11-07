@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
+using UnityEditor.Build.Reporting;
 using UnityEditor.Events;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -27,14 +28,19 @@ namespace TheLightHouse.Editor
         [MenuItem("TheLightHouse/Build Full Game Scenes")]
         public static void Build()
         {
+            var activeScene = EditorSceneManager.GetActiveScene();
+            if (activeScene.isDirty) EditorSceneManager.SaveScene(activeScene);
+
             BuildAct1Scene.BuildTo("Assets/_Project/Scenes/Act1.unity");
             BuildAct2Scene.BuildTo("Assets/_Project/Scenes/Act2.unity");
             BuildAct3Scene.BuildTo("Assets/_Project/Scenes/Act3.unity");
             BuildAct4Scene.BuildTo("Assets/_Project/Scenes/Act4.unity");
             BuildAct5Scene.BuildTo("Assets/_Project/Scenes/Act5.unity");
-            ApplyGraphics1.Apply();
             ReferenceVisualPass.ApplyAll();
             IslandArrivalPass.ApplyAll();
+            ApplyGraphics1.Apply();
+            AssetIntegrationPass.ApplyToAllScenes();
+            HarrowRockEnvironmentMasterPass.ApplyToAllScenes();
             BuildMenu();
 
             string[] paths = {
@@ -55,406 +61,57 @@ namespace TheLightHouse.Editor
         [MenuItem("TheLightHouse/Build Main Menu")]
         public static void BuildMenu()
         {
-            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            MainMenuSceneBuilder.BuildMenuScene();
+        }
 
-            // 1. Build 3D Cinematic Environment
-            var envRoot = new GameObject("Environment 3D");
+        [MenuItem("TheLightHouse/Build Standalone Player (macOS)")]
+        public static void BuildStandalonePlayer()
+        {
+            BuildStandalone(false);
+        }
 
-            var matPlaster = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Salt Plaster.mat");
-            var matShale = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Wet Shale.mat");
-            var matSea = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Harrow Sea.mat") ?? matShale;
-            var matIron = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Oxidised Iron.mat");
-            var matBeaconGlass = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Beacon Glass.mat");
-            var matCottageGlass = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Warm Cottage Glass.mat");
-            var matSlate = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Slate.mat");
-            var matRain = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Rain.mat");
-            var matGlow = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Dock Lantern Glow.mat");
-            var matFoam = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Sea Spray Foam.mat");
+        [MenuItem("TheLightHouse/Build and Run Standalone Player (macOS)")]
+        public static void BuildAndRunStandalonePlayer()
+        {
+            BuildStandalone(true);
+        }
 
-            // Sea Surface
-            var sea = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            sea.name = "Ocean Surface";
-            sea.transform.SetParent(envRoot.transform);
-            sea.transform.position = new Vector3(0, -1f, 15f);
-            sea.transform.localScale = new Vector3(30f, 1f, 30f);
-            if (matSea) sea.GetComponent<Renderer>().sharedMaterial = matSea;
+        private static void BuildStandalone(bool autoRun)
+        {
+            string buildFolder = Path.Combine(Directory.GetCurrentDirectory(), "Builds", "macOS");
+            if (!Directory.Exists(buildFolder)) Directory.CreateDirectory(buildFolder);
+            string buildPath = Path.Combine(buildFolder, "TheLightHouse.app");
 
-            // Harrow Rock Island Bluff (Wavy Organic Coastal Rock Promontory)
-            CreateOrganicWavyBluff(envRoot.transform, matShale, matFoam);
+            string[] scenes = {
+                MenuPath,
+                "Assets/_Project/Scenes/Act1.unity",
+                "Assets/_Project/Scenes/Act2.unity",
+                "Assets/_Project/Scenes/Act3.unity",
+                "Assets/_Project/Scenes/Act4.unity",
+                "Assets/_Project/Scenes/Act5.unity"
+            };
 
-            // Lighthouse Masonry Tower
-            var tower = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            tower.name = "Lighthouse Tower";
-            tower.transform.SetParent(envRoot.transform);
-            tower.transform.position = new Vector3(10f, 15f, 22f);
-            tower.transform.localScale = new Vector3(5.5f, 22f, 5.5f);
-            if (matPlaster) tower.GetComponent<Renderer>().sharedMaterial = matPlaster;
-
-            // Lantern Gallery Platform
-            var gallery = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            gallery.name = "Lantern Gallery";
-            gallery.transform.SetParent(envRoot.transform);
-            gallery.transform.position = new Vector3(10f, 26.2f, 22f);
-            gallery.transform.localScale = new Vector3(7.5f, 0.4f, 7.5f);
-            if (matIron) gallery.GetComponent<Renderer>().sharedMaterial = matIron;
-
-            // Lantern Glass Chamber
-            var chamber = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            chamber.name = "Beacon Chamber";
-            chamber.transform.SetParent(envRoot.transform);
-            chamber.transform.position = new Vector3(10f, 28.2f, 22f);
-            chamber.transform.localScale = new Vector3(4.8f, 3.5f, 4.8f);
-            if (matBeaconGlass) chamber.GetComponent<Renderer>().sharedMaterial = matBeaconGlass;
-
-            // Lantern Cap Dome
-            var dome = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            dome.name = "Lantern Dome";
-            dome.transform.SetParent(envRoot.transform);
-            dome.transform.position = new Vector3(10f, 30.2f, 22f);
-            dome.transform.localScale = new Vector3(5.2f, 0.8f, 5.2f);
-            if (matSlate) dome.GetComponent<Renderer>().sharedMaterial = matSlate;
-
-            // Connected Keeper's Cottage
-            var cottage = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cottage.name = "Keeper Cottage";
-            cottage.transform.SetParent(envRoot.transform);
-            cottage.transform.position = new Vector3(2f, 6f, 20f);
-            cottage.transform.localScale = new Vector3(9f, 4.8f, 7.5f);
-            if (matPlaster) cottage.GetComponent<Renderer>().sharedMaterial = matPlaster;
-
-            var cottageRoof = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cottageRoof.name = "Cottage Slate Roof";
-            cottageRoof.transform.SetParent(envRoot.transform);
-            cottageRoof.transform.position = new Vector3(2f, 8.8f, 20f);
-            cottageRoof.transform.localScale = new Vector3(10f, 1.6f, 8.5f);
-            if (matSlate) cottageRoof.GetComponent<Renderer>().sharedMaterial = matSlate;
-
-            // Warm Glowing Cottage Window
-            var window = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            window.name = "Warm Window";
-            window.transform.SetParent(envRoot.transform);
-            window.transform.position = new Vector3(2f, 6.2f, 16.2f);
-            window.transform.localScale = new Vector3(1.8f, 1.8f, 1f);
-            if (matCottageGlass) window.GetComponent<Renderer>().sharedMaterial = matCottageGlass;
-
-            var windowLight = new GameObject("Cottage Warm Glow").AddComponent<Light>();
-            windowLight.transform.SetParent(envRoot.transform);
-            windowLight.transform.position = new Vector3(2f, 6.2f, 15f);
-            windowLight.type = LightType.Point;
-            windowLight.color = new Color(1f, 0.72f, 0.35f);
-            windowLight.range = 14f;
-            windowLight.intensity = 2.5f;
-
-            // Rotating Lighthouse Beacon Beam
-            var beaconPivot = new GameObject("Lighthouse Beacon Pivot");
-            beaconPivot.transform.SetParent(envRoot.transform);
-            beaconPivot.transform.position = new Vector3(10f, 28.2f, 22f);
-
-            var beamLight = new GameObject("Beacon Spotlight").AddComponent<Light>();
-            beamLight.transform.SetParent(beaconPivot.transform);
-            beamLight.transform.localPosition = Vector3.zero;
-            beamLight.transform.localRotation = Quaternion.Euler(14f, 0f, 0f);
-            beamLight.type = LightType.Spot;
-            beamLight.color = new Color(1f, 0.92f, 0.65f);
-            beamLight.range = 140f;
-            beamLight.spotAngle = 45f;
-            beamLight.innerSpotAngle = 20f;
-            beamLight.intensity = 15f;
-            beamLight.shadows = LightShadows.Soft;
-
-            // Ambient Moonlight
-            var moon = new GameObject("Dusk Moonlight").AddComponent<Light>();
-            moon.transform.SetParent(envRoot.transform);
-            moon.type = LightType.Directional;
-            moon.transform.rotation = Quaternion.Euler(35f, -60f, 0f);
-            moon.color = new Color(0.18f, 0.28f, 0.38f);
-            moon.intensity = 0.5f;
-            moon.shadows = LightShadows.Soft;
-
-            // Distant Lightning Light
-            var lightning = new GameObject("Distant Lightning").AddComponent<Light>();
-            lightning.transform.SetParent(envRoot.transform);
-            lightning.type = LightType.Directional;
-            lightning.transform.rotation = Quaternion.Euler(25f, 130f, 0f);
-            lightning.color = new Color(0.75f, 0.88f, 1.0f);
-            lightning.intensity = 0f;
-
-            // Rain Particle System
-            var rainGo = new GameObject("Menu Rain Particles");
-            rainGo.transform.SetParent(envRoot.transform);
-            rainGo.transform.position = new Vector3(0, 25f, 10f);
-            var ps = rainGo.AddComponent<ParticleSystem>();
-            var psRenderer = rainGo.GetComponent<ParticleSystemRenderer>();
-            if (matRain) psRenderer.sharedMaterial = matRain;
-            var main = ps.main;
-            main.startSpeed = 22f;
-            main.startLifetime = 1.8f;
-            main.startSize = 0.08f;
-            main.maxParticles = 800;
-            main.startColor = new Color(1f, 1f, 1f, 0.45f);
-            var emission = ps.emission;
-            emission.rateOverTime = 350f;
-            var shape = ps.shape;
-            shape.shapeType = ParticleSystemShapeType.Box;
-            shape.scale = new Vector3(40f, 1f, 35f);
-
-            // Post-Processing Volume
-            var volProfile = AssetDatabase.LoadAssetAtPath<VolumeProfile>("Assets/_Project/Settings/Volume_Night.asset");
-            if (volProfile)
+            var options = new BuildPlayerOptions
             {
-                var volGo = new GameObject("Global PostProcess Volume").AddComponent<Volume>();
-                volGo.transform.SetParent(envRoot.transform);
-                volGo.isGlobal = true;
-                volGo.profile = volProfile;
-            }
+                scenes = scenes,
+                locationPathName = buildPath,
+                target = BuildTarget.StandaloneOSX,
+                options = autoRun ? BuildOptions.AutoRunPlayer : BuildOptions.None
+            };
 
-            // 2. Camera Setup
-            var cameraObject = new GameObject("Menu Camera", typeof(Camera), typeof(AudioListener));
-            cameraObject.tag = "MainCamera";
-            cameraObject.transform.position = new Vector3(-3f, 4.5f, -10f);
-            cameraObject.transform.rotation = Quaternion.Euler(-8f, 24f, 0f);
+            Debug.Log($"<color=#44AAFF>[TheLightHouse]</color> Starting Standalone macOS build to {buildPath}...");
+            BuildReport report = BuildPipeline.BuildPlayer(options);
+            BuildSummary summary = report.summary;
 
-            var camera = cameraObject.GetComponent<Camera>();
-            camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = new Color(0.015f, 0.022f, 0.032f, 1f);
-            camera.cullingMask = ~0;
-            camera.nearClipPlane = 0.3f;
-            camera.farClipPlane = 180f;
-
-            var camSway = cameraObject.AddComponent<MenuCameraController>();
-            Set(camSway, "swayAmount", 0.3f);
-            Set(camSway, "swaySpeed", 0.35f);
-            Set(camSway, "lighthouseBeam", beaconPivot.transform);
-            Set(camSway, "lightningLight", lightning);
-
-            // 3. Act Flow & Save System
-            var flowObject = new GameObject("Act Flow");
-            var flow = flowObject.AddComponent<ActFlowController>();
-            Set(flow, "enableSceneChaining", true);
-            var saves = flowObject.AddComponent<SaveSystem>();
-            var debug = flowObject.AddComponent<GameDebugMenu>();
-            Set(debug, "flow", flow);
-            Set(debug, "inputActions", AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions"));
-
-            // 4. UI Canvas
-            var canvasObject = new GameObject("Main Menu Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-            var canvas = canvasObject.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 10;
-            var scaler = canvasObject.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = ReferenceResolution;
-            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = .5f;
-
-            var menu = canvasObject.AddComponent<MainMenu>();
-            Set(menu, "flow", flow);
-            Set(menu, "root", canvasObject);
-
-            // Left-docked Semi-Transparent Navigation Panel
-            var leftVignette = Image("Left Navigation Panel", canvasObject.transform, new Vector2(-480f, 0f), new Vector2(580f, 1080f), GlassPanelColor);
-            StretchVerticalLeft(leftVignette.rectTransform, 580f);
-
-            // Title & Subtitle
-            Text title = Label("THE LIGHTHOUSE", leftVignette.transform, new Vector2(0f, 380f), new Vector2(500f, 68f), 48, TextAnchor.MiddleLeft);
-            title.fontStyle = FontStyle.Bold;
-            title.color = TextColor;
-            title.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.9f);
-
-            Text subtitle = Label("HARROW ROCK", leftVignette.transform, new Vector2(0f, 335f), new Vector2(500f, 34f), 18, TextAnchor.MiddleLeft);
-            subtitle.color = AccentAmber;
-
-            Text tagline = Label("Keep the light. Never answer the singing.", leftVignette.transform, new Vector2(0f, 300f), new Vector2(500f, 28f), 15, TextAnchor.MiddleLeft);
-            tagline.fontStyle = FontStyle.Italic;
-            tagline.color = TextMuted;
-
-            // Main Menu 8-Option Buttons
-            float btnY = 220f;
-            float btnSpacing = 58f;
-
-            var btnNew = Button("NEW GAME", leftVignette.transform, new Vector2(0f, btnY), menu.StartGame);
-            var btnContinue = Button("CONTINUE", leftVignette.transform, new Vector2(0f, btnY - btnSpacing), menu.ContinueGame);
-            var btnChapters = Button("CHAPTER SELECT", leftVignette.transform, new Vector2(0f, btnY - btnSpacing * 2), menu.ShowChapterSelect);
-            var btnLoad = Button("LOAD GAME", leftVignette.transform, new Vector2(0f, btnY - btnSpacing * 3), menu.ShowLoadGame);
-            var btnSettings = Button("SETTINGS", leftVignette.transform, new Vector2(0f, btnY - btnSpacing * 4), menu.ShowSettings);
-            var btnExtras = Button("EXTRAS", leftVignette.transform, new Vector2(0f, btnY - btnSpacing * 5), menu.ShowExtras);
-            var btnCredits = Button("CREDITS", leftVignette.transform, new Vector2(0f, btnY - btnSpacing * 6), menu.ShowCredits);
-            var btnQuit = Button("QUIT", leftVignette.transform, new Vector2(0f, btnY - btnSpacing * 7), menu.Quit);
-
-            Set(menu, "continueButton", btnContinue);
-
-            Label("F1 debug tools • F4 performance overlay", leftVignette.transform, new Vector2(0f, -480f), new Vector2(500f, 24f), 12, TextAnchor.MiddleLeft).color = new Color(TextColor.r, TextColor.g, TextColor.b, 0.45f);
-
-            // 5. Submenus
-            // Chapter Select Modal
-            var chapterPanel = Image("Chapter Select Panel", canvasObject.transform, Vector2.zero, new Vector2(760f, 620f), SubmenuPanelColor);
-            var chapterUI = chapterPanel.gameObject.AddComponent<ChapterSelectUI>();
-            Set(chapterUI, "panel", chapterPanel.gameObject);
-            Set(chapterUI, "flow", flow);
-            Label("CHAPTER SELECT", chapterPanel.transform, new Vector2(0f, 250f), new Vector2(650f, 50f), 28, TextAnchor.MiddleCenter).color = AccentAmber;
-
-            var chapterButtons = new Button[5];
-            var chapterStatus = new Text[5];
-            for (int i = 0; i < 5; i++)
+            if (summary.result == BuildResult.Succeeded)
             {
-                var chBtn = Button($"ACT {i + 1}", chapterPanel.transform, new Vector2(0f, 170f - i * 65f), null, new Vector2(620f, 52f));
-                chapterButtons[i] = chBtn;
-                chapterStatus[i] = chBtn.GetComponentInChildren<Text>();
+                Debug.Log($"<color=#44FF88>[TheLightHouse]</color> Standalone macOS build succeeded! Size: {summary.totalSize / (1024 * 1024):F1} MB");
+                EditorUtility.RevealInFinder(buildPath);
             }
-            var chBack = Button("BACK", chapterPanel.transform, new Vector2(0f, -240f), chapterUI.Close, new Vector2(240f, 46f));
-            Set(chapterUI, "backButton", chBack);
-            SetArray(chapterUI, "chapterButtons", chapterButtons);
-            SetArray(chapterUI, "chapterStatusLabels", chapterStatus);
-            chapterPanel.gameObject.SetActive(false);
-            Set(menu, "chapterSelect", chapterUI);
-
-            // Save / Load Modal
-            var saveLoadPanel = Image("Save Load Panel", canvasObject.transform, Vector2.zero, new Vector2(760f, 580f), SubmenuPanelColor);
-            var saveLoadUI = saveLoadPanel.gameObject.AddComponent<SaveLoadUI>();
-            Set(saveLoadUI, "panel", saveLoadPanel.gameObject);
-            Set(saveLoadUI, "flow", flow);
-            var slTitle = Label("LOAD GAME", saveLoadPanel.transform, new Vector2(0f, 230f), new Vector2(650f, 50f), 28, TextAnchor.MiddleCenter);
-            slTitle.color = AccentAmber;
-            Set(saveLoadUI, "headerTitle", slTitle);
-
-            var slotButtons = new Button[3];
-            var slotInfo = new Text[3];
-            for (int i = 0; i < 3; i++)
+            else
             {
-                var sBtn = Button($"Slot {i + 1}", saveLoadPanel.transform, new Vector2(0f, 130f - i * 85f), null, new Vector2(620f, 70f));
-                slotButtons[i] = sBtn;
-                slotInfo[i] = sBtn.GetComponentInChildren<Text>();
+                Debug.LogError($"<color=#FF4444>[TheLightHouse]</color> Standalone build failed with {summary.totalErrors} errors.");
             }
-            var slBack = Button("BACK", saveLoadPanel.transform, new Vector2(0f, -220f), saveLoadUI.Close, new Vector2(240f, 46f));
-            Set(saveLoadUI, "backButton", slBack);
-            SetArray(saveLoadUI, "slotButtons", slotButtons);
-            SetArray(saveLoadUI, "slotInfoTexts", slotInfo);
-            saveLoadPanel.gameObject.SetActive(false);
-            Set(menu, "saveLoad", saveLoadUI);
-
-            // Complete Settings Menu Modal
-            var settingsPanel = Image("Settings Panel", canvasObject.transform, Vector2.zero, new Vector2(980f, 740f), SubmenuPanelColor);
-            var settingsUI = settingsPanel.gameObject.AddComponent<SettingsMenuUI>();
-            Set(settingsUI, "rootPanel", settingsPanel.gameObject);
-            Label("SETTINGS", settingsPanel.transform, new Vector2(0f, 320f), new Vector2(850f, 45f), 30, TextAnchor.MiddleCenter).color = AccentAmber;
-
-            // Tab Buttons
-            var tabDisplay = Button("Display", settingsPanel.transform, new Vector2(-340f, 260f), null, new Vector2(160f, 42f));
-            var tabAudio = Button("Audio", settingsPanel.transform, new Vector2(-170f, 260f), null, new Vector2(160f, 42f));
-            var tabGameplay = Button("Gameplay", settingsPanel.transform, new Vector2(0f, 260f), null, new Vector2(160f, 42f));
-            var tabAccess = Button("Accessibility", settingsPanel.transform, new Vector2(170f, 260f), null, new Vector2(160f, 42f));
-            var tabControls = Button("Controls", settingsPanel.transform, new Vector2(340f, 260f), null, new Vector2(160f, 42f));
-
-            Set(settingsUI, "displayTabButton", tabDisplay);
-            Set(settingsUI, "audioTabButton", tabAudio);
-            Set(settingsUI, "gameplayTabButton", tabGameplay);
-            Set(settingsUI, "accessibilityTabButton", tabAccess);
-            Set(settingsUI, "controlsTabButton", tabControls);
-
-            // Tab Panels
-            var pDisplay = RectObject("Tab_Display", settingsPanel.transform, new Vector2(0, -10f), new Vector2(880f, 460f));
-            var pAudio = RectObject("Tab_Audio", settingsPanel.transform, new Vector2(0, -10f), new Vector2(880f, 460f));
-            var pGameplay = RectObject("Tab_Gameplay", settingsPanel.transform, new Vector2(0, -10f), new Vector2(880f, 460f));
-            var pAccess = RectObject("Tab_Access", settingsPanel.transform, new Vector2(0, -10f), new Vector2(880f, 460f));
-            var pControls = RectObject("Tab_Controls", settingsPanel.transform, new Vector2(0, -10f), new Vector2(880f, 460f));
-
-            Set(settingsUI, "displayTab", pDisplay);
-            Set(settingsUI, "audioTab", pAudio);
-            Set(settingsUI, "gameplayTab", pGameplay);
-            Set(settingsUI, "accessibilityTab", pAccess);
-            Set(settingsUI, "controlsTab", pControls);
-
-            // Display Controls
-            var sRenderScale = Slider("Render Scale (Mac M3: 100%)", pDisplay.transform, new Vector2(-220f, 150f), null, 0.7f, 1.0f, 1.0f);
-            Set(settingsUI, "renderScaleSlider", sRenderScale);
-            var sFov = Slider("Field of View (FOV)", pDisplay.transform, new Vector2(-220f, 60f), null, 55f, 90f, 65f);
-            Set(settingsUI, "fovSlider", sFov);
-            var sBrightness = Slider("Brightness", pDisplay.transform, new Vector2(-220f, -30f), null, 0.5f, 1.5f, 1.0f);
-            Set(settingsUI, "brightnessSlider", sBrightness);
-            var tVSync = Toggle("Vertical Sync (VSync)", pDisplay.transform, new Vector2(220f, 150f), null, true);
-            Set(settingsUI, "vSyncToggle", tVSync);
-            var tFullscreen = Toggle("Fullscreen Mode", pDisplay.transform, new Vector2(220f, 70f), null, true);
-            Set(settingsUI, "fullscreenToggle", tFullscreen);
-
-            // Audio Controls
-            var sMaster = Slider("Master Volume", pAudio.transform, new Vector2(0f, 160f), null, 0f, 1f, 1f);
-            Set(settingsUI, "masterVolumeSlider", sMaster);
-            var sMusic = Slider("Music Volume", pAudio.transform, new Vector2(0f, 90f), null, 0f, 1f, 0.8f);
-            Set(settingsUI, "musicVolumeSlider", sMusic);
-            var sAmbience = Slider("Ambience Volume", pAudio.transform, new Vector2(0f, 20f), null, 0f, 1f, 0.9f);
-            Set(settingsUI, "ambienceVolumeSlider", sAmbience);
-            var sSfx = Slider("SFX Volume", pAudio.transform, new Vector2(0f, -50f), null, 0f, 1f, 1f);
-            Set(settingsUI, "sfxVolumeSlider", sSfx);
-            var sDialogue = Slider("Dialogue Volume", pAudio.transform, new Vector2(0f, -120f), null, 0f, 1f, 1f);
-            Set(settingsUI, "dialogueVolumeSlider", sDialogue);
-
-            // Gameplay Controls
-            var sSens = Slider("Look Sensitivity", pGameplay.transform, new Vector2(0f, 150f), null, 0.1f, 3.0f, 1.0f);
-            Set(settingsUI, "sensitivitySlider", sSens);
-            var tInvertY = Toggle("Invert Y Axis", pGameplay.transform, new Vector2(0f, 60f), null, false);
-            Set(settingsUI, "invertYToggle", tInvertY);
-            var tBob = Toggle("Camera Bobbing", pGameplay.transform, new Vector2(0f, 0f), null, true);
-            Set(settingsUI, "cameraBobToggle", tBob);
-            var tMotion = Toggle("Motion Sickness Reduction", pGameplay.transform, new Vector2(0f, -60f), null, false);
-            Set(settingsUI, "motionSicknessToggle", tMotion);
-            var tObj = Toggle("Objective Navigation Hints", pGameplay.transform, new Vector2(0f, -120f), null, true);
-            Set(settingsUI, "objectiveAssistanceToggle", tObj);
-
-            // Accessibility Controls
-            var tSub = Toggle("Subtitles Enabled", pAccess.transform, new Vector2(0f, 150f), null, true);
-            Set(settingsUI, "subtitlesToggle", tSub);
-            var sSubSize = Slider("Subtitle Size", pAccess.transform, new Vector2(0f, 75f), null, 0.8f, 1.5f, 1.0f);
-            Set(settingsUI, "subtitleSizeSlider", sSubSize);
-            var sSubBg = Slider("Subtitle Background Opacity", pAccess.transform, new Vector2(0f, 0f), null, 0f, 1f, 0.75f);
-            Set(settingsUI, "subtitleBgOpacitySlider", sSubBg);
-            var tStorm = Toggle("Reduced Storm Flashes", pAccess.transform, new Vector2(0f, -75f), null, true);
-            Set(settingsUI, "reducedStormToggle", tStorm);
-            var tShake = Toggle("Reduced Camera Shake", pAccess.transform, new Vector2(0f, -135f), null, false);
-            Set(settingsUI, "reducedCameraShakeToggle", tShake);
-
-            // Controls Keybindings Text
-            var kbText = Label("Keybindings", pControls.transform, Vector2.zero, new Vector2(800f, 380f), 18, TextAnchor.MiddleCenter);
-            kbText.color = TextColor;
-            Set(settingsUI, "keybindingsText", kbText);
-
-            var sBack = Button("BACK", settingsPanel.transform, new Vector2(-150f, -315f), settingsUI.Close, new Vector2(220f, 46f));
-            var sReset = Button("RESET DEFAULTS", settingsPanel.transform, new Vector2(150f, -315f), null, new Vector2(220f, 46f));
-            Set(settingsUI, "backButton", sBack);
-            Set(settingsUI, "resetDefaultsButton", sReset);
-
-            settingsPanel.gameObject.SetActive(false);
-            Set(menu, "settingsMenu", settingsUI);
-
-            // Extras Modal
-            var extrasPanel = Image("Extras Panel", canvasObject.transform, Vector2.zero, new Vector2(760f, 540f), SubmenuPanelColor);
-            Label("EXTRAS & LORE", extrasPanel.transform, new Vector2(0f, 210f), new Vector2(650f, 50f), 28, TextAnchor.MiddleCenter).color = AccentAmber;
-            Label("HARROW ROCK ARCHIVE:\n\n• The 'Marguerite': Sunk deliberate by island wreckers in 1888.\n• The Light: A supernatural boundary leashing the drowned souls.\n• Marta Relay: Recorded VHF loop synthesized by harbor board.\n• The Ledger: Daniel Hale selected weeks before arrival to atone.", extrasPanel.transform, new Vector2(0f, 30f), new Vector2(680f, 260f), 17, TextAnchor.MiddleLeft).color = TextColor;
-            Button("BACK", extrasPanel.transform, new Vector2(0f, -210f), menu.CloseExtras, new Vector2(220f, 46f));
-            extrasPanel.gameObject.SetActive(false);
-            Set(menu, "extrasPanel", extrasPanel.gameObject);
-
-            // Credits Modal
-            var creditsPanel = Image("Credits Panel", canvasObject.transform, Vector2.zero, new Vector2(760f, 540f), SubmenuPanelColor);
-            Label("CREDITS", creditsPanel.transform, new Vector2(0f, 210f), new Vector2(650f, 50f), 28, TextAnchor.MiddleCenter).color = AccentAmber;
-            Label("THE LIGHTHOUSE — HARROW ROCK\n\nDirected & Developed with Google DeepMind Advanced Agentic Coding\nAudio & Visuals: Kenney (CC0 1.0), Maritime Historical Records\nEngine: Unity 6 (Universal Render Pipeline)\nBackend: Java 21, Spring Boot 3.4.5, PostgreSQL", creditsPanel.transform, new Vector2(0f, 30f), new Vector2(680f, 260f), 17, TextAnchor.MiddleCenter).color = TextColor;
-            Button("BACK", creditsPanel.transform, new Vector2(0f, -210f), menu.CloseCredits, new Vector2(220f, 46f));
-            creditsPanel.gameObject.SetActive(false);
-            Set(menu, "creditsPanel", creditsPanel.gameObject);
-
-            // New Game Confirmation Modal
-            var confirmModal = Image("New Game Confirm Modal", canvasObject.transform, Vector2.zero, new Vector2(640f, 320f), SubmenuPanelColor);
-            Label("START NEW GAME?", confirmModal.transform, new Vector2(0f, 90f), new Vector2(580f, 45f), 24, TextAnchor.MiddleCenter).color = AccentAmber;
-            Label("Starting a new game will reset your current checkpoint.\nDo you wish to proceed?", confirmModal.transform, new Vector2(0f, 20f), new Vector2(580f, 60f), 16, TextAnchor.MiddleCenter).color = TextColor;
-            Button("CANCEL", confirmModal.transform, new Vector2(-130f, -80f), menu.CancelNewGame, new Vector2(200f, 46f));
-            Button("PROCEED", confirmModal.transform, new Vector2(130f, -80f), menu.ConfirmNewGame, new Vector2(200f, 46f));
-            confirmModal.gameObject.SetActive(false);
-            Set(menu, "confirmNewGameModal", confirmModal.gameObject);
-
-            new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem), typeof(UnityEngine.InputSystem.UI.InputSystemUIInputModule));
-
-            EditorSceneManager.SaveScene(scene, MenuPath);
-            AssetDatabase.SaveAssets();
-            Debug.Log("Commercial Main Menu rebuilt with real-time 3D environment, rotating beacon, and full submenu suite.");
         }
 
         static Button Button(string label, Transform parent, Vector2 position, UnityEngine.Events.UnityAction action, Vector2? size = null)
