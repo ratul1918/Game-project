@@ -358,8 +358,17 @@ namespace TheLightHouse.Editor
             GameObject player=GameObject.Find("Player");if(player)player.transform.position=actName=="Act1"?new(0,.15f,-29):new(0,dimensions.towerLevelCount*dimensions.floorHeight-.8f,-1.5f);
         }
 
+        public static void RebuildHudInCurrentScene()
+        {
+            BuildHud();
+        }
+
         static void BuildHud()
         {
+            if (!Object.FindAnyObjectByType<UnityEngine.EventSystems.EventSystem>())
+            {
+                new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem), typeof(UnityEngine.InputSystem.UI.InputSystemUIInputModule));
+            }
             GameObject canvas=GameObject.Find("Debug Canvas");if(!canvas)return;if(!canvas.GetComponent<UiAudio>())canvas.AddComponent<UiAudio>();CanvasScaler scaler=canvas.GetComponent<CanvasScaler>();if(scaler){scaler.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;scaler.referenceResolution=new(1920,1080);scaler.screenMatchMode=CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;scaler.matchWidthOrHeight=.5f;}
             Transform legacyObjective=canvas.transform.Find("Objective");if(legacyObjective)Object.DestroyImmediate(legacyObjective.gameObject);
             Transform previous=canvas.transform.Find("HUD Root");if(previous)Object.DestroyImmediate(previous.gameObject);RectTransform root=Rect("HUD Root",canvas.transform,Vector2.zero,Vector2.one);UITheme theme=AssetDatabase.LoadAssetAtPath<UITheme>($"{SettingsFolder}/UITheme.asset");HudSettings settings=AssetDatabase.LoadAssetAtPath<HudSettings>($"{SettingsFolder}/HudSettings.asset");HudRoot hud=root.gameObject.AddComponent<HudRoot>();Set(hud,"theme",theme);Set(hud,"settings",settings);Set(hud,"scalableRoot",root);
@@ -387,11 +396,18 @@ namespace TheLightHouse.Editor
         static void BuildPauseMenu(Transform canvas,UITheme theme)
         {
             Transform old=canvas.Find("Pause Menu");if(old)Object.DestroyImmediate(old.gameObject);PauseMenu existing=canvas.GetComponent<PauseMenu>();if(existing)Object.DestroyImmediate(existing);GameObject panel=Panel("Pause Menu",canvas,new(.32f,.18f),new(.68f,.82f),new Color(theme.Panel.r,theme.Panel.g,theme.Panel.b,.97f));PauseMenu pause=canvas.gameObject.AddComponent<PauseMenu>();Set(pause,"panel",panel);Set(pause,"player",Object.FindAnyObjectByType<FirstPersonController>());Set(pause,"interactor",Object.FindAnyObjectByType<Interactor>());Set(pause,"journal",Object.FindAnyObjectByType<JournalUI>());
-            Text("Title",panel.transform,new(.08f,.84f),new(.92f,.96f),"PAUSED",38,theme);string[] names={"Resume","Journal","Options","Save","Quit to MainMenu"};for(int i=0;i<names.Length;i++){Button button=Button(names[i],panel.transform,new(.15f,.68f-i*.12f),new(.85f,.77f-i*.12f),theme);switch(i){case 0:UnityEventTools.AddPersistentListener(button.onClick,pause.Resume);break;case 1:UnityEventTools.AddPersistentListener(button.onClick,pause.OpenJournal);break;case 2:UnityEventTools.AddPersistentListener(button.onClick,pause.OpenOptions);break;case 3:UnityEventTools.AddPersistentListener(button.onClick,pause.Save);break;case 4:UnityEventTools.AddPersistentListener(button.onClick,pause.QuitToMainMenu);break;}}
-            GameObject options=Panel("Options",panel.transform,new(.04f,.03f),new(.96f,.83f),theme.Panel);HudSettings hudSettings=AssetDatabase.LoadAssetAtPath<HudSettings>($"{SettingsFolder}/HudSettings.asset");HudSettingsPanel controller=options.AddComponent<HudSettingsPanel>();Set(controller,"settings",hudSettings);Set(controller,"hud",Object.FindAnyObjectByType<HudRoot>());Set(controller,"subtitles",Object.FindAnyObjectByType<SubtitleUI>());Text("Options Label",options.transform,new(.05f,.88f),new(.95f,.98f),"HUD OPTIONS",25,theme);
+            Text("Title",panel.transform,new(.08f,.84f),new(.92f,.96f),"PAUSED",38,theme);
+            TMP_Text saveStatus = Text("SaveStatus", panel.transform, new(.15f, .07f), new(.85f, .13f), "", 18, theme);
+            saveStatus.color = theme.Accent;
+            Set(pause, "saveStatus", saveStatus);
+            string[] names={"Resume","Journal","Options","Save","Quit to MainMenu"};for(int i=0;i<names.Length;i++){Button button=Button(names[i],panel.transform,new(.15f,.68f-i*.12f),new(.85f,.77f-i*.12f),theme);switch(i){case 0:UnityEventTools.AddPersistentListener(button.onClick,pause.Resume);break;case 1:UnityEventTools.AddPersistentListener(button.onClick,pause.OpenJournal);break;case 2:UnityEventTools.AddPersistentListener(button.onClick,pause.OpenOptions);break;case 3:UnityEventTools.AddPersistentListener(button.onClick,pause.Save);break;case 4:UnityEventTools.AddPersistentListener(button.onClick,pause.QuitToMainMenu);break;}}
+            GameObject options=Panel("HUD Options Panel",panel.transform,new(.02f,.02f),new(.98f,.98f),new Color(0.04f,0.08f,0.07f,1f));HudSettings hudSettings=AssetDatabase.LoadAssetAtPath<HudSettings>($"{SettingsFolder}/HudSettings.asset");HudSettingsPanel controller=options.AddComponent<HudSettingsPanel>();Set(controller,"settings",hudSettings);Set(controller,"hud",Object.FindAnyObjectByType<HudRoot>());Set(controller,"subtitles",Object.FindAnyObjectByType<SubtitleUI>());Text("Options Label",options.transform,new(.05f,.88f),new(.95f,.98f),"HUD OPTIONS",25,theme);
             string[] labels={"Noise","Stamina","Lamp","Objective","Inventory","Interaction","Toasts","Room names","Composure","Minimal HUD"};bool[] values={true,true,true,true,true,true,true,true,false,false};for(int i=0;i<labels.Length;i++){int column=i/5;int row=i%5;Toggle toggle=OptionToggle(labels[i],options.transform,new(.05f+column*.48f,.74f-row*.13f),new(.47f+column*.48f,.84f-row*.13f),theme,values[i]);switch(i){case 0:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetNoise);break;case 1:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetStamina);break;case 2:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetLamp);break;case 3:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetObjective);break;case 4:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetInventory);break;case 5:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetInteraction);break;case 6:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetToasts);break;case 7:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetRoomNames);break;case 8:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetComposure);break;case 9:UnityEventTools.AddPersistentListener(toggle.onValueChanged,controller.SetMinimal);break;}}
-            Slider scale=OptionSlider("HUD Scale",options.transform,new(.08f,.04f),new(.92f,.12f),theme,.7f,1.5f,1f);UnityEventTools.AddPersistentListener(scale.onValueChanged,controller.SetHudScale);options.SetActive(false);Set(pause,"optionsPanel",options);
-            TextAsset credits=AssetDatabase.LoadAssetAtPath<TextAsset>($"{SettingsFolder}/Credits.txt");if(credits)Text("Credits",options.transform,new(.05f,.13f),new(.95f,.2f),credits.text,12,theme).alignment=TextAlignmentOptions.Left;
+            Slider scale=OptionSlider("HUD Scale",options.transform,new(.08f,.11f),new(.92f,.18f),theme,.7f,1.5f,1f);UnityEventTools.AddPersistentListener(scale.onValueChanged,controller.SetHudScale);
+            Button backBtn = Button("Back", options.transform, new(.32f, .02f), new(.68f, .08f), theme);
+            UnityEventTools.AddPersistentListener(backBtn.onClick, pause.CloseOptions);
+            options.SetActive(false);Set(pause,"optionsPanel",options);
+            Text("Credits",options.transform,new(.05f,.08f),new(.95f,.11f),"Audio & Fonts by Kenney (CC0 1.0)",13,theme).alignment=TextAlignmentOptions.Center;
         }
 
         static Button Button(string label,Transform parent,Vector2 min,Vector2 max,UITheme theme){GameObject go=Panel(label,parent,min,max,theme.Accent);Button button=go.AddComponent<Button>();button.targetGraphic=go.GetComponent<Image>();Text("Label",go.transform,Vector2.zero,Vector2.one,label,22,theme);return button;}

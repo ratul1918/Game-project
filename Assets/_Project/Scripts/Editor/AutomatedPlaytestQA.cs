@@ -241,6 +241,10 @@ namespace TheLightHouse.Editor
             // 6. Shader/Material audit
             AuditSceneMaterialsAndRenderers("Act 1", report);
 
+            // 7. EventSystem and PauseMenu UI audit
+            EnsureEventSystemInScene("Act 1", report);
+            AuditPauseMenuAndButtons("Act 1", report, ref phasePassed);
+
             report.PhaseStatus["Phase 2: Arrival at Harrow Rock (Dusk)"] = phasePassed;
             if (scene.isDirty) EditorSceneManager.SaveScene(scene);
         }
@@ -307,6 +311,8 @@ namespace TheLightHouse.Editor
 
             AuditNavMesh("Act 2", 2, report);
             AuditSceneMaterialsAndRenderers("Act 2", report);
+            EnsureEventSystemInScene("Act 2", report);
+            AuditPauseMenuAndButtons("Act 2", report, ref phasePassed);
 
             report.PhaseStatus["Phase 3: The Keeper’s House & Radio Transmission"] = phasePassed;
             if (scene.isDirty) EditorSceneManager.SaveScene(scene);
@@ -369,6 +375,8 @@ namespace TheLightHouse.Editor
 
             AuditNavMesh("Act 3", 3, report);
             AuditSceneMaterialsAndRenderers("Act 3", report);
+            EnsureEventSystemInScene("Act 3", report);
+            AuditPauseMenuAndButtons("Act 3", report, ref phasePassed);
 
             report.PhaseStatus["Phase 4 & 5: Ascending Tower, Generator Cut, Hand-Crank & Shallows Figures"] = phasePassed;
             if (scene.isDirty) EditorSceneManager.SaveScene(scene);
@@ -425,6 +433,8 @@ namespace TheLightHouse.Editor
 
             AuditNavMesh("Act 4", 4, report);
             AuditSceneMaterialsAndRenderers("Act 4", report);
+            EnsureEventSystemInScene("Act 4", report);
+            AuditPauseMenuAndButtons("Act 4", report, ref phasePassed);
 
             report.PhaseStatus["Phase 6: The Cellar, The Recording & The Harbor Ledger"] = phasePassed;
             if (scene.isDirty) EditorSceneManager.SaveScene(scene);
@@ -494,6 +504,8 @@ namespace TheLightHouse.Editor
 
             AuditNavMesh("Act 5", 5, report);
             AuditSceneMaterialsAndRenderers("Act 5", report);
+            EnsureEventSystemInScene("Act 5", report);
+            AuditPauseMenuAndButtons("Act 5", report, ref phasePassed);
 
             report.PhaseStatus["Phase 7: Climax, Father's Sacrifice & Morning Boat Escape"] = phasePassed;
             if (scene.isDirty) EditorSceneManager.SaveScene(scene);
@@ -608,6 +620,81 @@ namespace TheLightHouse.Editor
                         report.IdentifiedBugs.Add($"[{sceneName}] {r.name} has broken/pink shader ({mat.name}).");
                         mat.shader = Shader.Find("Universal Render Pipeline/Lit");
                         report.AppliedFixes.Add($"[{sceneName}] Repaired shader on {r.name} material ({mat.name}) to URP/Lit.");
+                    }
+                }
+            }
+        }
+
+        private static void EnsureEventSystemInScene(string act, QAReport report)
+        {
+            var scene = EditorSceneManager.GetActiveScene();
+            var eventSystem = Object.FindAnyObjectByType<EventSystem>();
+            if (!eventSystem)
+            {
+                report.IdentifiedBugs.Add($"[{act}] EventSystem missing.");
+                var es = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+                var mod = es.GetComponent<InputSystemUIInputModule>();
+                mod?.AssignDefaultActions();
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+                report.AppliedFixes.Add($"[{act}] Instantiated EventSystem with InputSystemUIInputModule and saved scene.");
+            }
+            else
+            {
+                var inputModule = eventSystem.GetComponent<InputSystemUIInputModule>();
+                if (!inputModule)
+                {
+                    inputModule = eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
+                    inputModule.AssignDefaultActions();
+                    EditorSceneManager.MarkSceneDirty(scene);
+                    EditorSceneManager.SaveScene(scene);
+                    report.AppliedFixes.Add($"[{act}] Added InputSystemUIInputModule to EventSystem and saved scene.");
+                }
+            }
+        }
+
+        private static void AuditPauseMenuAndButtons(string act, QAReport report, ref bool phasePassed)
+        {
+            var pause = Object.FindAnyObjectByType<PauseMenu>();
+            if (!pause)
+            {
+                report.IdentifiedBugs.Add($"[{act}] PauseMenu component missing.");
+                phasePassed = false;
+                return;
+            }
+
+            var canvas = pause.GetComponent<Canvas>() ?? pause.GetComponentInParent<Canvas>();
+            if (canvas)
+            {
+                var gr = canvas.GetComponent<GraphicRaycaster>();
+                if (!gr)
+                {
+                    canvas.gameObject.AddComponent<GraphicRaycaster>();
+                    report.AppliedFixes.Add($"[{act}] Added GraphicRaycaster to Canvas for PauseMenu button clicks.");
+                }
+            }
+
+            var buttons = pause.GetComponentsInChildren<Button>(true);
+            string[] required = { "Resume", "Journal", "Options", "Save", "Quit to MainMenu" };
+            foreach (var req in required)
+            {
+                var btn = buttons.FirstOrDefault(b => b.name.IndexOf(req, StringComparison.OrdinalIgnoreCase) >= 0);
+                if (!btn)
+                {
+                    report.IdentifiedBugs.Add($"[{act}] PauseMenu button '{req}' missing.");
+                    phasePassed = false;
+                }
+                else
+                {
+                    if (btn.onClick.GetPersistentEventCount() == 0)
+                    {
+                        report.IdentifiedBugs.Add($"[{act}] PauseMenu button '{req}' has no onClick event listener.");
+                        phasePassed = false;
+                    }
+                    if (btn.targetGraphic != null && !btn.targetGraphic.raycastTarget)
+                    {
+                        btn.targetGraphic.raycastTarget = true;
+                        report.AppliedFixes.Add($"[{act}] Enabled raycastTarget on PauseMenu button '{req}'.");
                     }
                 }
             }
