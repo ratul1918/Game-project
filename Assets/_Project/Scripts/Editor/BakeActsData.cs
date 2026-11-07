@@ -89,6 +89,8 @@ namespace TheLightHouse.Editor
 
             foreach (var surface in surfaces)
             {
+                surface.useGeometry = UnityEngine.AI.NavMeshCollectGeometry.PhysicsColliders;
+                surface.collectObjects = Unity.AI.Navigation.CollectObjects.All;
                 string assetPath = $"{dir}/NavMesh-{surface.gameObject.name}.asset";
                 surface.BuildNavMesh();
                 if (surface.navMeshData != null)

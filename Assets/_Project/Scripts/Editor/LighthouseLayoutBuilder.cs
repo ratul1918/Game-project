@@ -294,18 +294,18 @@ namespace TheLightHouse.Editor
             GameObject support=GameObject.CreatePrimitive(PrimitiveType.Cylinder);support.name="Tower Central Support";support.transform.SetParent(stairs);support.transform.position=new(0,dimensions.towerLevelCount*dimensions.floorHeight*.5f,0);support.transform.localScale=new(.35f,dimensions.towerLevelCount*dimensions.floorHeight*.5f,.35f);support.GetComponent<Renderer>().sharedMaterial=Materials["Metal"];GameObjectUtility.SetStaticEditorFlags(support,StaticEditorFlags.BatchingStatic|StaticEditorFlags.OccludeeStatic|StaticEditorFlags.NavigationStatic);
             for(int level=0;level<dimensions.towerLevelCount;level++)SpiralFlight(stairs,$"Spiral L{level}",level*dimensions.floorHeight);
             for(int level=0;level<dimensions.towerLevelCount;level++)Link(stairs,$"Spiral Link {level}",new(0,level*dimensions.floorHeight+dimensions.floorHeight-.2f,0),new(0,(level+1)*dimensions.floorHeight+.1f,0));
-            StraightFlight(stairs,"Cellar Stair",new(-8,-3.2f,-5),new(-8,0,-5),16);
-            Link(stairs,"Cellar Link",new(-8,-3.2f,-5),new(-8,0,-5));
+            StraightFlight(stairs,"Cellar Stair",new(-8f,0.05f,-5f),new(-8f,-3.2f,-0.5f),18);
+            Link(stairs,"Cellar Link",new(-8f,0.05f,-5f),new(-8f,-3.2f,-0.5f));
         }
 
         static void SpiralFlight(Transform parent,string name,float baseY)
         {
             Transform flight=Group(name,parent);int steps=Mathf.CeilToInt(dimensions.floorHeight/dimensions.stairStepHeight);float progress=baseY/(dimensions.floorHeight*Mathf.Max(1,dimensions.towerLevelCount));float diameter=Mathf.Lerp(dimensions.towerBaseDiameter,dimensions.towerGalleryDiameter,progress);float radius=diameter*.5f-Mathf.Lerp(dimensions.towerBaseWallThickness,dimensions.towerGalleryWallThickness,progress)-dimensions.stairWidth*.5f;
-            for(int i=0;i<steps;i++){float angle=(100f-i*360f/steps);float radians=angle*Mathf.Deg2Rad;GameObject step=Place($"{name} {i:00}",new(Mathf.Sin(radians)*radius,baseY+(i+.5f)*dimensions.stairStepHeight,Mathf.Cos(radians)*radius),new(dimensions.stairWidth,dimensions.stairStepHeight,dimensions.stairStepDepth),"Stair","Wood",flight);step.transform.rotation=Quaternion.Euler(0,-angle,0);}
+            for(int i=0;i<steps;i++){float angle=(100f-i*360f/steps);float radians=angle*Mathf.Deg2Rad;GameObject step=Place($"{name} {i:00}",new(Mathf.Sin(radians)*radius,baseY+(i+.5f)*dimensions.stairStepHeight,Mathf.Cos(radians)*radius),new(dimensions.stairWidth,dimensions.stairStepHeight,dimensions.stairStepDepth),"Stair","Wood",flight);step.transform.rotation=Quaternion.Euler(0,-angle,0);var sc=step.GetComponent<Collider>();if(sc)Object.DestroyImmediate(sc);}
             Place($"{name} Landing",new(0,baseY+dimensions.floorHeight-.1f,0),new(2.6f,.2f,2.6f),"Floor","Wood",flight);
-            for(int i=0;i<6;i++){float a=100f-i*60f;float r=a*Mathf.Deg2Rad;Place($"{name} Handrail {i}",new(Mathf.Sin(r)*3.1f,baseY+1.1f,Mathf.Cos(r)*3.1f),new(.08f,1.1f,.08f),"Wall","Metal",flight);}
+            for(int i=0;i<6;i++){float a=100f-i*60f;float r=a*Mathf.Deg2Rad;GameObject hr=Place($"{name} Handrail {i}",new(Mathf.Sin(r)*3.1f,baseY+1.1f,Mathf.Cos(r)*3.1f),new(.08f,1.1f,.08f),"Wall","Metal",flight);var hc=hr.GetComponent<Collider>();if(hc)Object.DestroyImmediate(hc);}
         }
-        static void StraightFlight(Transform parent,string name,Vector3 start,Vector3 end,int count){for(int i=0;i<count;i++){float t=(i+.5f)/count;Place($"{name} {i:00}",Vector3.Lerp(start,end,t),new(dimensions.stairWidth,dimensions.stairStepHeight,.5f),"Stair","Wood",parent);}}
+        static void StraightFlight(Transform parent,string name,Vector3 start,Vector3 end,int count){for(int i=0;i<count;i++){float t=(i+.5f)/count;GameObject step=Place($"{name} {i:00}",Vector3.Lerp(start,end,t),new(dimensions.stairWidth,dimensions.stairStepHeight,.5f),"Stair","Wood",parent);var c=step.GetComponent<Collider>();if(c)Object.DestroyImmediate(c);}}
         static void Link(Transform parent,string name,Vector3 start,Vector3 end){var link=new GameObject(name).AddComponent<NavMeshLink>();link.transform.SetParent(parent);link.startPoint=start;link.endPoint=end;link.width=dimensions.stairWidth;link.bidirectional=true;}
 
         static void BuildWindows(Transform root)
@@ -319,7 +319,7 @@ namespace TheLightHouse.Editor
         {
             Transform rooms=Group("Room Triggers",root);
             Room(rooms,"entry-hall","Entry Hall",0,new(-5,1.4f,-5),new(3,2.8f,3));Room(rooms,"keeper-room","Keeper's Room",0,new(-8,1.4f,-5),new(3,2.8f,3));Room(rooms,"kitchen-pantry","Kitchen & Pantry",0,new(-3,1.4f,-5),new(2.5f,2.8f,3));Room(rooms,"generator-room","Generator Room",0,new(-1,1.4f,-3),new(2,2.8f,2));
-            Room(rooms,"cellar","Cellar",-1,new(-5,-1.8f,-5),new(8,2.7f,7));Room(rooms,"hidden-room","Hidden Room",-1,new(-12,-1.8f,-5),new(4,2.7f,5));Room(rooms,"flooded-corridor","Flooded Corridor",-1,new(1,-1.8f,-5),new(3,2.7f,8));
+            Room(rooms,"cellar","Cellar",-1,new(-8,-1.8f,2),new(4,2.7f,6));Room(rooms,"hidden-room","Hidden Room",-1,new(-8,-1.8f,7),new(5,2.7f,5));Room(rooms,"flooded-corridor","Flooded Corridor",-1,new(1,-1.8f,-5),new(3,2.7f,8));
             Room(rooms,"bedroom-library","Bedroom & Library",2,new(0,dimensions.floorHeight*2+1.4f,0),new(5,2.8f,5));Room(rooms,"crane-room","Crane's Room",3,new(-1.5f,dimensions.floorHeight*3+1.4f,0),new(3,2.8f,5));Room(rooms,"upper-landing","Upper Landing",3,new(1.5f,dimensions.floorHeight*3+1.4f,0),new(2,2.8f,5));Room(rooms,"lantern-room","Lantern Room",8,new(0,dimensions.towerLevelCount*dimensions.floorHeight+1.4f,0),new(4.5f,2.8f,4.5f));
         }
         static void Room(Transform parent,string id,string display,int floor,Vector3 position,Vector3 size){var go=new GameObject(display+" Trigger");go.transform.SetParent(parent);go.transform.position=position;var box=go.AddComponent<BoxCollider>();box.isTrigger=true;box.size=size;var room=go.AddComponent<RoomTrigger>();Set(room,"roomId",id);Set(room,"displayName",display);Set(room,"floorLevel",floor);}
@@ -351,8 +351,8 @@ namespace TheLightHouse.Editor
             MakeNonBlocking("Door panel");
             Move("Radio",new(-8,1,-5));Move("Hot Meal",new(-8,.9f,-6));Move("Table",new(-8,.45f,-6));Move("Steam placeholder",new(-8,1.1f,-6));
             Move("Lamp",new(0,dimensions.towerLevelCount*dimensions.floorHeight+1.1f,0));Move("Crank Station",new(2.2f,dimensions.towerLevelCount*dimensions.floorHeight+.35f,0));
-            Move("Locked Cellar Door",new(-8,-1.7f,-5));Move("Wet footprints (Act 2)",new(-6,-3.15f,-5));Move("Cellar Hum",new(-6,-1.8f,-5));Move("Reserve Fuel Can",new(-3,-2.75f,-5));
-            Move("hidden shelf",new(-10,-2.2f,-5));Move("Marta reel-to-reel recorder",new(-12,-2.65f,-4));Move("Harbor board ledger",new(-12,-2.65f,-6));
+            Move("Locked Cellar Door",new(-8f,1.1f,-5f));Move("Wet footprints (Act 2)",new(-8f,0.05f,-6f));Move("Cellar Hum",new(-8f,-1.8f,2f));Move("Reserve Fuel Can",new(-9f,-3.2f,2f));
+            Move("hidden shelf",new(-8f,-2.2f,4.5f));Move("Marta reel-to-reel recorder",new(-8.75f,-2.25f,8.86f));Move("Harbor board ledger",new(-8.15f,-2.32f,8.58f));
             Move("Crane's Room Door",new(-1.5f,dimensions.floorHeight*3,-2.4f));Move("Family Photo",new(-2.5f,dimensions.floorHeight*3+1.4f,1));Move("Crane's Desk",new(-1.5f,dimensions.floorHeight*3+.35f,1.2f));Move("Crane Room Key",new(10,.4f,-14));
             Move("Boat",new(-3.5f,.15f,-29));Move("Shoreline ending trigger",new(0,1,-27));
             GameObject player=GameObject.Find("Player");if(player)player.transform.position=actName=="Act1"?new(0,.15f,-29):new(0,dimensions.towerLevelCount*dimensions.floorHeight-.8f,-1.5f);

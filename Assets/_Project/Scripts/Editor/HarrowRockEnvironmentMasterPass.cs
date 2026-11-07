@@ -752,6 +752,8 @@ namespace TheLightHouse.Editor
                 {
                     foreach (var r in go.GetComponentsInChildren<Renderer>(true))
                         r.enabled = false;
+                    foreach (var c in go.GetComponentsInChildren<Collider>(true))
+                        c.enabled = false;
                 }
             }
 
@@ -760,6 +762,8 @@ namespace TheLightHouse.Editor
             {
                 var r = lvl2Desk.GetComponent<Renderer>();
                 if (r) r.enabled = false;
+                var c = lvl2Desk.GetComponent<Collider>();
+                if (c) c.enabled = false;
             }
 
             var towerRoot = new GameObject("Tower Interior & Mid-Level Study Master").transform;
@@ -804,6 +808,8 @@ namespace TheLightHouse.Editor
             for (int spoke = 0; spoke < 8; spoke++)
             {
                 float sAngle = spoke * 45f;
+                // Flight 1 ascends along South arc (135° to 315°). Omit spokes in this range to guarantee >2.5m vertical headroom!
+                if (sAngle >= 135f && sAngle <= 315f) continue;
                 float sRad = sAngle * Mathf.Deg2Rad;
                 Vector3 spokePos = new Vector3(Mathf.Sin(sRad) * 3.8f, upperRingY - 0.05f, Mathf.Cos(sRad) * 3.8f);
                 CreatePrimitiveMesh($"Radial Ceiling Girder {spoke}", PrimitiveType.Cube, wallGroup,
@@ -815,20 +821,25 @@ namespace TheLightHouse.Editor
             deckGroup.SetParent(towerRoot, false);
 
             // Hardwood floor platform with generous curved stairwell wellhole opening (Ref: Screenshot 19)
-            // Covers the study zone (x in [-3.2f, 3.2f], z in [0.2f, 3.8f]) leaving the outer stairwell perimeter (r > 3.85m on North arc) 100% OPEN AIR
+            // 1. Core Study Platform (x in [-3.5, 3.5], z in [0.1, 4.3])
             CreatePrimitiveMesh("Mezzanine Study Floor Core", PrimitiveType.Cube, deckGroup,
-                new Vector3(0f, 3.20f, 2.00f), new Vector3(6.4f, 0.12f, 3.6f), Quaternion.identity, matWood, true);
+                new Vector3(0f, 3.20f, 2.20f), new Vector3(7.0f, 0.14f, 4.2f), Quaternion.identity, matWood, true);
 
-            // Arrival Landing Platform connecting stair top (angle -110°) smoothly into study floor
+            // 2. Main Arrival Landing Deck connecting to study core
             CreatePrimitiveMesh("Stair Arrival Landing Deck", PrimitiveType.Cube, deckGroup,
-                new Vector3(-3.85f, 3.20f, -0.60f), new Vector3(2.4f, 0.12f, 2.4f), Quaternion.identity, matWood, true);
+                new Vector3(-4.20f, 3.20f, -0.90f), new Vector3(2.8f, 0.14f, 2.8f), Quaternion.identity, matWood, true);
+
+            // 3. Seamless Transition Slab extending directly under Flight 0 top step (flush against tower curved wall)
+            CreatePrimitiveMesh("Stair Transition Deck Slab", PrimitiveType.Cube, deckGroup,
+                new Vector3(-4.60f, 3.20f, -1.65f), new Vector3(1.8f, 0.14f, 1.4f), Quaternion.identity, matWood, true);
 
             // Inner Curved Wrought-Iron Guardrail along void edge overlooking staircase (South perimeter of mezzanine)
-            int railPosts = 24;
+            // Runs from x = -2.40f to x = +2.60f, leaving a wide open gateway for x < -2.40f directly onto stair landing deck!
+            int railPosts = 20;
             for (int p = 0; p <= railPosts; p++)
             {
                 float t = p / (float)railPosts;
-                float px = Mathf.Lerp(-3.8f, 1.2f, t);
+                float px = Mathf.Lerp(-2.40f, 2.60f, t);
                 float pz = 0.20f - 0.25f * Mathf.Sin(t * Mathf.PI);
                 Vector3 postPos = new Vector3(px, 3.21f, pz);
 
@@ -837,7 +848,7 @@ namespace TheLightHouse.Editor
                     postPos + Vector3.up * 0.52f, new Vector3(0.038f, 0.52f, 0.038f), Quaternion.identity, matIron, false);
 
                 // Main posts with ornamental cap
-                if (p == 0 || p == railPosts || p % 6 == 0)
+                if (p == 0 || p == railPosts || p % 5 == 0)
                 {
                     CreatePrimitiveMesh($"Main Post {p}", PrimitiveType.Cylinder, deckGroup,
                         postPos + Vector3.up * 0.55f, new Vector3(0.08f, 0.55f, 0.08f), Quaternion.identity, matIron, false);
@@ -847,7 +858,7 @@ namespace TheLightHouse.Editor
                 if (p < railPosts)
                 {
                     float nextT = (p + 1) / (float)railPosts;
-                    float npx = Mathf.Lerp(-3.8f, 1.2f, nextT);
+                    float npx = Mathf.Lerp(-2.40f, 2.60f, nextT);
                     float npz = 0.20f - 0.25f * Mathf.Sin(nextT * Mathf.PI);
                     Vector3 nextPos = new Vector3(npx, 3.21f, npz);
                     Vector3 mid = (postPos + nextPos) * 0.5f + Vector3.up * 1.05f;
@@ -858,6 +869,13 @@ namespace TheLightHouse.Editor
                         mid, new Vector3(0.055f, len * 0.5f, 0.055f), rot * Quaternion.Euler(90f, 0, 0), matIron, false);
                 }
             }
+
+            // Landing Newel Post capping the start of the railing at the gateway
+            Vector3 gatewayNewelPos = new Vector3(-2.40f, 3.21f, 0.20f);
+            CreatePrimitiveMesh("Balustrade Landing Newel", PrimitiveType.Cylinder, deckGroup,
+                gatewayNewelPos + Vector3.up * 0.58f, new Vector3(0.10f, 0.58f, 0.10f), Quaternion.identity, matBrass, false);
+            CreatePrimitiveMesh("Balustrade Newel Finial", PrimitiveType.Sphere, deckGroup,
+                gatewayNewelPos + Vector3.up * 1.18f, new Vector3(0.12f, 0.12f, 0.12f), Quaternion.identity, matBrass, false);
 
             // C. Mid-Level Study Platform: Persian Rug & Solid Mahogany Writing Desk
             var studyGroup = new GameObject("Study Writing Desk & Instruments").transform;
@@ -1199,46 +1217,157 @@ namespace TheLightHouse.Editor
             for (int i = 0; i < 6; i++)
             {
                 var archL = GameObject.Find($"Cellar Arch Left {i}");
-                if (archL) { var r = archL.GetComponent<Renderer>(); if (r) r.enabled = false; }
+                if (archL)
+                {
+                    var r = archL.GetComponent<Renderer>(); if (r) r.enabled = false;
+                    foreach (var c in archL.GetComponentsInChildren<Collider>(true)) c.enabled = false;
+                }
                 var archT = GameObject.Find($"Cellar Arch Top {i}");
-                if (archT) { var r = archT.GetComponent<Renderer>(); if (r) r.enabled = false; }
+                if (archT)
+                {
+                    var r = archT.GetComponent<Renderer>(); if (r) r.enabled = false;
+                    foreach (var c in archT.GetComponentsInChildren<Collider>(true)) c.enabled = false;
+                }
+            }
+
+            var oldTimberFloor = GameObject.Find("Timber Floor");
+            if (oldTimberFloor)
+            {
+                foreach (var c in oldTimberFloor.GetComponentsInChildren<Collider>(true)) c.enabled = false;
+            }
+
+            var oldCellarStairs = GameObject.Find("Cellar Stair");
+            if (oldCellarStairs)
+            {
+                foreach (var c in oldCellarStairs.GetComponentsInChildren<Collider>(true)) c.enabled = false;
+            }
+
+            var lockedCellarDoor = GameObject.Find("Locked Cellar Door");
+            if (lockedCellarDoor)
+            {
+                var mod = lockedCellarDoor.GetComponent<Unity.AI.Navigation.NavMeshModifier>();
+                if (!mod) mod = lockedCellarDoor.AddComponent<Unity.AI.Navigation.NavMeshModifier>();
+                mod.ignoreFromBuild = true;
             }
 
             var cellarRoot = new GameObject("Underground Cellar & Secret Room Master").transform;
             cellarRoot.SetParent(parent, false);
 
-            // A. Entrance from 1st Floor / Ground Floor (Door, Plaque, Coats, Boots, Lantern)
-            Vector3 cellarDoorPos = new Vector3(-8.0f, 1.4f, -5.0f);
-            var entranceGroup = new GameObject("Cellar Entrance Vestibule").transform;
+            // A. Heavy Timber-Framed Arched Entrance Portal (Matching Panel 1 Reference)
+            // Positioned at cottage North wall at x = -8.00m, z = -5.00m, ground y = 0.05m
+            Vector3 cellarPortalPos = new Vector3(-8.00f, 0.05f, -5.00f);
+            var entranceGroup = new GameObject("Cellar Entrance Portal & Vestibule").transform;
             entranceGroup.SetParent(cellarRoot, false);
 
-            // "WARNING: Cellar Access" enamel plaque mounted beside door
+            // Heavy rough-hewn oak vertical posts framing doorway (1.30m wide opening along X)
+            float postX_L = -8.00f - 0.75f; // x = -8.75f (West)
+            float postX_R = -8.00f + 0.75f; // x = -7.25f (East)
+
+            var postL = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            postL.name = "Timber Portal Post Left";
+            postL.transform.SetParent(entranceGroup, false);
+            postL.transform.position = new Vector3(postX_L, 1.25f, cellarPortalPos.z);
+            postL.transform.localScale = new Vector3(0.28f, 2.45f, 0.28f);
+            postL.GetComponent<Renderer>().sharedMaterial = matWood;
+
+            var postR = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            postR.name = "Timber Portal Post Right";
+            postR.transform.SetParent(entranceGroup, false);
+            postR.transform.position = new Vector3(postX_R, 1.25f, cellarPortalPos.z);
+            postR.transform.localScale = new Vector3(0.28f, 2.45f, 0.28f);
+            postR.GetComponent<Renderer>().sharedMaterial = matWood;
+
+            // Heavy Timber Overhead Lintel
+            var lintel = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            lintel.name = "Timber Portal Lintel";
+            lintel.transform.SetParent(entranceGroup, false);
+            lintel.transform.position = new Vector3(cellarPortalPos.x, 2.50f, cellarPortalPos.z);
+            lintel.transform.localScale = new Vector3(1.80f, 0.30f, 0.32f);
+            lintel.GetComponent<Renderer>().sharedMaterial = matWood;
+
+            // Diagonal Knee Braces in upper corners (Panel 1)
+            var braceL = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            braceL.name = "Timber Knee Brace Left";
+            braceL.transform.SetParent(entranceGroup, false);
+            braceL.transform.position = new Vector3(postX_L + 0.22f, 2.25f, cellarPortalPos.z);
+            braceL.transform.localScale = new Vector3(0.45f, 0.22f, 0.22f);
+            braceL.transform.rotation = Quaternion.Euler(0, 0, 45f);
+            braceL.GetComponent<Renderer>().sharedMaterial = matWood;
+            Object.DestroyImmediate(braceL.GetComponent<Collider>());
+
+            var braceR = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            braceR.name = "Timber Knee Brace Right";
+            braceR.transform.SetParent(entranceGroup, false);
+            braceR.transform.position = new Vector3(postX_R - 0.22f, 2.25f, cellarPortalPos.z);
+            braceR.transform.localScale = new Vector3(0.45f, 0.22f, 0.22f);
+            braceR.transform.rotation = Quaternion.Euler(0, 0, -45f);
+            braceR.GetComponent<Renderer>().sharedMaterial = matWood;
+            Object.DestroyImmediate(braceR.GetComponent<Collider>());
+
+            // Wrought-iron studded corner brackets on lintel
+            for (int b = -1; b <= 1; b += 2)
+            {
+                var bracket = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                bracket.name = $"Iron Stud Bracket {b}";
+                bracket.transform.SetParent(entranceGroup, false);
+                bracket.transform.position = new Vector3(cellarPortalPos.x + b * 0.68f, 2.48f, cellarPortalPos.z - 0.05f);
+                bracket.transform.localScale = new Vector3(0.22f, 0.22f, 0.04f);
+                bracket.GetComponent<Renderer>().sharedMaterial = matIron;
+                Object.DestroyImmediate(bracket.GetComponent<Collider>());
+            }
+
+            // Wall-mounted Warm Hurricane Lantern Sconce beside doorway (Panel 1)
+            var wallSconce = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            wallSconce.name = "Cellar Portal Warm Lantern Sconce";
+            wallSconce.transform.SetParent(entranceGroup, false);
+            wallSconce.transform.position = new Vector3(-7.00f, 1.85f, -5.15f);
+            wallSconce.transform.localScale = new Vector3(0.18f, 0.38f, 0.18f);
+            wallSconce.GetComponent<Renderer>().sharedMaterial = matLanternGlow;
+            Object.DestroyImmediate(wallSconce.GetComponent<Collider>());
+
+            var sconceArm = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            sconceArm.name = "Sconce Iron Arm";
+            sconceArm.transform.SetParent(wallSconce.transform, false);
+            sconceArm.transform.localPosition = new Vector3(0, 0.08f, -0.10f);
+            sconceArm.transform.localScale = new Vector3(0.04f, 0.04f, 0.25f);
+            sconceArm.GetComponent<Renderer>().sharedMaterial = matIron;
+            Object.DestroyImmediate(sconceArm.GetComponent<Collider>());
+
+            var sconceLightGo = new GameObject("Portal Lantern Light");
+            sconceLightGo.transform.SetParent(wallSconce.transform, false);
+            var sconceLight = sconceLightGo.AddComponent<Light>();
+            sconceLight.type = LightType.Point;
+            sconceLight.color = new Color(1.0f, 0.70f, 0.32f);
+            sconceLight.intensity = 2.4f;
+            sconceLight.range = 5.5f;
+            sconceLight.shadows = LightShadows.Soft;
+
+            // \"WARNING: Cellar Access\" enamel plaque mounted beside door
             var warningPlaque = GameObject.CreatePrimitive(PrimitiveType.Quad);
             warningPlaque.name = "Warning Cellar Access Plaque";
             warningPlaque.transform.SetParent(entranceGroup, false);
-            warningPlaque.transform.position = cellarDoorPos + new Vector3(-1.15f, 0.15f, -0.15f);
+            warningPlaque.transform.position = new Vector3(-8.95f, 1.55f, -5.15f);
             warningPlaque.transform.localScale = new Vector3(0.38f, 0.48f, 1f);
-            warningPlaque.transform.rotation = Quaternion.Euler(0, 0, 0);
+            warningPlaque.transform.rotation = Quaternion.Euler(0, 180f, 0);
             warningPlaque.GetComponent<Renderer>().sharedMaterial = matWarningSign;
             Object.DestroyImmediate(warningPlaque.GetComponent<Collider>());
 
-            // Wooden Coat Pegs with Hanging Oilskin Keeper's Slickers
+            // Wooden Coat Pegs with Hanging Oilskin Keeper's Slickers (Panel 1)
             var coatRack = GameObject.CreatePrimitive(PrimitiveType.Cube);
             coatRack.name = "Wooden Coat Rack Bar";
             coatRack.transform.SetParent(entranceGroup, false);
-            coatRack.transform.position = cellarDoorPos + new Vector3(1.35f, 0.35f, -0.12f);
-            coatRack.transform.localScale = new Vector3(1.10f, 0.12f, 0.05f);
+            coatRack.transform.position = new Vector3(-6.80f, 1.70f, -5.15f);
+            coatRack.transform.localScale = new Vector3(1.10f, 0.12f, 0.06f);
             coatRack.GetComponent<Renderer>().sharedMaterial = matWood;
             Object.DestroyImmediate(coatRack.GetComponent<Collider>());
 
-            // 3 Hanging Coats
             var yellowSlickerMat = AssetDatabase.LoadAssetAtPath<Material>($"{MatRoot}/Yellow Oilskin.mat") ?? matWood;
             var darkCoatMat = AssetDatabase.LoadAssetAtPath<Material>($"{MatRoot}/Dark Wool Navy.mat") ?? matIron;
 
             var c1 = GameObject.CreatePrimitive(PrimitiveType.Cube);
             c1.name = "Hanging Keeper Slicker 1";
             c1.transform.SetParent(entranceGroup, false);
-            c1.transform.position = coatRack.transform.position + new Vector3(-0.35f, -0.55f, 0.08f);
+            c1.transform.position = coatRack.transform.position + new Vector3(-0.32f, -0.55f, -0.06f);
             c1.transform.localScale = new Vector3(0.28f, 0.95f, 0.18f);
             c1.GetComponent<Renderer>().sharedMaterial = yellowSlickerMat;
             Object.DestroyImmediate(c1.GetComponent<Collider>());
@@ -1246,79 +1375,137 @@ namespace TheLightHouse.Editor
             var c2 = GameObject.CreatePrimitive(PrimitiveType.Cube);
             c2.name = "Hanging Keeper Slicker 2";
             c2.transform.SetParent(entranceGroup, false);
-            c2.transform.position = coatRack.transform.position + new Vector3(0.05f, -0.58f, 0.09f);
+            c2.transform.position = coatRack.transform.position + new Vector3(0.12f, -0.58f, -0.06f);
             c2.transform.localScale = new Vector3(0.30f, 1.02f, 0.20f);
             c2.GetComponent<Renderer>().sharedMaterial = darkCoatMat;
             Object.DestroyImmediate(c2.GetComponent<Collider>());
 
-            // Pair of wet boots on floor
+            // Pair of muddy boots on floor beside doorway
             for (int b = -1; b <= 1; b += 2)
             {
                 var boot = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 boot.name = $"Keeper Muddy Boot {b}";
                 boot.transform.SetParent(entranceGroup, false);
-                boot.transform.position = cellarDoorPos + new Vector3(1.35f + b * 0.14f, -1.35f, 0.18f);
-                boot.transform.localScale = new Vector3(0.12f, 0.30f, 0.24f);
+                boot.transform.position = new Vector3(-6.80f + b * 0.14f, 0.15f, -5.22f);
+                boot.transform.localScale = new Vector3(0.12f, 0.28f, 0.24f);
                 boot.GetComponent<Renderer>().sharedMaterial = matIron;
                 Object.DestroyImmediate(boot.GetComponent<Collider>());
             }
 
-            // Storm Lantern resting on floor beside doorway
-            var floorLantern = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            floorLantern.name = "Vestibule Floor Storm Lantern";
-            floorLantern.transform.SetParent(entranceGroup, false);
-            floorLantern.transform.position = cellarDoorPos + new Vector3(-0.85f, -1.25f, 0.25f);
-            floorLantern.transform.localScale = new Vector3(0.18f, 0.35f, 0.18f);
-            floorLantern.GetComponent<Renderer>().sharedMaterial = matLanternGlow;
-            Object.DestroyImmediate(floorLantern.GetComponent<Collider>());
-
-            var floorLanternLight = new GameObject("Floor Lantern Light");
-            floorLanternLight.transform.SetParent(floorLantern.transform, false);
-            var fll = floorLanternLight.AddComponent<Light>();
-            fll.type = LightType.Point;
-            fll.color = new Color(1.0f, 0.65f, 0.28f);
-            fll.intensity = 1.4f;
-            fll.range = 3.5f;
-
-            // B. Deep Stone Stairwell Spiraling into Bedrock down to y = -4.95m
-            var stairGroup = new GameObject("Deep Stone Stairwell").transform;
+            // B. Straight Wide Flight of Stone Steps Descending into Earth (Panel 1)
+            // Descends Northward from z = -5.00m, y = 0.05m down to z = -0.50m, y = -3.20m at x = -8.00m
+            var stairGroup = new GameObject("Descending Cellar Stone Stairs").transform;
             stairGroup.SetParent(cellarRoot, false);
 
-            const int steps = 24;
-            for (int s = 0; s < steps; s++)
+            const int cellarSteps = 18;
+            float stepRise = 3.25f / cellarSteps;   // ~0.18m
+            float stepRun = 4.50f / cellarSteps;    // ~0.25m along Z
+            float stepWidth = 1.30f; // Width along X
+
+            for (int s = 0; s < cellarSteps; s++)
             {
-                float t = s / (float)steps;
-                float sy = Mathf.Lerp(0f, -4.95f, t);
-                float angle = s * 13.5f * Mathf.Deg2Rad;
-                float sx = -8.0f + Mathf.Sin(angle) * 1.5f;
-                float sz = -4.8f - Mathf.Cos(angle) * 1.5f;
+                float t = s / (float)cellarSteps;
+                float sz = Mathf.Lerp(-5.00f + stepRun * 0.5f, -0.50f - stepRun * 0.5f, t);
+                float sy = Mathf.Lerp(0.05f - stepRise * 0.5f, -3.20f + stepRise * 0.5f, t);
 
                 var step = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                step.name = $"Deep Stone Step {s}";
+                step.name = $"Cellar Stone Step {s:00}";
                 step.transform.SetParent(stairGroup, false);
-                step.transform.position = new Vector3(sx, sy, sz);
-                step.transform.localScale = new Vector3(1.15f, 0.20f, 0.45f);
-                step.transform.rotation = Quaternion.Euler(0, -angle * Mathf.Rad2Deg, 0);
+                step.transform.position = new Vector3(-8.00f, sy, sz);
+                step.transform.localScale = new Vector3(stepWidth, stepRise, stepRun * 1.15f);
                 step.GetComponent<Renderer>().sharedMaterial = matStone;
+                Object.DestroyImmediate(step.GetComponent<Collider>()); // Smooth ramp collider handles navigation
 
-                // Wet glistening footprint on step
+                // Wet footprint decals descending steps (Panel 1)
                 if (s % 2 == 0)
                 {
                     var fp = GameObject.CreatePrimitive(PrimitiveType.Quad);
-                    fp.name = $"Stair Footprint {s}";
+                    fp.name = $"Step Footprint {s}";
                     fp.transform.SetParent(step.transform, false);
-                    fp.transform.localPosition = new Vector3(0, 0.52f, 0);
+                    fp.transform.localPosition = new Vector3(0.12f * (s % 4 == 0 ? 1 : -1), 0.52f, 0);
                     fp.transform.rotation = Quaternion.Euler(90f, 0, 0);
-                    fp.transform.localScale = new Vector3(0.35f, 0.75f, 1f);
+                    fp.transform.localScale = new Vector3(0.32f, 0.65f, 1f);
                     fp.GetComponent<Renderer>().sharedMaterial = matWetFootprint;
                     Object.DestroyImmediate(fp.GetComponent<Collider>());
                 }
             }
 
-            // Bare Hanging Incandescent Bulb in Deep Stairwell
+            // Smooth Ramp MeshCollider for effortless navigation without step snagging
+            var rampGo = new GameObject("Cellar Stair Ramp Collider");
+            rampGo.transform.SetParent(stairGroup, false);
+            var rampMesh = new Mesh();
+            float halfW = stepWidth * 0.55f;
+            Vector3 r0 = new Vector3(-8.00f + halfW, 0.08f, -5.00f);
+            Vector3 r1 = new Vector3(-8.00f - halfW, 0.08f, -5.00f);
+            Vector3 r2 = new Vector3(-8.00f + halfW, -3.18f, -0.45f);
+            Vector3 r3 = new Vector3(-8.00f - halfW, -3.18f, -0.45f);
+            rampMesh.vertices = new[] { r0, r1, r2, r3 };
+            rampMesh.triangles = new[] { 0, 1, 2, 2, 1, 3, 2, 1, 0, 3, 1, 2 };
+            rampMesh.RecalculateNormals();
+            var rampCollider = rampGo.AddComponent<MeshCollider>();
+            rampCollider.sharedMesh = rampMesh;
+
+            // Wall-mounted Iron Pipe Handrail along Right-Hand Wall (East wall: x = -8.00f + halfW) (Panel 1)
+            var handrailGroup = new GameObject("Iron Wall Handrail").transform;
+            handrailGroup.SetParent(stairGroup, false);
+
+            Vector3 railStart = new Vector3(-8.00f + halfW - 0.06f, 1.05f, -5.00f);
+            Vector3 railEnd = new Vector3(-8.00f + halfW - 0.06f, -2.20f, -0.50f);
+            Vector3 railDiff = railEnd - railStart;
+            float railLen = railDiff.magnitude;
+
+            var railBar = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            railBar.name = "Handrail Pipe Bar";
+            railBar.transform.SetParent(handrailGroup, false);
+            railBar.transform.position = (railStart + railEnd) * 0.5f;
+            railBar.transform.localScale = new Vector3(0.055f, railLen * 0.5f, 0.055f);
+            railBar.transform.rotation = Quaternion.LookRotation(railDiff) * Quaternion.Euler(90f, 0, 0);
+            railBar.GetComponent<Renderer>().sharedMaterial = matIron;
+            Object.DestroyImmediate(railBar.GetComponent<Collider>());
+
+            // Wall mounting brackets for iron pipe
+            for (int b = 0; b < 4; b++)
+            {
+                float bt = b / 3f;
+                Vector3 bp = Vector3.Lerp(railStart, railEnd, bt);
+                var bracket = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                bracket.name = $"Handrail Bracket {b}";
+                bracket.transform.SetParent(handrailGroup, false);
+                bracket.transform.position = bp + new Vector3(0.06f, 0, 0);
+                bracket.transform.localScale = new Vector3(0.12f, 0.04f, 0.04f);
+                bracket.GetComponent<Renderer>().sharedMaterial = matIron;
+                Object.DestroyImmediate(bracket.GetComponent<Collider>());
+            }
+
+            // Enclosing stone walls flanking the stair flight
+            var stairWallW = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            stairWallW.name = "Stair Tunnel Wall West";
+            stairWallW.transform.SetParent(stairGroup, false);
+            stairWallW.transform.position = new Vector3(-8.00f - halfW - 0.12f, -1.25f, -2.75f);
+            stairWallW.transform.localScale = new Vector3(0.25f, 3.80f, 4.80f);
+            stairWallW.GetComponent<Renderer>().sharedMaterial = matStone;
+
+            var stairWallE = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            stairWallE.name = "Stair Tunnel Wall East";
+            stairWallE.transform.SetParent(stairGroup, false);
+            stairWallE.transform.position = new Vector3(-8.00f + halfW + 0.12f, -1.25f, -2.75f);
+            stairWallE.transform.localScale = new Vector3(0.25f, 3.80f, 4.80f);
+            stairWallE.GetComponent<Renderer>().sharedMaterial = matStone;
+
+            // Sloping stone tunnel ceiling over stairs
+            var stairCeil = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            stairCeil.name = "Stair Tunnel Sloping Ceiling";
+            stairCeil.transform.SetParent(stairGroup, false);
+            stairCeil.transform.position = new Vector3(-8.00f, 1.20f, -2.75f);
+            stairCeil.transform.localScale = new Vector3(stepWidth + 0.35f, 0.25f, 5.10f);
+            stairCeil.transform.rotation = Quaternion.Euler(-35.8f, 0, 0);
+            stairCeil.GetComponent<Renderer>().sharedMaterial = matStone;
+            Object.DestroyImmediate(stairCeil.GetComponent<Collider>());
+
+            // Bare Hanging Incandescent Bulb in Stairwell
             var bulbGroup = new GameObject("Dangling Stairwell Bulb").transform;
             bulbGroup.SetParent(stairGroup, false);
-            bulbGroup.position = new Vector3(-8.0f, -2.2f, -4.8f);
+            bulbGroup.position = new Vector3(-8.00f, -0.80f, -2.75f);
 
             var cord = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             cord.name = "Bulb Cord";
@@ -1345,18 +1532,18 @@ namespace TheLightHouse.Editor
             bl.range = 6.5f;
             bl.shadows = LightShadows.Soft;
 
-            // C. Low Subterranean Corridor (Romanesque Stone Arches, Enclosed Walls, Puddles)
+            // C. Low Subterranean Corridor (Romanesque Stone Arches, Enclosed Walls, Puddles - Panel 2)
             var corridorGroup = new GameObject("Low Subterranean Corridor").transform;
             corridorGroup.SetParent(cellarRoot, false);
 
-            Vector3 corridorCenter = new Vector3(-7.5f, -3.2f, -5.0f);
+            Vector3 corridorCenter = new Vector3(-8.00f, -3.20f, 2.00f);
 
             // Flagstone floor
             var cellarFloor = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cellarFloor.name = "Cellar Flagstone Floor";
             cellarFloor.transform.SetParent(corridorGroup, false);
             cellarFloor.transform.position = corridorCenter;
-            cellarFloor.transform.localScale = new Vector3(10.0f, 0.15f, 4.2f);
+            cellarFloor.transform.localScale = new Vector3(3.60f, 0.15f, 5.60f);
             cellarFloor.GetComponent<Renderer>().sharedMaterial = matStone;
 
             // Arched stone ceiling vault
@@ -1364,43 +1551,43 @@ namespace TheLightHouse.Editor
             ceilingVault.name = "Cellar Stone Vault Ceiling";
             ceilingVault.transform.SetParent(corridorGroup, false);
             ceilingVault.transform.position = corridorCenter + new Vector3(0, 2.6f, 0);
-            ceilingVault.transform.localScale = new Vector3(10.0f, 0.20f, 4.2f);
+            ceilingVault.transform.localScale = new Vector3(3.60f, 0.20f, 5.00f);
             ceilingVault.GetComponent<Renderer>().sharedMaterial = matStone;
 
             // Enclosing corridor side walls
-            var wallN = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            wallN.name = "Corridor Wall North";
-            wallN.transform.SetParent(corridorGroup, false);
-            wallN.transform.position = corridorCenter + new Vector3(0, 1.3f, 2.1f);
-            wallN.transform.localScale = new Vector3(10.0f, 2.6f, 0.2f);
-            wallN.GetComponent<Renderer>().sharedMaterial = matStone;
+            var wallW = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            wallW.name = "Corridor Wall West";
+            wallW.transform.SetParent(corridorGroup, false);
+            wallW.transform.position = corridorCenter + new Vector3(-1.80f, 1.3f, 0);
+            wallW.transform.localScale = new Vector3(0.25f, 2.6f, 5.00f);
+            wallW.GetComponent<Renderer>().sharedMaterial = matStone;
 
-            var wallS = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            wallS.name = "Corridor Wall South";
-            wallS.transform.SetParent(corridorGroup, false);
-            wallS.transform.position = corridorCenter + new Vector3(0, 1.3f, -2.1f);
-            wallS.transform.localScale = new Vector3(10.0f, 2.6f, 0.2f);
-            wallS.GetComponent<Renderer>().sharedMaterial = matStone;
+            var wallE = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            wallE.name = "Corridor Wall East";
+            wallE.transform.SetParent(corridorGroup, false);
+            wallE.transform.position = corridorCenter + new Vector3(1.80f, 1.3f, 0);
+            wallE.transform.localScale = new Vector3(0.25f, 2.6f, 5.00f);
+            wallE.GetComponent<Renderer>().sharedMaterial = matStone;
 
-            // Romanesque Arched Vaults along corridor
-            for (int a = 0; a < 4; a++)
+            // Romanesque Arched Vaults along corridor (Panel 2)
+            for (int a = 0; a < 3; a++)
             {
-                float ax = -4.5f - a * 2.0f;
+                float az = 0.50f + a * 1.50f;
                 var arch = new GameObject($"Romanesque Arch {a}").transform;
                 arch.SetParent(corridorGroup, false);
-                arch.position = new Vector3(ax, -3.2f, -5.0f);
+                arch.position = new Vector3(-8.00f, -3.2f, az);
 
-                // Left pillar
+                // Left pillar (West)
                 var pilL = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 pilL.transform.SetParent(arch, false);
-                pilL.transform.localPosition = new Vector3(0, 1.25f, -1.95f);
+                pilL.transform.localPosition = new Vector3(-1.65f, 1.25f, 0);
                 pilL.transform.localScale = new Vector3(0.35f, 2.5f, 0.35f);
                 pilL.GetComponent<Renderer>().sharedMaterial = matStone;
 
-                // Right pillar
+                // Right pillar (East)
                 var pilR = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 pilR.transform.SetParent(arch, false);
-                pilR.transform.localPosition = new Vector3(0, 1.25f, 1.95f);
+                pilR.transform.localPosition = new Vector3(1.65f, 1.25f, 0);
                 pilR.transform.localScale = new Vector3(0.35f, 2.5f, 0.35f);
                 pilR.GetComponent<Renderer>().sharedMaterial = matStone;
 
@@ -1408,36 +1595,72 @@ namespace TheLightHouse.Editor
                 var archRib = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 archRib.transform.SetParent(arch, false);
                 archRib.transform.localPosition = new Vector3(0, 2.45f, 0);
-                archRib.transform.localScale = new Vector3(0.38f, 0.32f, 4.0f);
+                archRib.transform.localScale = new Vector3(3.40f, 0.32f, 0.38f);
                 archRib.GetComponent<Renderer>().sharedMaterial = matStone;
             }
 
-            // Iron water pipes and electrical conduits along walls
+            // Stacked wooden nautical storage crates & barrels along walls (Panel 2)
+            var crate1 = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            crate1.name = "Cellar Storage Crate 1";
+            crate1.transform.SetParent(corridorGroup, false);
+            crate1.transform.position = new Vector3(-9.20f, -2.75f, 1.20f);
+            crate1.transform.localScale = new Vector3(0.85f, 0.75f, 0.85f);
+            crate1.GetComponent<Renderer>().sharedMaterial = matWood;
+
+            var crate2 = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            crate2.name = "Cellar Storage Crate 2";
+            crate2.transform.SetParent(corridorGroup, false);
+            crate2.transform.position = new Vector3(-9.20f, -2.10f, 1.20f);
+            crate2.transform.localScale = new Vector3(0.70f, 0.60f, 0.70f);
+            crate2.transform.rotation = Quaternion.Euler(0, 14f, 0);
+            crate2.GetComponent<Renderer>().sharedMaterial = matWood;
+
+            var barrel1 = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            barrel1.name = "Cellar Storage Barrel 1";
+            barrel1.transform.SetParent(corridorGroup, false);
+            barrel1.transform.position = new Vector3(-6.65f, -2.70f, 2.80f);
+            barrel1.transform.localScale = new Vector3(0.65f, 0.50f, 0.65f);
+            barrel1.GetComponent<Renderer>().sharedMaterial = matWood;
+
+            // Iron water pipes and electrical conduits along West wall (Panel 2)
             var pipe = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             pipe.name = "Cellar Iron Conduit Pipe";
             pipe.transform.SetParent(corridorGroup, false);
-            pipe.transform.position = corridorCenter + new Vector3(0, 1.6f, -1.98f);
-            pipe.transform.localScale = new Vector3(0.06f, 5.0f, 0.06f);
-            pipe.transform.rotation = Quaternion.Euler(0, 0, 90f);
+            pipe.transform.position = corridorCenter + new Vector3(-1.70f, 1.6f, 0);
+            pipe.transform.localScale = new Vector3(0.06f, 2.50f, 0.06f);
+            pipe.transform.rotation = Quaternion.identity;
             pipe.GetComponent<Renderer>().sharedMaterial = matIron;
             Object.DestroyImmediate(pipe.GetComponent<Collider>());
 
-            // Puddle reflections on corridor floor
-            for (int p = 0; p < 4; p++)
+            // Puddle reflections on corridor floor (Panel 2)
+            for (int p = 0; p < 3; p++)
             {
                 var puddle = GameObject.CreatePrimitive(PrimitiveType.Quad);
                 puddle.name = $"Corridor Wet Puddle {p}";
                 puddle.transform.SetParent(corridorGroup, false);
-                puddle.transform.position = new Vector3(-5.0f - p * 1.8f, -3.12f, -5.0f + (p % 2 == 0 ? 0.35f : -0.35f));
+                puddle.transform.position = new Vector3(-8.00f + (p % 2 == 0 ? 0.25f : -0.25f), -3.12f, 0.80f + p * 1.20f);
                 puddle.transform.rotation = Quaternion.Euler(90f, 0, 0);
-                puddle.transform.localScale = new Vector3(0.85f, 1.25f, 1f);
+                puddle.transform.localScale = new Vector3(0.75f, 1.10f, 1f);
                 puddle.GetComponent<Renderer>().sharedMaterial = matPuddle;
                 Object.DestroyImmediate(puddle.GetComponent<Collider>());
             }
 
+            // Wet footprints leading along corridor toward secret room doorway (Panel 2)
+            for (int fpIdx = 0; fpIdx < 5; fpIdx++)
+            {
+                var fp = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                fp.name = $"Corridor Footprint {fpIdx}";
+                fp.transform.SetParent(corridorGroup, false);
+                fp.transform.position = new Vector3(-8.00f + (fpIdx % 2 == 0 ? 0.15f : -0.15f), -3.11f, 0.20f + fpIdx * 0.90f);
+                fp.transform.rotation = Quaternion.Euler(90f, 0, 0);
+                fp.transform.localScale = new Vector3(0.30f, 0.65f, 1f);
+                fp.GetComponent<Renderer>().sharedMaterial = matWetFootprint;
+                Object.DestroyImmediate(fp.GetComponent<Collider>());
+            }
+
             // D. Hidden Cellar Entryway & Recorded Room (Reel-to-Reel, Ledger, Maps, Radio)
             // Layout reference: Image 11 Panel 4 & Image 12 Panels 2-3
-            Vector3 secretRoomPos = new Vector3(-12.0f, -3.2f, -5.0f);
+            Vector3 secretRoomPos = new Vector3(-8.00f, -3.20f, 7.00f);
             var secretRoomGroup = new GameObject("Secret Recorded Radio Room").transform;
             secretRoomGroup.SetParent(cellarRoot, false);
 
@@ -1472,38 +1695,65 @@ namespace TheLightHouse.Editor
             srWallW.transform.localScale = new Vector3(0.25f, 2.6f, 4.8f);
             srWallW.GetComponent<Renderer>().sharedMaterial = matStone;
 
-            // South Wall (Rear flank)
-            var srWallS = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            srWallS.name = "Secret Room Wall South";
-            srWallS.transform.SetParent(secretRoomGroup, false);
-            srWallS.transform.position = secretRoomPos + new Vector3(0, 1.3f, -2.35f);
-            srWallS.transform.localScale = new Vector3(4.8f, 2.6f, 0.25f);
-            srWallS.GetComponent<Renderer>().sharedMaterial = matStone;
+            // East Wall (Right flank)
+            var srWallE = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            srWallE.name = "Secret Room Wall East";
+            srWallE.transform.SetParent(secretRoomGroup, false);
+            srWallE.transform.position = secretRoomPos + new Vector3(2.35f, 1.3f, 0);
+            srWallE.transform.localScale = new Vector3(0.25f, 2.6f, 4.8f);
+            srWallE.GetComponent<Renderer>().sharedMaterial = matStone;
 
-            // East Wall with Arched Secret Entryway connecting to corridor
-            var srWallEJambL = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            srWallEJambL.name = "Secret Room Doorway Jamb L";
-            srWallEJambL.transform.SetParent(secretRoomGroup, false);
-            srWallEJambL.transform.position = secretRoomPos + new Vector3(2.35f, 1.3f, 1.45f);
-            srWallEJambL.transform.localScale = new Vector3(0.25f, 2.6f, 1.8f);
-            srWallEJambL.GetComponent<Renderer>().sharedMaterial = matStone;
+            // South Wall with Arched Secret Entryway connecting to corridor (Panel 3)
+            var srWallSJambL = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            srWallSJambL.name = "Secret Room Doorway Jamb L";
+            srWallSJambL.transform.SetParent(secretRoomGroup, false);
+            srWallSJambL.transform.position = secretRoomPos + new Vector3(-1.65f, 1.3f, -2.35f);
+            srWallSJambL.transform.localScale = new Vector3(1.6f, 2.6f, 0.25f);
+            srWallSJambL.GetComponent<Renderer>().sharedMaterial = matStone;
 
-            var srWallEJambR = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            srWallEJambR.name = "Secret Room Doorway Jamb R";
-            srWallEJambR.transform.SetParent(secretRoomGroup, false);
-            srWallEJambR.transform.position = secretRoomPos + new Vector3(2.35f, 1.3f, -1.45f);
-            srWallEJambR.transform.localScale = new Vector3(0.25f, 2.6f, 1.8f);
-            srWallEJambR.GetComponent<Renderer>().sharedMaterial = matStone;
+            var srWallSJambR = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            srWallSJambR.name = "Secret Room Doorway Jamb R";
+            srWallSJambR.transform.SetParent(secretRoomGroup, false);
+            srWallSJambR.transform.position = secretRoomPos + new Vector3(1.65f, 1.3f, -2.35f);
+            srWallSJambR.transform.localScale = new Vector3(1.6f, 2.6f, 0.25f);
+            srWallSJambR.GetComponent<Renderer>().sharedMaterial = matStone;
 
-            var srWallEArch = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            srWallEArch.name = "Secret Room Doorway Arched Header";
-            srWallEArch.transform.SetParent(secretRoomGroup, false);
-            srWallEArch.transform.position = secretRoomPos + new Vector3(2.35f, 2.35f, 0);
-            srWallEArch.transform.localScale = new Vector3(0.28f, 0.50f, 1.40f);
-            srWallEArch.GetComponent<Renderer>().sharedMaterial = matStone;
+            var srWallSArch = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            srWallSArch.name = "Secret Room Doorway Arched Header";
+            srWallSArch.transform.SetParent(secretRoomGroup, false);
+            srWallSArch.transform.position = secretRoomPos + new Vector3(0, 2.35f, -2.35f);
+            srWallSArch.transform.localScale = new Vector3(1.80f, 0.50f, 0.28f);
+            srWallSArch.GetComponent<Renderer>().sharedMaterial = matStone;
 
-            // Heavy Timber Workbench Desk
-            Vector3 deskPos = secretRoomPos + new Vector3(0, 0, 0.95f);
+            // Heavy Timber Door Slightly Ajar (Panel 3)
+            var srDoor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            srDoor.name = "Secret Room Timber Door (Ajar)";
+            srDoor.transform.SetParent(secretRoomGroup, false);
+            srDoor.transform.position = secretRoomPos + new Vector3(0.40f, 1.15f, -2.30f);
+            srDoor.transform.localScale = new Vector3(1.10f, 2.15f, 0.08f);
+            srDoor.transform.rotation = Quaternion.Euler(0, 35f, 0);
+            srDoor.GetComponent<Renderer>().sharedMaterial = matWood;
+            Object.DestroyImmediate(srDoor.GetComponent<Collider>());
+
+            // Subterranean NavMesh Links guaranteeing continuous navigation across stairs and portal
+            var stairLinkGo = new GameObject("Cellar Stair NavMesh Link");
+            stairLinkGo.transform.SetParent(cellarRoot, false);
+            var stairLink = stairLinkGo.AddComponent<Unity.AI.Navigation.NavMeshLink>();
+            stairLink.startPoint = new Vector3(-8.15f, 0.10f, -4.65f);
+            stairLink.endPoint = new Vector3(-8.00f, -2.90f, -0.50f);
+            stairLink.width = 1.30f;
+            stairLink.bidirectional = true;
+
+            var doorwayLinkGo = new GameObject("Secret Room Doorway NavMesh Link");
+            doorwayLinkGo.transform.SetParent(cellarRoot, false);
+            var doorwayLink = doorwayLinkGo.AddComponent<Unity.AI.Navigation.NavMeshLink>();
+            doorwayLink.startPoint = new Vector3(-8.00f, -3.07f, 3.92f);
+            doorwayLink.endPoint = new Vector3(-8.00f, -3.07f, 5.80f);
+            doorwayLink.width = 1.40f;
+            doorwayLink.bidirectional = true;
+
+            // Heavy Timber Workbench Desk (against North wall)
+            Vector3 deskPos = secretRoomPos + new Vector3(0, 0, 1.70f);
             var desk = GameObject.CreatePrimitive(PrimitiveType.Cube);
             desk.name = "Radio & Ledger Workbench";
             desk.transform.SetParent(secretRoomGroup, false);
@@ -1609,7 +1859,17 @@ namespace TheLightHouse.Editor
             indRed.GetComponent<Renderer>().sharedMaterial = matIndicatorRed;
             Object.DestroyImmediate(indRed.GetComponent<Collider>());
 
-            // 3. The Harbor Board Ledger Book (Center-Left on Desk, directly under Lamp)
+            // 3. The Harbor Board Ledger Book (Center-Left on Desk, directly under Lamp - Panel 4)
+            // Open Navigation Chart of Harrow Rock spread under ledger and photo (Panel 4)
+            var chartSpread = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            chartSpread.name = "Workbench Nautical Chart Spread";
+            chartSpread.transform.SetParent(secretRoomGroup, false);
+            chartSpread.transform.position = deskPos + new Vector3(0.05f, 0.846f, -0.10f);
+            chartSpread.transform.localScale = new Vector3(1.10f, 0.75f, 1f);
+            chartSpread.transform.rotation = Quaternion.Euler(90f, 0, 0);
+            chartSpread.GetComponent<Renderer>().sharedMaterial = matNauticalChart;
+            Object.DestroyImmediate(chartSpread.GetComponent<Collider>());
+
             Vector3 ledgerPos = deskPos + new Vector3(-0.15f, 0.885f, -0.12f);
             var ledgerObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
             ledgerObj.name = "Harbor board ledger";
@@ -1623,6 +1883,63 @@ namespace TheLightHouse.Editor
             {
                 ledgerObj.AddComponent<TheLightHouse.Ledger>();
             }
+
+            // Brass drafting calipers / dividers resting on chart (Panel 4)
+            Vector3 calPos = deskPos + new Vector3(0.38f, 0.852f, -0.18f);
+            var calHinge = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            calHinge.name = "Drafting Caliper Hinge";
+            calHinge.transform.SetParent(secretRoomGroup, false);
+            calHinge.transform.position = calPos;
+            calHinge.transform.localScale = new Vector3(0.035f, 0.006f, 0.035f);
+            calHinge.GetComponent<Renderer>().sharedMaterial = matBrass;
+            Object.DestroyImmediate(calHinge.GetComponent<Collider>());
+
+            var calLegL = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            calLegL.name = "Drafting Caliper Leg L";
+            calLegL.transform.SetParent(secretRoomGroup, false);
+            calLegL.transform.position = calPos + new Vector3(-0.035f, 0.003f, 0.07f);
+            calLegL.transform.localScale = new Vector3(0.008f, 0.08f, 0.008f);
+            calLegL.transform.rotation = Quaternion.Euler(0, -18f, 90f);
+            calLegL.GetComponent<Renderer>().sharedMaterial = matBrass;
+            Object.DestroyImmediate(calLegL.GetComponent<Collider>());
+
+            var calLegR = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            calLegR.name = "Drafting Caliper Leg R";
+            calLegR.transform.SetParent(secretRoomGroup, false);
+            calLegR.transform.position = calPos + new Vector3(0.035f, 0.003f, 0.07f);
+            calLegR.transform.localScale = new Vector3(0.008f, 0.08f, 0.008f);
+            calLegR.transform.rotation = Quaternion.Euler(0, 180f + 18f, 90f);
+            calLegR.GetComponent<Renderer>().sharedMaterial = matBrass;
+            Object.DestroyImmediate(calLegR.GetComponent<Collider>());
+
+            // Heavy-Duty Vintage Brass Flashlight on desk edge (Panel 4)
+            Vector3 torchPos = deskPos + new Vector3(-0.25f, 0.865f, -0.38f);
+            var torchBody = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            torchBody.name = "Vintage Brass Flashlight Body";
+            torchBody.transform.SetParent(secretRoomGroup, false);
+            torchBody.transform.position = torchPos;
+            torchBody.transform.localScale = new Vector3(0.052f, 0.22f, 0.052f);
+            torchBody.transform.rotation = Quaternion.Euler(0, 75f, 90f);
+            torchBody.GetComponent<Renderer>().sharedMaterial = matBrass;
+            Object.DestroyImmediate(torchBody.GetComponent<Collider>());
+
+            var torchBezel = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            torchBezel.name = "Flashlight Head Bezel";
+            torchBezel.transform.SetParent(secretRoomGroup, false);
+            torchBezel.transform.position = torchPos + new Vector3(0.12f, 0, 0.032f);
+            torchBezel.transform.localScale = new Vector3(0.075f, 0.04f, 0.075f);
+            torchBezel.transform.rotation = Quaternion.Euler(0, 75f, 90f);
+            torchBezel.GetComponent<Renderer>().sharedMaterial = matBrass;
+            Object.DestroyImmediate(torchBezel.GetComponent<Collider>());
+
+            var torchLens = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            torchLens.name = "Flashlight Glass Lens";
+            torchLens.transform.SetParent(secretRoomGroup, false);
+            torchLens.transform.position = torchPos + new Vector3(0.14f, 0, 0.037f);
+            torchLens.transform.localScale = new Vector3(0.070f, 0.008f, 0.070f);
+            torchLens.transform.rotation = Quaternion.Euler(0, 75f, 90f);
+            torchLens.GetComponent<Renderer>().sharedMaterial = matSpecimenJar;
+            Object.DestroyImmediate(torchLens.GetComponent<Collider>());
 
             // Brass inkwell & quill
             var inkwell = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
@@ -1751,7 +2068,7 @@ namespace TheLightHouse.Editor
             var chartBacking = GameObject.CreatePrimitive(PrimitiveType.Cube);
             chartBacking.name = "Chart Mounting Board";
             chartBacking.transform.SetParent(secretRoomGroup, false);
-            chartBacking.transform.position = deskPos + new Vector3(0, 1.55f, 0.72f);
+            chartBacking.transform.position = deskPos + new Vector3(0, 1.55f, 0.50f);
             chartBacking.transform.localScale = new Vector3(1.85f, 1.25f, 0.04f);
             chartBacking.GetComponent<Renderer>().sharedMaterial = matWood;
 

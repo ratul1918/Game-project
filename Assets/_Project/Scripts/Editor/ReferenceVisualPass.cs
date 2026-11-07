@@ -339,7 +339,11 @@ namespace TheLightHouse.Editor
         {
             // Sited strictly on the West flank: x in [-12.5, -5.2], z in [-9.0, -1.0]
             // Leaving x in [-5.2, +7.0], z in [-12.0, -6.5] completely open for the Grand Tower Entrance and courtyard!
-            Box("Timber Floor",new(-8.85f,.06f,-5.0f),new(7.3f,.18f,8.0f),wood,true);
+            // South living/dining room floor: z in [-9.0, -5.0]
+            Box("Timber Floor South",new(-8.85f,.06f,-7.0f),new(7.3f,.18f,4.0f),wood,true);
+            // North kitchen floor flanking cellar stairwell (stair wellhole x in [-8.8, -7.2], z in [-5.0, -1.0])
+            Box("Timber Floor North West",new(-10.65f,.06f,-3.0f),new(3.7f,.18f,4.0f),wood,true);
+            Box("Timber Floor North East",new(-6.20f,.06f,-3.0f),new(2.0f,.18f,4.0f),wood,true);
             Box("Timber Ceiling",new(-8.85f,2.95f,-5.0f),new(7.3f,.18f,8.0f),wood,true);
             Box("West Wall",new(-12.5f,1.5f,-5.0f),new(.3f,3f,8.0f),towerStone??plaster,true);
             Box("East Wall",new(-5.2f,1.5f,-6.5f),new(.3f,3f,5.0f),towerStone??plaster,true);
@@ -664,7 +668,7 @@ namespace TheLightHouse.Editor
             (-110f, -310f, 22.40f, 25.60f)   // Flight 7: Lantern Service (y=22.40) to Lantern Gallery Deck (y=25.60), South arc
         };
 
-        static void BuildSingleFlight(int f, float stairWidth = 1.15f, int stepsPerFlight = 20)
+        static void BuildSingleFlight(int f, float stairWidth = 1.25f, int stepsPerFlight = 20)
         {
             var fl = flights[f];
             BuildFlightRampCollider(f, fl.startDeg, fl.endDeg, fl.yStart, fl.yEnd, stairWidth, stepsPerFlight);
@@ -715,7 +719,7 @@ namespace TheLightHouse.Editor
 
         static void StaircaseA()
         {
-            float stairWidth = 1.15f;
+            float stairWidth = 1.25f;
             float baseAngle = 100f * Mathf.Deg2Rad;
             float outerLevel0 = 5.63f;
             float innerLevel0 = outerLevel0 - stairWidth;
@@ -1051,7 +1055,7 @@ namespace TheLightHouse.Editor
         static void RoomFloor(int level, float y, float floorThick = 0.14f)
         {
             float wallR = Mathf.Lerp(5.65f, 4.25f, y / 25.6f);
-            float stairWidth = 1.15f;
+            float stairWidth = 1.25f;
             float outerStairR = wallR - 0.02f;
             float innerStairR = outerStairR - stairWidth;
 
@@ -1113,8 +1117,8 @@ namespace TheLightHouse.Editor
                 float deg;
                 if (isOddLevel)
                 {
-                    // Span from +50° clockwise to -140° (190° span guarding stair well)
-                    deg = Mathf.Lerp(50f, -140f, t);
+                    // Span from +50° clockwise to -85° (leaving -85° to -145° landing exit 100% open gate)
+                    deg = Mathf.Lerp(50f, -85f, t);
                 }
                 else
                 {
