@@ -211,24 +211,15 @@ namespace TheLightHouse.Editor
                             }
                             else if (px < pathCenter - 2.0f)
                             {
-                                // --- LEFT EMBANKMENT TERRACING ---
-                                // Replaces smooth clay blobs with terraced, gradual incline towards water
+                                // --- GENTLE ROCKY TIDAL SHELF ---
+                                // Replaces any earthen blobs/dunes with a low rocky shelf sloping naturally into the sea (Ref: Screenshots 15, 16)
                                 float embankDist = (pathCenter - 2.0f) - px;
                                 float maxSpan = 14.0f;
                                 float embankFrac = Mathf.Clamp01(embankDist / maxSpan);
 
                                 float targetShoreY = settings.seaLevel + 0.05f;
-                                float linearSlope = Mathf.Lerp(roadY, targetShoreY, embankFrac);
-
-                                // Step terracing every 0.12m
-                                float stepSize = 0.12f;
-                                float stepIdx = Mathf.Floor(linearSlope / stepSize);
-                                float tread = (linearSlope - stepIdx * stepSize) / stepSize;
-                                float terracedSlope = stepIdx * stepSize + Mathf.SmoothStep(0f, 0.035f, tread);
-
-                                py = Mathf.Lerp(terracedSlope, linearSlope, 0.35f);
-                                // Guarantee the left embankment NEVER bulges above the fence line
-                                py = Mathf.Min(py, roadY - 0.015f);
+                                py = Mathf.Lerp(roadY - 0.04f, targetShoreY, Mathf.Pow(embankFrac, 0.75f));
+                                py = Mathf.Min(py, roadY - 0.03f);
                             }
                             else if (px > pathCenter + 2.0f)
                             {
@@ -454,25 +445,26 @@ namespace TheLightHouse.Editor
                 }
             }
 
-            // Gallows Lamp Post positioned prominently at the dock head (x = -2.6, z = -28.5)
+            // Gallows Lamp Post positioned prominently at the dock head (x = -2.85, z = -28.5)
+            // Scaled to standard human proportion: ~2.9m total height (Ref: Task requirement 2.8m - 3.2m)
             var gallows=new GameObject("Gallows Lamp Post").transform;gallows.SetParent(dockGroup,false);
-            Vector3 postBase=new(-2.6f,settings.landHeight,-28.5f);
-            Box("Post Footing",gallows,postBase+new Vector3(0,.15f,0),new(.34f,.30f,.34f),stone,true);
-            Box("Vertical Post",gallows,postBase+new Vector3(0,1.75f,0),new(.20f,3.2f,.20f),wood,true);
-            Box("Horizontal Crossarm",gallows,postBase+new Vector3(.60f,3.30f,0),new(1.25f,.16f,.16f),wood);
-            Rod("Knee Brace",gallows,postBase+new Vector3(0,2.5f,0),postBase+new Vector3(.60f,3.25f,0),.11f,wood);
+            Vector3 postBase=new(-2.85f,settings.landHeight,-28.5f);
+            Box("Post Footing",gallows,postBase+new Vector3(0,.08f,0),new(.24f,.16f,.24f),stone,true);
+            Box("Vertical Post",gallows,postBase+new Vector3(0,1.43f,0),new(.14f,2.70f,.14f),wood,true);
+            Box("Horizontal Crossarm",gallows,postBase+new Vector3(.45f,2.72f,0),new(.90f,.12f,.12f),wood);
+            Rod("Knee Brace",gallows,postBase+new Vector3(0,2.15f,0),postBase+new Vector3(.45f,2.68f,0),.08f,wood);
 
-            // Hanging iron chain and detailed hurricane storm lantern
-            Vector3 lanternDrop=postBase+new Vector3(1.10f,3.30f,0);
-            Rod("Lantern Chain",gallows,lanternDrop,lanternDrop+Vector3.down*.45f,.03f,iron);
-            Vector3 lanternCenter=lanternDrop+Vector3.down*.72f;
-            Box("Lantern Vented Hood",gallows,lanternCenter+Vector3.up*.20f,new(.26f,.07f,.26f),iron);
-            Box("Lantern Glass Chimney",gallows,lanternCenter,new(.18f,.32f,.18f),lanternGlow);
-            Box("Lantern Oil Reservoir",gallows,lanternCenter+Vector3.down*.18f,new(.22f,.07f,.22f),iron);
-            Rod("Cage Rib 1",gallows,lanternCenter+new Vector3(-.10f,-.16f,-.10f),lanternCenter+new Vector3(-.10f,.18f,-.10f),.02f,iron);
-            Rod("Cage Rib 2",gallows,lanternCenter+new Vector3( .10f,-.16f,-.10f),lanternCenter+new Vector3( .10f,.18f,-.10f),.02f,iron);
-            Rod("Cage Rib 3",gallows,lanternCenter+new Vector3(-.10f,-.16f, .10f),lanternCenter+new Vector3(-.10f,.18f, .10f),.02f,iron);
-            Rod("Cage Rib 4",gallows,lanternCenter+new Vector3( .10f,-.16f, .10f),lanternCenter+new Vector3( .10f,.18f, .10f),.02f,iron);
+            // Hanging iron chain and hurricane storm lantern (eye-level glow ~2.25m)
+            Vector3 lanternDrop=postBase+new Vector3(.75f,2.68f,0);
+            Rod("Lantern Chain",gallows,lanternDrop,lanternDrop+Vector3.down*.25f,.025f,iron);
+            Vector3 lanternCenter=lanternDrop+Vector3.down*.42f;
+            Box("Lantern Vented Hood",gallows,lanternCenter+Vector3.up*.15f,new(.20f,.05f,.20f),iron);
+            Box("Lantern Glass Chimney",gallows,lanternCenter,new(.14f,.24f,.14f),lanternGlow);
+            Box("Lantern Oil Reservoir",gallows,lanternCenter+Vector3.down*.14f,new(.16f,.05f,.16f),iron);
+            Rod("Cage Rib 1",gallows,lanternCenter+new Vector3(-.07f,-.12f,-.07f),lanternCenter+new Vector3(-.07f,.14f,-.07f),.016f,iron);
+            Rod("Cage Rib 2",gallows,lanternCenter+new Vector3( .07f,-.12f,-.07f),lanternCenter+new Vector3( .07f,.14f,-.07f),.016f,iron);
+            Rod("Cage Rib 3",gallows,lanternCenter+new Vector3(-.07f,-.12f, .07f),lanternCenter+new Vector3(-.07f,.14f, .07f),.016f,iron);
+            Rod("Cage Rib 4",gallows,lanternCenter+new Vector3( .07f,-.12f, .07f),lanternCenter+new Vector3( .07f,.14f, .07f),.016f,iron);
 
             // Rich warm golden light pool illuminating dock, boat, and road entrance
             var lightGo=new GameObject("Dock Lantern Light",typeof(Light));lightGo.transform.SetParent(gallows,false);
@@ -657,10 +649,11 @@ namespace TheLightHouse.Editor
         {
             // Cottage West Front Plinth & Steps at x = -8.5, z = -9.05
             Box("House Plinth West",root,new(-8.85f,.08f,-9.05f),new(7.3f,.18f,.28f),stone,true);
-            Box("Cottage Door Threshold Sill",root,new(-8.5f,.12f,-9.15f),new(2.2f,.18f,.45f),stone,true);
-            Box("Cottage Door Intermediate Step",root,new(-8.5f,.06f,-9.6f),new(2.5f,.14f,.55f),stone,true);
-            Box("Cottage Door Approach Step",root,new(-8.5f,.01f,-10.1f),new(2.8f,.12f,.65f),stone,true);
-            DoorLeaf("Keeper House Front Door",new(-9.40f,.15f,-9.05f),0,1.80f,2.2f,"Keeper House Front Door");
+            Box("Cottage Door Threshold Sill",root,new(-8.5f,.12f,-9.15f),new(1.8f,.18f,.45f),stone,true);
+            Box("Cottage Door Intermediate Step",root,new(-8.5f,.06f,-9.6f),new(2.1f,.14f,.55f),stone,true);
+            Box("Cottage Door Approach Step",root,new(-8.5f,.01f,-10.1f),new(2.4f,.12f,.65f),stone,true);
+            // Standard human doorway: width = 1.16m, height = 2.25m, clearance = 1.20m (Ref: Screenshot 18)
+            DoorLeaf("Keeper House Front Door",new(-9.08f,.15f,-9.05f),0,1.16f,2.25f,"Keeper House Front Door");
 
             // GRAND TOWER MAIN ENTRANCE (South wall, facing courtyard at x = 0, z = -6.50m)
             Box("Grand Tower Door Threshold Sill",root,new(0f,.12f,-6.65f),new(2.2f,.18f,.55f),stone,true);
@@ -684,19 +677,19 @@ namespace TheLightHouse.Editor
             foreach(var renderer in go.GetComponentsInChildren<Renderer>(true))renderer.enabled=false;
             foreach(var collider in go.GetComponentsInChildren<Collider>(true))collider.enabled=false;
             go.transform.position=hinge;go.transform.rotation=Quaternion.Euler(0,yaw,0);go.transform.localScale=Vector3.one;
-            var leaf=Box("Operable Leaf",go.transform,new(width*.5f,height*.5f,0),new(width,height,.14f),wood,true);
-            Box("Iron Door Handle",leaf.transform,new(.32f,0,-.62f),new(.045f,.09f,.12f),iron);
-            Box("Iron Door Handle",leaf.transform,new(.32f,0,.62f),new(.045f,.09f,.12f),iron);
-            Box("Hinge Strap Top",leaf.transform,new(-width*.22f,height*.32f,0),new(width*.52f,.065f,.16f),iron);
-            Box("Hinge Strap Bottom",leaf.transform,new(-width*.22f,-height*.32f,0),new(width*.52f,.065f,.16f),iron);
+            var leaf=Box("Operable Leaf",go.transform,new(width*.5f,height*.5f,0),new(width,height,.08f),wood,true);
+            Box("Iron Door Handle",leaf.transform,new(width*.5f-.08f,0,-.06f),new(.04f,.10f,.03f),iron);
+            Box("Iron Door Handle",leaf.transform,new(width*.5f-.08f,0,.06f),new(.04f,.10f,.03f),iron);
+            Box("Hinge Strap Top",leaf.transform,new(-width*.25f,height*.32f,0),new(width*.45f,.055f,.10f),iron);
+            Box("Hinge Strap Bottom",leaf.transform,new(-width*.25f,-height*.32f,0),new(width*.45f,.055f,.10f),iron);
             var door=go.GetComponent<Door>();var so=new SerializedObject(door);so.FindProperty("doorId").stringValue=id;so.FindProperty("locked").boolValue=false;so.FindProperty("openAngle").floatValue=-105;
             if(name=="Tower Door")so.FindProperty("blockDuringActTwo").boolValue=false;
             so.ApplyModifiedPropertiesWithoutUndo();
             Quaternion rotation=Quaternion.Euler(0,yaw,0);
-            for(int i=0;i<2;i++)Box("Masonry Door Reveal",root,hinge+rotation*new Vector3(i==0?-.4f:width+.4f,height*.5f,.15f),new(.64f,height+.12f,.6f),stone,true).transform.rotation=rotation;
-            for(int i=0;i<2;i++)Box("Fixed Door Jamb",root,hinge+rotation*new Vector3(i==0?-.09f:width+.09f,height*.5f,0),new(.16f,height+.12f,.25f),wood,true).transform.rotation=rotation;
-            Box("Fixed Door Header",root,hinge+rotation*new Vector3(width*.5f,height+.08f,0),new(width+.34f,.16f,.25f),wood,true).transform.rotation=rotation;
-            Box("Door Threshold",root,hinge+rotation*new Vector3(width*.5f,-.03f,0),new(width+.18f,.07f,.34f),stone,true).transform.rotation=rotation;
+            for(int i=0;i<2;i++)Box("Masonry Door Reveal",root,hinge+rotation*new Vector3(i==0?-.35f:width+.35f,height*.5f,.15f),new(.55f,height+.12f,.6f),stone,true).transform.rotation=rotation;
+            for(int i=0;i<2;i++)Box("Fixed Door Jamb",root,hinge+rotation*new Vector3(i==0?-.06f:width+.06f,height*.5f,0),new(.12f,height+.12f,.22f),wood,true).transform.rotation=rotation;
+            Box("Fixed Door Header",root,hinge+rotation*new Vector3(width*.5f,height+.06f,0),new(width+.24f,.12f,.22f),wood,true).transform.rotation=rotation;
+            Box("Door Threshold",root,hinge+rotation*new Vector3(width*.5f,-.03f,0),new(width+.16f,.07f,.30f),stone,true).transform.rotation=rotation;
         }
     }
 }

@@ -344,9 +344,17 @@ namespace TheLightHouse.Editor
             Box("West Wall",new(-12.5f,1.5f,-5.0f),new(.3f,3f,8.0f),towerStone??plaster,true);
             Box("East Wall",new(-5.2f,1.5f,-6.5f),new(.3f,3f,5.0f),towerStone??plaster,true);
             Box("North Wall",new(-8.85f,1.5f,-1.0f),new(7.3f,3f,.3f),towerStone??plaster,true);
-            Box("Front West",new(-11.15f,1.5f,-9.0f),new(2.7f,3f,.3f),towerStone??plaster,true);
-            Box("Front East",new(-6.0f,1.5f,-9.0f),new(2.4f,3f,.3f),towerStone??plaster,true);
-            Box("Front Lintel",new(-8.5f,2.75f,-9.0f),new(2.8f,.5f,.3f),towerStone??plaster,true);
+
+            // Front stone cottage facade with standardized human doorway opening (width = 1.20m, height = 2.30m, Ref: Screenshot 18)
+            Box("Front West",new(-10.80f,1.5f,-9.0f),new(3.40f,3.0f,.30f),towerStone??plaster,true);
+            Box("Front East",new(-6.55f,1.5f,-9.0f),new(2.70f,3.0f,.30f),towerStone??plaster,true);
+            Box("Front Lintel",new(-8.50f,2.65f,-9.0f),new(1.20f,.70f,.30f),towerStone??plaster,true);
+
+            // Finished connecting hallway linking rear of cottage to tower base west portal (Ref: Task 4)
+            Box("Corridor Floor",new(-5.50f,.06f,-3.25f),new(1.0f,.18f,1.80f),wood,true);
+            Box("Corridor Ceiling",new(-5.50f,2.95f,-3.25f),new(1.0f,.18f,1.80f),wood,true);
+            Box("Corridor Wall North",new(-5.50f,1.5f,-2.35f),new(1.0f,3.0f,.25f),towerStone??plaster,true);
+            Box("Corridor Wall South",new(-5.50f,1.5f,-4.15f),new(1.0f,3.0f,.25f),towerStone??plaster,true);
 
             // Cottage internal room partition dividing North Kitchen (z in [-5, -1]) and South Dining/Office (z in [-9, -5])
             Box("Cottage Partition West",new(-11.15f,1.5f,-5.0f),new(2.7f,3f,.2f),plaster,true);

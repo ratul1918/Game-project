@@ -9,11 +9,11 @@ namespace TheLightHouse.Editor
         public static void ApplyToOpenScene()
         {
             var root=GameObject.Find("Reference Visuals");
-            var go=new GameObject("Coastal Rain");go.transform.SetParent(root.transform);go.transform.position=new(0,9,-22);
+            var go=new GameObject("Coastal Rain");go.transform.SetParent(root.transform);go.transform.position=new(0,18,-18);
             var ps=go.AddComponent<ParticleSystem>();ps.Stop(true,ParticleSystemStopBehavior.StopEmittingAndClear);
-            var main=ps.main;main.startSpeed=0;main.startLifetime=.85f;main.startSize=.018f;main.startColor=new Color(.58f,.72f,.77f,.36f);main.maxParticles=360;main.simulationSpace=ParticleSystemSimulationSpace.World;main.prewarm=true;
-            var shape=ps.shape;shape.shapeType=ParticleSystemShapeType.Box;shape.scale=new(34,.1f,22);
-            var velocity=ps.velocityOverLifetime;velocity.enabled=true;velocity.space=ParticleSystemSimulationSpace.World;velocity.x=-1.2f;velocity.y=-18;velocity.z=.8f;
+            var main=ps.main;main.startSpeed=0;main.startLifetime=1.15f;main.startSize=.018f;main.startColor=new Color(.58f,.72f,.77f,.36f);main.maxParticles=800;main.simulationSpace=ParticleSystemSimulationSpace.World;main.prewarm=true;
+            var shape=ps.shape;shape.shapeType=ParticleSystemShapeType.Box;shape.scale=new(48,1f,36);
+            var velocity=ps.velocityOverLifetime;velocity.enabled=true;velocity.space=ParticleSystemSimulationSpace.World;velocity.x=-2.2f;velocity.y=-22;velocity.z=1.2f;
             var emission=ps.emission;emission.rateOverTime=90;
             const string path="Assets/_Project/Materials/Reference/Rain.mat";
             var material=AssetDatabase.LoadAssetAtPath<Material>(path);

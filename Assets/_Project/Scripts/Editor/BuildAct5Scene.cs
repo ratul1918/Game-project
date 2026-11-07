@@ -72,7 +72,14 @@ namespace TheLightHouse.Editor
         static StoryBeat Beat(string id,string signal,string objective){string path=$"Assets/_Project/StoryBeats/{id}.asset";var beat=AssetDatabase.LoadAssetAtPath<StoryBeat>(path);if(!beat){beat=ScriptableObject.CreateInstance<StoryBeat>();AssetDatabase.CreateAsset(beat,path);}beat.id=id;beat.trigger=StoryTrigger.Signal;beat.triggerId=signal;beat.objective=objective;beat.prerequisiteId="";beat.lines=System.Array.Empty<DialogueLine>();EditorUtility.SetDirty(beat);return beat;}
         static Door DoorObject(string name,Vector3 position,float loudness){var root=new GameObject(name);root.transform.position=position;var panel=Cube(name+" panel",position+new Vector3(1,1.5f,0),new(2,3,.25f));panel.transform.SetParent(root.transform,true);root.AddComponent<NoiseEmitter>();var door=root.AddComponent<Door>();Set(door,"doorId",name);Set(door,"slamLoudness",loudness);return door;}
         static Transform Point(string name,Vector3 position){var point=new GameObject(name).transform;point.position=position;return point;}
-        static GameObject Cube(string name,Vector3 position,Vector3 scale){var go=GameObject.CreatePrimitive(PrimitiveType.Cube);go.name=name;go.transform.position=position;go.transform.localScale=scale;return go;}
+        static GameObject Cube(string name,Vector3 position,Vector3 scale){
+            var go=GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name=name;go.transform.position=position;go.transform.localScale=scale;
+            var mat=AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/PBR/PBR_WeatheredPlanks.mat") ?? new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            var r=go.GetComponent<Renderer>();
+            if(r) r.sharedMaterial=mat;
+            return go;
+        }
         static GameObject Panel(string name,Transform parent,Vector2 min,Vector2 max){var go=new GameObject(name,typeof(RectTransform),typeof(CanvasRenderer),typeof(Image));go.transform.SetParent(parent,false);var rect=go.GetComponent<RectTransform>();rect.anchorMin=min;rect.anchorMax=max;rect.offsetMin=rect.offsetMax=Vector2.zero;go.GetComponent<Image>().color=Color.black;return go;}
         static Text Text(string name,Transform parent,Vector2 min,Vector2 max,int size){var go=new GameObject(name,typeof(RectTransform),typeof(CanvasRenderer),typeof(Text));go.transform.SetParent(parent,false);var rect=go.GetComponent<RectTransform>();rect.anchorMin=min;rect.anchorMax=max;rect.offsetMin=rect.offsetMax=Vector2.zero;var text=go.GetComponent<Text>();text.font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");text.fontSize=size;text.alignment=TextAnchor.MiddleCenter;text.color=Color.white;return text;}
         static void Set(Object target,string name,Object value){if(!target)return;var so=new SerializedObject(target);var p=so.FindProperty(name);if(p!=null){p.objectReferenceValue=value;so.ApplyModifiedPropertiesWithoutUndo();}}

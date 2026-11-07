@@ -781,12 +781,17 @@ namespace TheLightHouse.Editor
                 CreatePrimitiveMesh($"Tower Wall Stone Arc {i}", PrimitiveType.Cube, wallGroup,
                     segPos, new Vector3(1.15f, 4.2f, 0.35f), segRot, matStone, false);
 
-                // Heavy timber wall corbel supporting mezzanine deck above
+                // Heavy timber wall corbel supporting mezzanine deck above (only outside the stair wellhole!)
                 if (i % 2 == 0)
                 {
-                    Vector3 corbelPos = new Vector3(Mathf.Sin(rad) * (towerRadius - 0.28f), 3.12f, Mathf.Cos(rad) * (towerRadius - 0.28f));
-                    CreatePrimitiveMesh($"Deck Corbel {i}", PrimitiveType.Cube, wallGroup,
-                        corbelPos, new Vector3(0.24f, 0.36f, 0.55f), segRot, matWood, false);
+                    // Stair Flight 0 ascends along the North arc from angle 50° through 0° down to -110° (approx 40° to 250°)
+                    // Omit corbels in this sector to ensure >= 2.4m vertical headroom over every step (Ref: Screenshot 19)
+                    if (angle < 45f || angle > 250f)
+                    {
+                        Vector3 corbelPos = new Vector3(Mathf.Sin(rad) * (towerRadius - 0.28f), 3.12f, Mathf.Cos(rad) * (towerRadius - 0.28f));
+                        CreatePrimitiveMesh($"Deck Corbel {i}", PrimitiveType.Cube, wallGroup,
+                            corbelPos, new Vector3(0.24f, 0.36f, 0.55f), segRot, matWood, false);
+                    }
                 }
             }
 
@@ -809,9 +814,14 @@ namespace TheLightHouse.Editor
             var deckGroup = new GameObject("Mezzanine Study Deck & Balustrade").transform;
             deckGroup.SetParent(towerRoot, false);
 
-            // Hardwood floor platform
-            CreatePrimitiveMesh("Mezzanine Floor Platform", PrimitiveType.Cube, deckGroup,
-                new Vector3(0f, 3.20f, 1.80f), new Vector3(8.5f, 0.12f, 6.4f), Quaternion.identity, matWood, true);
+            // Hardwood floor platform with generous curved stairwell wellhole opening (Ref: Screenshot 19)
+            // Covers the study zone (x in [-3.2f, 3.2f], z in [0.2f, 3.8f]) leaving the outer stairwell perimeter (r > 3.85m on North arc) 100% OPEN AIR
+            CreatePrimitiveMesh("Mezzanine Study Floor Core", PrimitiveType.Cube, deckGroup,
+                new Vector3(0f, 3.20f, 2.00f), new Vector3(6.4f, 0.12f, 3.6f), Quaternion.identity, matWood, true);
+
+            // Arrival Landing Platform connecting stair top (angle -110°) smoothly into study floor
+            CreatePrimitiveMesh("Stair Arrival Landing Deck", PrimitiveType.Cube, deckGroup,
+                new Vector3(-3.85f, 3.20f, -0.60f), new Vector3(2.4f, 0.12f, 2.4f), Quaternion.identity, matWood, true);
 
             // Inner Curved Wrought-Iron Guardrail along void edge overlooking staircase (South perimeter of mezzanine)
             int railPosts = 24;
@@ -1813,17 +1823,15 @@ namespace TheLightHouse.Editor
             var courtyardMaster = new GameObject("Flooded Courtyard & Boat Shed Master").transform;
             courtyardMaster.SetParent(parent, false);
 
-            // A. Flooded Courtyard Water Basin (0.5m Surge!) & Swirling Wave Foam
+            // A. Flooded Courtyard Water Basin & Swirling Wave Foam (Phase 7 / Act 5 Climax ONLY)
             var waterGroup = new GameObject("Flooded Courtyard Water & Wave Churn").transform;
             waterGroup.SetParent(courtyardMaster, false);
 
-            // Water surface plane at y = 0.50m (representing 0.5 meters of rising storm surge!)
+            bool isAct5 = SceneManager.GetActiveScene().name == "Act5";
+
+            // Water surface plane at y = 0.50m (representing storm surge during Act 5 finale, disabled during Acts 1-4)
             CreatePrimitiveMesh("Flooded Courtyard Water Surface", PrimitiveType.Cube, waterGroup,
                 new Vector3(3.5f, 0.50f, -14.0f), new Vector3(24.0f, 0.04f, 12.5f), Quaternion.identity, matFloodWater, false);
-
-            // Left Framing Stone Masonry Wall (Framing left edge of courtyard view matching Image 12 Panel 4)
-            CreatePrimitiveMesh("Courtyard Framing Wall Left", PrimitiveType.Cube, courtyardMaster,
-                new Vector3(-1.10f, 1.85f, -11.5f), new Vector3(0.65f, 3.8f, 6.0f), Quaternion.identity, matStone, true);
 
             // Swirling wave foam ribbons and churned froth patches across flooded basin at y = 0.51m
             for (int f = 0; f < 18; f++)
@@ -1836,6 +1844,9 @@ namespace TheLightHouse.Editor
                 CreatePrimitiveMesh($"Churned Seafoam Patch {f}", PrimitiveType.Quad, waterGroup,
                     new Vector3(fx, 0.51f + (f * 0.001f), fz), new Vector3(sx, sz, 1f), Quaternion.Euler(90f, rotY, 0), matSeaFoam, false);
             }
+
+            // Confine courtyard flooding strictly to Act 5 climax
+            waterGroup.gameObject.SetActive(isAct5);
 
             // B. Raised Wooden Boardwalk Approach (Partially Broken Dock Walkway elevated just above water)
             var boardwalkGroup = new GameObject("Raised Wooden Boardwalk Approach").transform;

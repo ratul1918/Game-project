@@ -27,7 +27,7 @@ Material:
     m_Floats:
     - _FoamDistance: 1.25
     - _Smoothness: 0.94
-    - _WaveHeight: 0.28
+    - _WaveHeight: 0.13
     - _WaveSpeed: 1.05
     m_Colors:
     - _CrestColor: {r: 0.054999977, g: 0.10999996, b: 0.11999995, a: 1}

@@ -59,6 +59,11 @@ namespace TheLightHouse
             {
                 renderer.renderMode = ParticleSystemRenderMode.Billboard;
                 var mat = Resources.Load<Material>("SteamMaterial");
+                if (!mat)
+                {
+                    var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+                    if (shader) mat = new Material(shader);
+                }
                 if (mat) renderer.sharedMaterial = mat;
             }
         }
