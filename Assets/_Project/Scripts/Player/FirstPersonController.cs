@@ -20,6 +20,7 @@ namespace TheLightHouse
         [Header("References")]
         [SerializeField] private Transform cameraTransform;
         [SerializeField] private NoiseEmitter noiseEmitter;
+        [SerializeField] private FlashlightController flashlight;
 
         [SerializeField] private PlayerMovementSettings settings;
         [SerializeField] private string jumpActionName = "Jump";
@@ -64,6 +65,7 @@ namespace TheLightHouse
         private FirstPersonArms arms;
         public float MoveSpeedMultiplier { get; set; } = 1f;
         public FirstPersonArms Arms => arms;
+        public FlashlightController Flashlight => flashlight;
         public void ApplyOptions(float sensitivityMultiplier,bool disableBobAndFov){lookSensitivityMultiplier=Mathf.Max(.01f,sensitivityMultiplier);settings.disableBobAndFov=disableBobAndFov;}
         public bool MovementEnabled
         {
@@ -101,7 +103,32 @@ namespace TheLightHouse
             characterController.slopeLimit = settings.slopeLimit;
             characterController.skinWidth = settings.skinWidth;
             arms = GetComponentInChildren<FirstPersonArms>();
+            flashlight = EnsureFlashlight();
             ResolveActions();
+        }
+
+        private FlashlightController EnsureFlashlight()
+        {
+            if (flashlight) return flashlight;
+            flashlight = GetComponentInChildren<FlashlightController>();
+            if (flashlight) return flashlight;
+
+            Transform cam = cameraTransform ?? GetComponentInChildren<Camera>()?.transform;
+            if (!cam) return null;
+
+            var existing = cam.Find("Player_Flashlight");
+            GameObject flGo = existing ? existing.gameObject : new GameObject("Player_Flashlight");
+            flGo.transform.SetParent(cam, false);
+            flGo.transform.localPosition = new Vector3(0.22f, -0.18f, 0.45f);
+            flGo.transform.localRotation = Quaternion.Euler(1.5f, -1.8f, 0f);
+
+            flashlight = flGo.GetComponent<FlashlightController>() ?? flGo.AddComponent<FlashlightController>();
+            if (flGo.transform.childCount == 0)
+            {
+                var model = FlashlightModelBuilder.BuildFlashlightModel(flGo.transform, out var bulbRend, out var bulbMat);
+                flashlight.AssignModelReferences(model.transform, bulbRend, bulbMat);
+            }
+            return flashlight;
         }
 
         private void OnEnable()

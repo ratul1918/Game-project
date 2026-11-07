@@ -245,6 +245,20 @@ namespace TheLightHouse.Editor
             EnsureEventSystemInScene("Act 1", report);
             AuditPauseMenuAndButtons("Act 1", report, ref phasePassed);
 
+            // 8. Handheld Flashlight & Voiceover Director audit
+            var fl = Object.FindAnyObjectByType<FlashlightController>();
+            if (!fl)
+            {
+                report.IdentifiedBugs.Add("[Act 1] FlashlightController missing.");
+                phasePassed = false;
+            }
+            var vo = Object.FindAnyObjectByType<VoiceoverDirector>();
+            if (!vo)
+            {
+                report.IdentifiedBugs.Add("[Act 1] VoiceoverDirector missing.");
+                phasePassed = false;
+            }
+
             report.PhaseStatus["Phase 2: Arrival at Harrow Rock (Dusk)"] = phasePassed;
             if (scene.isDirty) EditorSceneManager.SaveScene(scene);
         }

@@ -412,6 +412,12 @@ namespace TheLightHouse.Editor
         {
             PrepareMaterials();
 
+            var radioObj = GameObject.Find("Radio");
+            if (radioObj && !radioObj.GetComponent<AudioSource>()) radioObj.AddComponent<AudioSource>();
+
+            var boatmanObj = GameObject.Find("Boatman");
+            if (boatmanObj && !boatmanObj.GetComponent<AudioSource>()) boatmanObj.AddComponent<AudioSource>();
+
             var existing = GameObject.Find(RootName);
             if (existing) Object.DestroyImmediate(existing);
 
@@ -422,6 +428,7 @@ namespace TheLightHouse.Editor
             BuildTowerInteriorAndStudy(root);
             BuildUndergroundCellar(root);
             BuildFloodedCourtyardAndBoatShed(root);
+            SetupPlayerFlashlightAndAudio(root);
         }
 
         // =========================================================================
@@ -2181,6 +2188,16 @@ namespace TheLightHouse.Editor
                 Object.DestroyImmediate(reel.GetComponent<Collider>());
             }
 
+            var rtrRec = rtrObj.GetComponent<ReelToReelRecording>();
+            if (!rtrRec) rtrRec = rtrObj.AddComponent<ReelToReelRecording>();
+            var rtrAudio = rtrObj.GetComponent<AudioSource>();
+            if (!rtrAudio) rtrAudio = rtrObj.AddComponent<AudioSource>();
+            rtrAudio.spatialBlend = 1.0f;
+            rtrAudio.minDistance = 1.5f;
+            rtrAudio.maxDistance = 16.0f;
+            rtrAudio.rolloffMode = AudioRolloffMode.Logarithmic;
+            rtrAudio.playOnAwake = false;
+
             // 2. 1940s-1950s Vacuum Tube Shortwave Radio Console (Right Flank of Desk)
             Vector3 radioPos = deskPos + new Vector3(0.75f, 0.96f, 0.16f);
             var radioConsole = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -2802,6 +2819,133 @@ namespace TheLightHouse.Editor
                 // Swirling churned foam ring at waist where body breaches water (y = 0.51m in world space)
                 CreatePrimitiveMesh($"Water Foam Ring", PrimitiveType.Quad, fig,
                     new Vector3(0, 0.65f, 0), new Vector3(1.35f, 1.35f, 1f), Quaternion.Euler(90f, 0, 0), matSeaFoam, false);
+            }
+        }
+
+        private static void SetupPlayerFlashlightAndAudio(Transform parent)
+        {
+            // 1. Setup Voiceover & Spatial Audio Director
+            var voGo = GameObject.Find("Voiceover Director");
+            if (!voGo)
+            {
+                voGo = new GameObject("Voiceover Director");
+            }
+            if (!voGo.GetComponent<VoiceoverDirector>())
+            {
+                voGo.AddComponent<VoiceoverDirector>();
+            }
+
+            // 2. Setup Player Flashlight Rig
+            var player = Object.FindAnyObjectByType<FirstPersonController>();
+            if (player)
+            {
+                var cam = player.GetComponentInChildren<Camera>()?.transform;
+                if (cam)
+                {
+                    // Ensure AudioListener
+                    if (!cam.GetComponent<AudioListener>())
+                    {
+                        cam.gameObject.AddComponent<AudioListener>();
+                    }
+
+                    var flTransform = cam.Find("Player_Flashlight");
+                    GameObject flGo = flTransform ? flTransform.gameObject : new GameObject("Player_Flashlight");
+                    flGo.transform.SetParent(cam, false);
+                    flGo.transform.localPosition = new Vector3(0.22f, -0.18f, 0.45f);
+                    flGo.transform.localRotation = Quaternion.Euler(1.5f, -1.8f, 0f);
+
+                    var flCtrl = flGo.GetComponent<FlashlightController>();
+                    if (!flCtrl) flCtrl = flGo.AddComponent<FlashlightController>();
+
+                    var oldModel = flGo.transform.Find("Flashlight_1940s_Ribbed_Mesh");
+                    if (oldModel) Object.DestroyImmediate(oldModel.gameObject);
+
+                    var model = FlashlightModelBuilder.BuildFlashlightModel(flGo.transform, out var bulbRend, out var bulbMat);
+                    flCtrl.SetupLightsAndAudio();
+                    flCtrl.AssignModelReferences(model.transform, bulbRend, bulbMat);
+                }
+            }
+
+            // 3. Attach ReelToReelRecording in Cellar Hidden Room
+            var rtr = GameObject.Find("Marta reel-to-reel recorder");
+            if (!rtr)
+            {
+                var env = GameObject.Find("Harrow Rock Master Environment");
+                if (env)
+                {
+                    var transforms = env.GetComponentsInChildren<Transform>(true);
+                    foreach (var t in transforms)
+                    {
+                        if (t.name == "Marta reel-to-reel recorder")
+                        {
+                            rtr = t.gameObject;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (rtr)
+            {
+                var rtrRec = rtr.GetComponent<ReelToReelRecording>();
+                if (!rtrRec) rtrRec = rtr.AddComponent<ReelToReelRecording>();
+                var rtrAudio = rtr.GetComponent<AudioSource>();
+                if (!rtrAudio) rtrAudio = rtr.AddComponent<AudioSource>();
+                rtrAudio.spatialBlend = 1.0f;
+                rtrAudio.minDistance = 1.5f;
+                rtrAudio.maxDistance = 16.0f;
+                rtrAudio.rolloffMode = AudioRolloffMode.Logarithmic;
+                rtrAudio.playOnAwake = false;
+                EditorUtility.SetDirty(rtrAudio);
+                EditorUtility.SetDirty(rtrRec);
+            }
+
+            // Boatman 3D Audio
+            var boatman = Object.FindAnyObjectByType<Boatman>();
+            if (boatman)
+            {
+                var bmAudio = boatman.GetComponent<AudioSource>();
+                if (!bmAudio) bmAudio = boatman.gameObject.AddComponent<AudioSource>();
+                bmAudio.spatialBlend = 1.0f;
+                bmAudio.minDistance = 2.0f;
+                bmAudio.maxDistance = 15.0f;
+                bmAudio.rolloffMode = AudioRolloffMode.Logarithmic;
+                bmAudio.playOnAwake = false;
+                EditorUtility.SetDirty(bmAudio);
+                EditorUtility.SetDirty(boatman);
+            }
+
+            // 4. Ensure Radio Voiceover
+            var radio = Object.FindAnyObjectByType<Radio>();
+            if (radio)
+            {
+                var radioAudio = radio.GetComponent<AudioSource>();
+                if (!radioAudio) radioAudio = radio.gameObject.AddComponent<AudioSource>();
+                radioAudio.spatialBlend = 1.0f;
+                radioAudio.minDistance = 1.5f;
+                radioAudio.maxDistance = 14.0f;
+                EditorUtility.SetDirty(radioAudio);
+                EditorUtility.SetDirty(radio);
+            }
+
+            // 5. Ensure CellarHum Voiceover
+            var hum = Object.FindAnyObjectByType<CellarHum>();
+            if (hum)
+            {
+                var humAudio = hum.GetComponent<AudioSource>();
+                if (!humAudio) humAudio = hum.gameObject.AddComponent<AudioSource>();
+                humAudio.spatialBlend = 1.0f;
+                humAudio.minDistance = 3.0f;
+                humAudio.maxDistance = 24.0f;
+                EditorUtility.SetDirty(humAudio);
+                EditorUtility.SetDirty(hum);
+            }
+            {
+                var humAudio = hum.GetComponent<AudioSource>();
+                if (!humAudio) humAudio = hum.gameObject.AddComponent<AudioSource>();
+                humAudio.spatialBlend = 1.0f;
+                humAudio.minDistance = 3.0f;
+                humAudio.maxDistance = 24.0f;
             }
         }
     }

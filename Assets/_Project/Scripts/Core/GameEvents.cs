@@ -230,6 +230,7 @@ namespace TheLightHouse
             StorySignal = null;
             ObjectiveChanged = null;
             DialogueRequested = null;
+            FlashlightToggled = null;
             NoiseEmitted = null;
             LampStateChanged = null;
             FuelChanged = null;
@@ -290,11 +291,13 @@ namespace TheLightHouse
         public static event Action<string> StorySignal;
         public static event Action<string> ObjectiveChanged;
         public static event Action<DialogueLine> DialogueRequested;
+        public static event Action<bool> FlashlightToggled;
         public static void RaiseGameStateChanged(GameStateChangedEvent e) => GameStateChanged?.Invoke(e);
         public static void RaiseLampNotLitInTime() => LampNotLitInTime?.Invoke();
         public static void RaiseStorySignal(string id) => StorySignal?.Invoke(id);
         public static void RaiseObjectiveChanged(string text) => ObjectiveChanged?.Invoke(text);
         public static void RequestDialogue(DialogueLine line) => DialogueRequested?.Invoke(line);
+        public static void RaiseFlashlightToggled(bool isOn) => FlashlightToggled?.Invoke(isOn);
         public static void RaiseStoryBeatTriggered(StoryBeatTriggeredEvent e) => StoryBeatTriggered?.Invoke(e);
         public static void RaiseItemCollected(ItemCollectedEvent e) => ItemCollected?.Invoke(e);
         public static void RaiseDoorStateChanged(DoorStateChangedEvent e) => DoorStateChanged?.Invoke(e);
