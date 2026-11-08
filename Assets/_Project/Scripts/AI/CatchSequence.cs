@@ -28,6 +28,7 @@ namespace TheLightHouse
             active = true; player.IsCaught = true; GameEvents.RaisePlayerDeath();
             var movement = player.GetComponent<FirstPersonController>();
             movement.SetMovementLocked(true); movement.SetPeekLimits(0, 0); movement.SetLookLocked(true);
+            GameEvents.RequestDialogue(new("Daniel", "(sharp choked gasp)") { duration = 1.0f });
             GameEvents.RequestDialogue(line); float elapsed = 0;
             while (elapsed < duration)
             {

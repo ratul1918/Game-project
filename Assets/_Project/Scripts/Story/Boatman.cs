@@ -42,6 +42,17 @@ namespace TheLightHouse
             {
                 if (line1Clip) warnings[1].clip = line1Clip;
                 if (line2Clip) warnings[3].clip = line2Clip;
+
+#if UNITY_EDITOR
+                var db = UnityEditor.AssetDatabase.LoadAssetAtPath<TheLightHouse.Voice.VoiceDatabase>("Assets/_Project/Audio/Voice/VoiceDatabase.asset");
+                if (db)
+                {
+                    if (db.TryGetLine("A1_BOAT_001", out var b1) && b1.Clip) warnings[0].clip = b1.Clip;
+                    if (db.TryGetLine("A1_BOAT_002", out var b2) && b2.Clip) warnings[1].clip = b2.Clip;
+                    if (db.TryGetLine("A1_DAN_BOAT_001", out var d1) && d1.Clip) warnings[2].clip = d1.Clip;
+                    if (db.TryGetLine("A1_BOAT_003", out var b3) && b3.Clip) warnings[3].clip = b3.Clip;
+                }
+#endif
             }
         }
 

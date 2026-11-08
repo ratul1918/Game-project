@@ -270,6 +270,10 @@ namespace TheLightHouse
             {
                 footsteps.Land(impactSpeed, settings);
                 effects.Land(impactSpeed, settings);
+                if (impactSpeed >= settings.hardLandingSpeed * 0.75f)
+                {
+                    GameEvents.RequestDialogue(new("Daniel", "(stifled grunt on hard drop)") { duration = 1.0f });
+                }
             }
             Vector3 actual = transform.position - previousPosition;
             actual.y = 0f;

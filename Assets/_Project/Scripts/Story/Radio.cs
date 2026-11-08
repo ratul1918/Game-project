@@ -8,9 +8,12 @@ namespace TheLightHouse
     {
         [SerializeField] private DialogueLine greeting = new("Marta", "Daniel... Daniel Hale. You made it before dark. Thomas left the lamp cold. You have to climb the tower and light it now. The fuel is in the cellar, Daniel.");
         [SerializeField] private DialogueLine[] reassurance = { new("Marta", "Questions after the lamp, Daniel. You have minutes.") };
+        [SerializeField] private TheLightHouse.Voice.VoiceLine martaVoiceLine;
         [SerializeField] private float loudness = 7f;
         [SerializeField] private AudioSource audioSource;
         [SerializeField] private AudioClip radioTransmissionClip;
+
+        public TheLightHouse.Voice.VoiceLine MartaVoiceLine => martaVoiceLine;
 
         private bool available;
         private bool held;
@@ -29,7 +32,18 @@ namespace TheLightHouse
             audioSource.rolloffMode = AudioRolloffMode.Logarithmic;
             audioSource.playOnAwake = false;
 
-            if (!radioTransmissionClip) radioTransmissionClip = LoadAudio("Voice_Marta_RadioGreeting.wav");
+            if (!martaVoiceLine)
+            {
+#if UNITY_EDITOR
+                martaVoiceLine = UnityEditor.AssetDatabase.LoadAssetAtPath<TheLightHouse.Voice.VoiceLine>("Assets/_Project/Audio/Voice/Lines/A1_MARTA_001.asset");
+#endif
+            }
+
+            if (!radioTransmissionClip)
+            {
+                if (martaVoiceLine != null && martaVoiceLine.Clip != null) radioTransmissionClip = martaVoiceLine.Clip;
+                else radioTransmissionClip = LoadAudio("Voice_Marta_RadioGreeting.wav");
+            }
             if (greeting != null && radioTransmissionClip != null)
             {
                 greeting.clip = radioTransmissionClip;
