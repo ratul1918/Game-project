@@ -11,7 +11,6 @@ namespace TheLightHouse.Editor
         public const string SettingsPath = "Assets/_Project/Settings/InteriorSettings.asset";
         public const string MatDir = "Assets/_Project/Materials/Interior";
 
-        [MenuItem("TheLightHouse/Build Modular Interior Kit")]
         public static void BuildKit()
         {
             Directory.CreateDirectory(PrefabDir);

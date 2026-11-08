@@ -27,7 +27,6 @@ namespace TheLightHouse.Editor
             }
         }
 
-        [MenuItem("TheLightHouse/Capture All 16 Validation Screenshots")]
         public static void CaptureAll16()
         {
             Directory.CreateDirectory(RepoDir);
@@ -185,7 +184,6 @@ namespace TheLightHouse.Editor
             Debug.Log("[ValidationSuiteRenderer] All 16 validation screenshots successfully generated.");
         }
 
-        [MenuItem("TheLightHouse/Capture Tower & Study Validation Screenshots")]
         public static void CaptureTowerStudyValidationShots()
         {
             string repoDir = "docs/screenshots";
@@ -307,7 +305,6 @@ namespace TheLightHouse.Editor
             Debug.Log("[ValidationSuiteRenderer] Tower & Study validation screenshots successfully generated.");
         }
 
-        [MenuItem("TheLightHouse/Capture Flooded Courtyard & Boat Shed Validation Screenshots")]
         public static void CaptureFloodedCourtyardValidationShots()
         {
             string repoDir = "docs/screenshots";
@@ -429,7 +426,6 @@ namespace TheLightHouse.Editor
             Debug.Log("[ValidationSuiteRenderer] Flooded Courtyard & Boat Shed validation screenshots successfully generated.");
         }
 
-        [MenuItem("TheLightHouse/Capture Secret Radio Room & Ledger Validation Screenshots")]
         public static void CaptureSecretRadioRoomAndLedgerValidationShots()
         {
             string repoDir = "docs/screenshots";

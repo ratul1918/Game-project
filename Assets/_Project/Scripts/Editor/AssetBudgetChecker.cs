@@ -17,7 +17,6 @@ namespace TheLightHouse.Editor
         [SerializeField,Min(1f)] float longAudioSeconds=30f;
         Vector2 scroll;readonly List<string> findings=new();
 
-        [MenuItem("TheLightHouse/Check Asset Budget")]
         static void Open()=>GetWindow<AssetBudgetChecker>("Asset Budget");
 
         void OnGUI()

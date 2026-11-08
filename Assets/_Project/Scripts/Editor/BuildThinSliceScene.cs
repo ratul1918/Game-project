@@ -35,7 +35,6 @@ namespace TheLightHouse.Editor
         private static readonly Vector3 CrankPosition = new(2.5f, 0.75f, 4f);
         private static readonly Vector3 StalkerPosition = new(-6f, 0f, 5f);
 
-        [MenuItem("TheLightHouse/Build Thin Slice Scene")]
         public static void Build()
         {
             BuildTo(ScenePath);

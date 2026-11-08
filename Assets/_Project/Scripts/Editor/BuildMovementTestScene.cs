@@ -30,7 +30,6 @@ namespace TheLightHouse.Editor
             return settings;
         }
 
-        [MenuItem("TheLightHouse/Build Movement Test Scene")]
         public static void Build()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)

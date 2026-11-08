@@ -22,7 +22,6 @@ namespace TheLightHouse.Editor
             public string Details;
         }
 
-        [MenuItem("TheLightHouse/Validate Interior")]
         public static void ValidateAll()
         {
             var results = new List<ValidationResult>();

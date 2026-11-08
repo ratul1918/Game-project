@@ -14,7 +14,6 @@ namespace TheLightHouse.Editor
         const string SettingsPath="Assets/_Project/Settings/ActFourSettings.asset";
         const string PageFolder="Assets/_Project/LogbookPages";
 
-        [MenuItem("TheLightHouse/Build Act 4 Scene")]
         public static void Build()
         {
             BuildTo(ScenePath);

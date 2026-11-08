@@ -11,7 +11,6 @@ namespace TheLightHouse.Editor
         private const string MatRoot = "Assets/_Project/Materials/Reference";
         private const string AnimRoot = "Assets/_Project/Animations/FPV";
 
-        [MenuItem("TheLightHouse/Setup FPV Assets and Animations")]
         public static void SetupAll()
         {
             SetupTextureImportSettings();

@@ -21,7 +21,6 @@ namespace TheLightHouse.Editor
             new[]{"A5-B01","A5-B02","A5-B03","A5-B04","A5-B05","A5-B06"}
         };
 
-        [MenuItem("TheLightHouse/Validate Full Lighthouse and HUD")]
         public static void ValidateBatch()
         {
             List<string> failures=new();

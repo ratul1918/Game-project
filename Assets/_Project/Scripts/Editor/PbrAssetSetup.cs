@@ -9,7 +9,6 @@ namespace TheLightHouse.Editor
         private const string PbrTexRoot = "Assets/_Project/Art/Textures/PBR";
         private const string PbrMatRoot = "Assets/_Project/Materials/PBR";
 
-        [MenuItem("TheLightHouse/Setup PBR Materials and Assets")]
         public static void SetupAll()
         {
             if (!Directory.Exists(PbrMatRoot))

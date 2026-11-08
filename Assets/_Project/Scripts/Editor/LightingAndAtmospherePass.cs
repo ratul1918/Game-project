@@ -11,13 +11,11 @@ namespace TheLightHouse.Editor
     {
         public const string AtmosphereRootName = "Atmosphere and Audio Mood";
 
-        [MenuItem("TheLightHouse/Apply Lighting and Atmosphere to Current Scene")]
         public static void ApplyToCurrentScene()
         {
             ApplyToOpenScene();
         }
 
-        [MenuItem("TheLightHouse/Apply Lighting and Atmosphere to All Acts")]
         public static void ApplyToAllActs()
         {
             var setup = EditorSceneManager.GetSceneManagerSetup();

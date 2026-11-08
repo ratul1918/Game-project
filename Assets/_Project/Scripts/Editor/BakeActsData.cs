@@ -10,7 +10,6 @@ namespace TheLightHouse.Editor
 {
     public static class BakeActsData
     {
-        [MenuItem("The LightHouse/Bake NavMesh and Occlusion (All Acts)")]
         public static void BakeAllActs()
         {
             for (int act = 1; act <= 5; act++)

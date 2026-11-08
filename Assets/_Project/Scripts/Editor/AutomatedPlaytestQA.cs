@@ -25,7 +25,6 @@ namespace TheLightHouse.Editor
             public List<string> Logs = new();
         }
 
-        [MenuItem("TheLightHouse/Run Full Automated QA Playtest")]
         public static void RunFullPlaytestMenu()
         {
             var report = RunFullPlaytest();

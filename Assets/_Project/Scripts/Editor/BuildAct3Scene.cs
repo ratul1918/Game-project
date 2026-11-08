@@ -9,7 +9,6 @@ namespace TheLightHouse.Editor
  {
   const string ScenePath="Assets/_Project/Scenes/Act3.unity";
   public const string SettingsPath="Assets/_Project/Settings/StormSettings.asset";
-  [MenuItem("TheLightHouse/Build Act 3 Scene")]
   public static void Build()
   {
    BuildTo(ScenePath);

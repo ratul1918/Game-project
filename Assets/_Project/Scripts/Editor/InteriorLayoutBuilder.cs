@@ -24,7 +24,6 @@ namespace TheLightHouse.Editor
             return comp != null ? comp : go.AddComponent<T>();
         }
 
-        [MenuItem("TheLightHouse/Rebuild Complete Interior & Cellar (All Acts)")]
         public static void RebuildAllActs()
         {
             var activeSetup = EditorSceneManager.GetSceneManagerSetup();
@@ -51,7 +50,6 @@ namespace TheLightHouse.Editor
             Debug.Log("[InteriorLayoutBuilder] Complete Interior & Cellar rebuilt across all Act scenes!");
         }
 
-        [MenuItem("TheLightHouse/Rebuild Interior Current Scene")]
         public static void RebuildCurrentScene()
         {
             var scene = EditorSceneManager.GetActiveScene();
@@ -61,7 +59,6 @@ namespace TheLightHouse.Editor
             Debug.Log($"[InteriorLayoutBuilder] Rebuilt complete interior & cellar in {scene.name}.");
         }
 
-        [MenuItem("TheLightHouse/Teleport to Cellar")]
         public static void TeleportToCellar()
         {
             var cellarDoor = GameObject.Find("Locked Cellar Door")?.GetComponent<Door>();

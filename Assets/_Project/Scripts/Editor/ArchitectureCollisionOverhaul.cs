@@ -30,7 +30,6 @@ namespace TheLightHouse.Editor
             foreach(var t in list) if(t) t.gameObject.SetActive(false);
         }
         static Vector3 P(float r,float a,float y)=>new(Mathf.Sin(a*Mathf.Deg2Rad)*r,y,Mathf.Cos(a*Mathf.Deg2Rad)*r);
-        [MenuItem("TheLightHouse/Repair Architecture and Collision (All Acts)")]
         public static void ApplyAll()
         {
             if(EditorApplication.isPlaying)throw new InvalidOperationException("Exit Play Mode before authoring.");

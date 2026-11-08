@@ -24,7 +24,6 @@ namespace TheLightHouse.Editor
             "Assets/_Project/Scenes/Act5.unity"
         };
 
-        [MenuItem("TheLightHouse/Apply Graphics 1 (Atmosphere)")]
         public static void Apply()
         {
             EnsureFolders();

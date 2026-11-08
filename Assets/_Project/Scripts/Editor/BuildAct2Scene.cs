@@ -16,7 +16,6 @@ namespace TheLightHouse.Editor
         const float StartingFuel=65f;
         const float DrainRate=.5f;
 
-        [MenuItem("TheLightHouse/Build Act 2 Scene")]
         public static void Build()
         {
             BuildTo(ScenePath);

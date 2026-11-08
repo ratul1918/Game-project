@@ -21,7 +21,6 @@ namespace TheLightHouse.EditorTools
             "Vintage Lanterns & Oil Lamps"
         };
 
-        [MenuItem("The LightHouse/Assets/Check Asset Store Package Status")]
         public static void CheckPackageStatus()
         {
             Debug.Log("<b>[The LightHouse] Scanning for Target Asset Store Packages...</b>");

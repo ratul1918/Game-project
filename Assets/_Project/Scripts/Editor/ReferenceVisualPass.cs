@@ -25,7 +25,6 @@ namespace TheLightHouse.Editor
         static string act;
         static string meshRunFolder;
 
-        [MenuItem("TheLightHouse/Apply Reference Visuals")]
         public static void ApplyAll()
         {
             if (EditorApplication.isPlaying) throw new InvalidOperationException("Exit Play Mode before applying visuals.");

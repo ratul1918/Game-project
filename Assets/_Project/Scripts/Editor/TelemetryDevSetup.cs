@@ -5,7 +5,6 @@ namespace TheLightHouse.Editor
 {
     public static class TelemetryDevSetup
     {
-        [MenuItem("TheLightHouse/Send Test Telemetry")]
         static void SendTestTelemetry()
         {
             if (!EditorApplication.isPlaying)

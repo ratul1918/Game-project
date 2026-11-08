@@ -10,7 +10,6 @@ const string ScenePath="Assets/_Project/Scenes/Act1.unity";
 const float StairRise=.2f;
 const float StairRun=.5f;
 const int StairCount=15;
-[MenuItem("TheLightHouse/Build Act 1 Scene")]
 public static void Build(){
 BuildTo(ScenePath);
 }

@@ -22,7 +22,6 @@ namespace TheLightHouse.Editor
         static IslandArrivalSettings settings;
         static string act;
 
-        [MenuItem("TheLightHouse/Apply Island Arrival and Doors")]
         public static void ApplyAll()
         {
             if(EditorApplication.isPlaying)throw new InvalidOperationException("Exit Play Mode first.");

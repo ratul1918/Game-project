@@ -57,7 +57,6 @@ namespace TheLightHouse.Editor
         private static Material matDeskLampShade;
         private static Material matRadioMetal;
 
-        [MenuItem("TheLightHouse/Apply Complete Harrow Rock Environments")]
         public static void ApplyToAllScenes()
         {
             if (EditorApplication.isPlaying)
@@ -91,7 +90,6 @@ namespace TheLightHouse.Editor
             AssetDatabase.Refresh();
         }
 
-        [MenuItem("TheLightHouse/Apply Complete Environment (Current Scene)")]
         public static void ApplyToCurrentScene()
         {
             PrepareMaterials();

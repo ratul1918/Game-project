@@ -10,7 +10,6 @@ namespace TheLightHouse.Editor
     {
         private const string ProfileRoot = "Assets/_Project/Settings";
 
-        [MenuItem("TheLightHouse/Setup Cinematic Post-Processing Volumes")]
         public static void SetupAllVolumes()
         {
             Directory.CreateDirectory(ProfileRoot);

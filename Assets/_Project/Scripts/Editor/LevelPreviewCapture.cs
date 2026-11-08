@@ -47,7 +47,6 @@ namespace TheLightHouse.Editor
             };
         }
 
-        [MenuItem("TheLightHouse/Capture All Previews")]
         public static void CaptureAll()
         {
             if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "Act1")

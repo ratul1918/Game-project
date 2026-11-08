@@ -13,7 +13,6 @@ namespace TheLightHouse.Editor
         private const string ModelRoot = "Assets/_Project/Art/Models";
         private const string AudioRoot = "Assets/_Project/Audio";
 
-        [MenuItem("TheLightHouse/Apply Asset Integration (Current Scene)")]
         public static void ApplyToCurrentScene()
         {
             UpgradeReferenceMaterialsWithPbr();
@@ -24,7 +23,6 @@ namespace TheLightHouse.Editor
             Debug.Log($"[AssetIntegrationPass] Applied asset integration to active scene: {scene.name}");
         }
 
-        [MenuItem("TheLightHouse/Apply Asset Integration (All Scenes)")]
         public static void ApplyToAllScenes()
         {
             UpgradeReferenceMaterialsWithPbr();

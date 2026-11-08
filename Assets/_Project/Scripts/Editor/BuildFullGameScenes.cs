@@ -25,7 +25,6 @@ namespace TheLightHouse.Editor
         static readonly Color TextMuted = new(.62f, .68f, .72f, 1f);
         static readonly Vector2 ReferenceResolution = new(1920f, 1080f);
 
-        [MenuItem("TheLightHouse/Build Full Game Scenes")]
         public static void Build()
         {
             var activeScene = EditorSceneManager.GetActiveScene();
@@ -58,19 +57,16 @@ namespace TheLightHouse.Editor
             Debug.Log("Full game scenes built and added to Build Settings. MainMenu is scene zero.");
         }
 
-        [MenuItem("TheLightHouse/Build Main Menu")]
         public static void BuildMenu()
         {
             MainMenuSceneBuilder.BuildMenuScene();
         }
 
-        [MenuItem("TheLightHouse/Build Standalone Player (macOS)")]
         public static void BuildStandalonePlayer()
         {
             BuildStandalone(false);
         }
 
-        [MenuItem("TheLightHouse/Build and Run Standalone Player (macOS)")]
         public static void BuildAndRunStandalonePlayer()
         {
             BuildStandalone(true);

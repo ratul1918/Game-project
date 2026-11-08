@@ -7,7 +7,6 @@ namespace TheLightHouse.Editor
 {
     public static class CheckUILayout
     {
-        [MenuItem("TheLightHouse/Check UI Layout")]
         public static void Check()
         {
             Canvas[] canvases=Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include,FindObjectsSortMode.None);
