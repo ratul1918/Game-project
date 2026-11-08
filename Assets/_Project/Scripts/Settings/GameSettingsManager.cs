@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
@@ -10,6 +11,7 @@ namespace TheLightHouse
         public static GameSettingsManager Instance { get; private set; }
 
         [SerializeField] private GameOptionsData currentOptions = new();
+        [SerializeField] private AudioMixer gameAudioMixer;
 
         public GameOptionsData CurrentOptions => currentOptions;
 
@@ -52,6 +54,24 @@ namespace TheLightHouse
 
             // Audio
             AudioListener.volume = Mathf.Clamp01(options.volume);
+
+            if (!gameAudioMixer)
+            {
+#if UNITY_EDITOR
+                gameAudioMixer = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioMixer>("Assets/_Project/Audio/Mixers/GameAudioMixer.mixer");
+#endif
+            }
+
+            if (gameAudioMixer)
+            {
+                float ToDb(float val) => val > 0.0001f ? Mathf.Log10(Mathf.Clamp(val, 0.0001f, 1f)) * 20f : -80f;
+                gameAudioMixer.SetFloat("MasterVolume", ToDb(options.masterVolume));
+                float voiceVol = options.voiceVolume > 0.0001f ? options.voiceVolume : options.dialogueVolume;
+                gameAudioMixer.SetFloat("VoiceVolume", ToDb(voiceVol));
+                gameAudioMixer.SetFloat("SfxVolume", ToDb(options.sfxVolume));
+                gameAudioMixer.SetFloat("AmbienceVolume", ToDb(options.ambienceVolume));
+                gameAudioMixer.SetFloat("MusicVolume", ToDb(options.musicVolume));
+            }
 
             // Display & Graphics
             if (options.qualityPreset >= 0 && options.qualityPreset < QualitySettings.names.Length)

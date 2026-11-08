@@ -18,11 +18,27 @@ public void ApplySettings(HudSettings settings){if(!settings)return;if(label)lab
 void OnEnable()=>GameEvents.DialogueRequested+=Enqueue;
 void OnDisable(){ GameEvents.DialogueRequested-=Enqueue; StopAllCoroutines(); queue.Clear(); playing=false; }
 void Enqueue(DialogueLine line){queue.Enqueue(line); if(!playing) StartCoroutine(Play());}
-IEnumerator Play(){playing=true; while(queue.Count>0){var line=queue.Dequeue();Show(line);if(line.clip)GetComponent<AudioSource>().PlayOneShot(line.clip);yield return new WaitForSeconds(line.clip?line.clip.length:line.duration>0?line.duration:fallbackDuration);}Hide();playing=false;}
+IEnumerator Play()
+{
+    playing=true;
+    while(queue.Count>0)
+    {
+        var line=queue.Dequeue();
+        Show(line);
+        if(line.clip && TheLightHouse.Voice.VoiceManager.Instance == null)
+        {
+            GetComponent<AudioSource>().PlayOneShot(line.clip);
+        }
+        float dur = line.clip ? line.clip.length : (line.duration > 0 ? line.duration : fallbackDuration);
+        yield return new WaitForSeconds(dur + 0.4f);
+    }
+    Hide();
+    playing=false;
+}
 void Show(DialogueLine line)
 {
     if(!label)return;
-    label.text=$"{line.speaker}: {line.text}";
+    label.text = string.IsNullOrEmpty(line.speaker) ? line.text : $"{line.speaker}: {line.text}";
     label.enabled=true;
     RectTransform labelRect=label.rectTransform;
     Vector2 size=new(Mathf.Max(1f,label.preferredWidth)+horizontalPadding,Mathf.Max(1f,label.preferredHeight)+verticalPadding);

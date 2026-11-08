@@ -80,6 +80,7 @@ namespace TheLightHouse
         private void OnDialogueRequested(DialogueLine line)
         {
             if (line == null) return;
+            if (TheLightHouse.Voice.VoiceManager.Instance != null) return;
 
             // If line has a clip and no custom spatial emitter handled it, play via 2D voiceover source
             if (line.clip != null)

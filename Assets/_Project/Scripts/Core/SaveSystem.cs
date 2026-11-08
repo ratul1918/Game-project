@@ -28,6 +28,7 @@ namespace TheLightHouse
         public float ambienceVolume = 0.9f;
         public float sfxVolume = 1f;
         public float dialogueVolume = 1f;
+        public float voiceVolume = 1f;
         public float footstepsVolume = 0.85f;
         public float horrorVolume = 1f;
 
