@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3733a21efab24c528e02d178edc682e, type: 3}
+  m_Name: Speaker_ThomasCrane
+  m_EditorClassIdentifier: Assembly-CSharp::TheLightHouse.Voice.VoiceSpeaker
+  speakerId: 3
+  displayName: Thomas Crane
+  outputGroup: {fileID: -4051020049479207187, guid: 5c7f5495113bd4279a08d4a888c4c5c5, type: 2}
+  volumeTrimDb: 1.5
+  pitchRandomRange: {x: 0.95, y: 1.03}
+  lowPassCutoff: 22000
+  highPassCutoff: 10

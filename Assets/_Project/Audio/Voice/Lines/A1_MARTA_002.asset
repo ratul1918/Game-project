@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40ea81093ca3d4c24af12dcc1609ad8c, type: 3}
+  m_Name: A1_MARTA_002
+  m_EditorClassIdentifier: Assembly-CSharp::TheLightHouse.Voice.VoiceLine
+  lineId: A1_MARTA_002
+  speaker: 2
+  text: Marta. Harbor relay. Questions after the lamp, Daniel. You have minutes.
+  actingDirection: Firm, clinical urgency
+  context: Radio desk dialogue response
+  clip: {fileID: 8300000, guid: 9672cee937d2e4fecbf9a9ce160be659, type: 3}
+  audioType: 1
+  spatialMode: 1
+  priority: 100
+  interruptible: 0
+  subtitleOverrideDuration: 0
+  isPlaceholder: 0

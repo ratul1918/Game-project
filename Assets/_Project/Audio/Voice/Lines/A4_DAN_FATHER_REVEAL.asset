@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40ea81093ca3d4c24af12dcc1609ad8c, type: 3}
+  m_Name: A4_DAN_FATHER_REVEAL
+  m_EditorClassIdentifier: Assembly-CSharp::TheLightHouse.Voice.VoiceLine
+  lineId: A4_DAN_FATHER_REVEAL
+  speaker: 0
+  text: Crane... the thing in the keeper's coat... is my father.
+  actingDirection: Epiphany breaking through defenses
+  context: Connecting photo and Stalker figure
+  clip: {fileID: 8300000, guid: c4a37a414b41a465b8ab4e41616ee27f, type: 3}
+  audioType: 0
+  spatialMode: 0
+  priority: 100
+  interruptible: 0
+  subtitleOverrideDuration: 0
+  isPlaceholder: 0

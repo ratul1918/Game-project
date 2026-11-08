@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40ea81093ca3d4c24af12dcc1609ad8c, type: 3}
+  m_Name: A2_DAN_WINDOW_SEE
+  m_EditorClassIdentifier: Assembly-CSharp::TheLightHouse.Voice.VoiceLine
+  lineId: A2_DAN_WINDOW_SEE
+  speaker: 0
+  text: Out there in the surf... those aren't rocks.
+  actingDirection: Dread taking root, hushed murmur
+  context: Looking out watchroom window at drowned figures
+  clip: {fileID: 8300000, guid: 18f9c3e1976414961b95b852268c6bdb, type: 3}
+  audioType: 0
+  spatialMode: 0
+  priority: 50
+  interruptible: 1
+  subtitleOverrideDuration: 0
+  isPlaceholder: 0

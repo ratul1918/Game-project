@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40ea81093ca3d4c24af12dcc1609ad8c, type: 3}
+  m_Name: A4_MARTA_RECORDING_SHORT
+  m_EditorClassIdentifier: Assembly-CSharp::TheLightHouse.Voice.VoiceLine
+  lineId: A4_MARTA_RECORDING_SHORT
+  speaker: 2
+  text: Daniel Hale. You made good time.
+  actingDirection: Looping tape recording, mechanical hiss
+  context: Reel-to-reel transmitter loop
+  clip: {fileID: 8300000, guid: 6cee8492079b84494907c3361acea7ab, type: 3}
+  audioType: 2
+  spatialMode: 1
+  priority: 100
+  interruptible: 0
+  subtitleOverrideDuration: 0
+  isPlaceholder: 0

@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40ea81093ca3d4c24af12dcc1609ad8c, type: 3}
+  m_Name: A3_DAN_LOG_READ
+  m_EditorClassIdentifier: Assembly-CSharp::TheLightHouse.Voice.VoiceLine
+  lineId: A3_DAN_LOG_READ
+  speaker: 0
+  text: A leash. It was never meant to guide ships.
+  actingDirection: Stunned shock, reading wrecker accounts
+  context: Reading logbook on Floor 2 study desk
+  clip: {fileID: 8300000, guid: dd385873475a9422b9c55b07bd9148a5, type: 3}
+  audioType: 0
+  spatialMode: 0
+  priority: 50
+  interruptible: 1
+  subtitleOverrideDuration: 0
+  isPlaceholder: 0
