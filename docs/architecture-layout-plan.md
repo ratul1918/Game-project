@@ -89,3 +89,23 @@ Lighthouse
 - **Complete Structural Enclosure**: Every room has a real, solid floor and ceiling. No gaping open abysses or broken balcony edges.
 - **Doorway Clearances**: All doorways maintain at least $1.2\text{m}$ width and $2.1\text{m}$ height with clear walking space on both sides.
 - **Lighting Ambience**: Warm amber interior lantern light ($\approx 2100\text{K} - 2800\text{K}$) contrasting with the cold, tempestuous blue-grey maritime exterior.
+
+## 2026-11-08 collision overhaul (supersedes legacy dimensions above)
+
+The active master interior uses floor tops at 0.15, 3.35, 6.55 and 9.75 m.
+The central floor discs end at radius 3.08 m; the annular stair well remains
+open above every rising flight. Stair tread width is 1.35 m (r=3.25–4.60),
+with a continuous persistent mesh ramp, no tread colliders, and at least
+2.6 m vertical clearance. The outer lining inner face is r=5.0 m and the
+room outer face is r=3.075 m, leaving 1.925 m of annular space.
+Room doors provide 1.10 x 2.20 m clear apertures, hinged leaves and level
+landings at least 1.5 x 1.5 m, continuous with the ramp and central floor.
+All existing exterior door IDs, locks and noise events remain unchanged.
+Cellar access has a 1.20 x 2.40 m clear masonry arch and a smooth straight
+stair route descending 4.50 m from the cottage floor into the vaulted
+corridor and hidden radio room. Existing story interactables move with it.
+Table food uses UV-mapped lit ceramic, stew and bread meshes. FPV torch
+barrel diameter is 0.04 m and total length 0.22 m; the hand-held anchor is
+camera-local (0.24, -0.22, 0.45), with light originating at the lens and
+converging on the crosshair. Geometry verification must inspect saved scenes,
+not only freshly generated in-memory meshes.

@@ -43,10 +43,13 @@ The lighthouse tower maintains its classic round, tapered stone exterior shell, 
   - `Interior_Handrail` (sloped and horizontal safety rails)
   - `Interior_WindowFrame` (stone reveal surround)
   - `Interior_VaultSegment` (2.8 m wide, 2.6 m high box corridor with half-cylinder ceiling and wooden rib beams)
-- **Stair Shaft & Headroom**: Headroom strictly verified >= 2.4 m above every tread across all 154 steps (minimum measured clearance: 2.48 m).
-- **Collision Architecture**: Continuous sloped ramp colliders (~32°) per flight eliminate per-step jitter. Landings feature flush box colliders. CharacterController: height 1.8 m, radius 0.4 m, slopeLimit 45°, stepOffset 0.3 m.
-- **Subterranean Vault**: Heavy arched cellar door with timber lintel in keeper's house storeroom descends 5.0 m into a 20 m vaulted masonry corridor with conduit, cable runs, supply crates, puddles, and iron drums. `WetFootprints` lead into the corridor with zero footprints exiting.
+- **Stair Shaft & Headroom**: Outer spiral stair width 1.3 m with >= 1.4 m open walkway between outer tapered masonry and inner room cylinder. Continuous spiral wellhole slot cut through floor slabs directly above stair treads ensuring strict minimum vertical head clearance >= 2.6 m across all flights.
+- **Collision Architecture**: Curved wedge ramp colliders eliminate per-step jitter. Steps feature visual iron treads without box colliders. Continuous curved inner stair guards prevent falls. CharacterController: height 1.8 m, radius 0.4 m, slopeLimit 45°, stepOffset 0.3 m.
+- **Access Doors & Landings**: Rectangular doorways (1.1 m width × 2.2 m height) at Floor 2 (Mid-Level Study) and Floor 3 (Upper Service Watchroom) with 1.5 × 1.5 m flat stone landings and standard wooden doors with interaction triggers.
+- **Subterranean Vault & Descent**: Heavy arched stone cellar door with 1.2 × 2.4 m masonry portal in keeper's house storeroom descends 4.5 m into bedrock via straight stone stairs with smooth ramp collider. Vaulted barrel-arch corridor with conduit, cable runs, supply crates, puddles, and iron drums. `WetFootprints` lead into the corridor with zero footprints exiting.
 - **Hidden Room**: Behind sliding barrel stack (`hidden shelf`), housing the recorded transmitter with script-driven reel rotation (`ReelRotator`), glowing tube radios, nautical charts marked with the *Marguerite* wreck, the harbor board ledger, and the photograph of the ship *Marguerite*.
+- **Cottage Interior & Dining Table**: Unshaded/white placeholders and spiky sunflower/lantern artifacts removed. Weathered oak dining table features UV-unwrapped props (steaming ceramic stew bowl with steam emitter, ceramic tea cup, dark crust bread loaf, wooden spoon) resting flush on the tabletop under warm overhead lamp illumination. Clear >= 1.0 m aperture doorway between living room and kitchen.
+- **Flashlight FPV Rig**: Handheld vintage flashlight scaled to 4 cm barrel diameter and 22 cm length, anchored at (0.24, -0.22, 0.45) in the lower right of camera view. Spotlight beam emanates directly from the lens glass aimed precisely at screen center.
 - **Hiding Spots**: 10 canonical hiding spots across the complex (`keeper-wardrobe`, `pantry-cupboard`, `generator-locker`, `boat-shed-crate`, `vestibule-nook`, `crane-wardrobe`, `watchroom-alcove`, `lantern-cabinet`, `cellar-coal-bin`, `hidden-room-crate`).
 - **Navigation**: NavMesh baked directly from physics colliders (`agentRadius = 0.4`, `agentHeight = 1.8`, `agentSlope = 45`, `agentClimb = 0.3`). NavMeshLinks span stair flights, doorways, and subterranean thresholds. Continuous path verified from House Entry to Lantern Room, Crane's Room, and Cellar Hidden Room.
 
@@ -59,18 +62,25 @@ All canonical IDs, interactables, and story anchors are preserved and verified:
 
 ## Verification & Previews
 
-12 eye-level preview captures are persisted under [docs/level-previews/](./level-previews/):
+15 eye-level preview captures are persisted under [docs/level-previews/](./level-previews/):
 - `dock-approach.png`
 - `courtyard.png`
 - `tower-exterior.png`
 - `entry-vestibule.png`
-- `floor-02-corridor.png`
-- `floor-03-corridor.png`
-- `cranes-room.png`
+- `tower-stair-spiral.png`
+- `floor-02-study-landing.png`
+- `floor-03-watchroom.png`
 - `lantern-room.png`
-- `cellar-stair.png`
-- `cellar-corridor.png`
-- `hidden-room.png`
+- `dining-table-meal.png`
+- `kitchen-hallway-doorway.png`
+- `cellar-arched-portal.png`
+- `cellar-stair-descent.png`
+- `cellar-vault-corridor.png`
+- `hidden-radio-room.png`
 - `shoreline.png`
+- `player-first-person-view.png`
 
-Validation automated via `TheLightHouse.Editor.InteriorValidation.ValidateAll()` passes all 8 test suites across Acts 1–5.
+Validation automated via:
+- `TheLightHouse.Editor.ArchitectureTraversalValidation.Inspect()`: 0 issues across all 5 acts (minimum 484 clearance/floor samples per act).
+- `TheLightHouse.Editor.LevelBuildValidation.ValidateBatch()`: PASSED across Acts 1–5.
+- `TheLightHouse.Editor.InteriorValidation.ValidateAll()`: PASSED across Acts 1–5.

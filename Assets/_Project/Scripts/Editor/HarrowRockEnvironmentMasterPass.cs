@@ -429,6 +429,7 @@ namespace TheLightHouse.Editor
             BuildUndergroundCellar(root);
             BuildFloodedCourtyardAndBoatShed(root);
             SetupPlayerFlashlightAndAudio(root);
+            ArchitectureCollisionOverhaul.ApplyCurrent();
         }
 
         // =========================================================================
