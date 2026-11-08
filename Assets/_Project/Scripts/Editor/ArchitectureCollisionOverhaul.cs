@@ -13,7 +13,7 @@ namespace TheLightHouse.Editor
         const string RootName="Architecture Collision Overhaul";
         static ArchitectureRepairSettings settings;
         static Transform root;
-        static Material stone, wood, iron;
+        static Material stone, wood, iron, ceramic, bread, brass, oilskin, darkWool, leather, parchment, clockDial, copperKettle, stewMat, teaMat, pewterMat;
         static string folder;
         static int meshId;
         public static readonly float[] Levels={.15f,3.35f,6.55f,9.75f};
@@ -57,7 +57,21 @@ namespace TheLightHouse.Editor
             folder="Assets/_Project/Art/ArchitectureRepair/"+SceneManager.GetActiveScene().name;
             Directory.CreateDirectory(folder);AssetDatabase.Refresh();meshId=0;
             Remove(RootName);root=new GameObject(RootName).transform;
-            stone=Material("Stone",new Color(.26f,.29f,.28f)); wood=Material("Oak",new Color(.22f,.12f,.065f));iron=Material("Iron",new Color(.13f,.15f,.16f));
+            stone=AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/PBR/PBR_LighthouseStone.mat")??Material("Stone",new Color(.26f,.29f,.28f));
+            wood=AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/PBR/PBR_WeatheredPlanks.mat")??Material("Oak",new Color(.22f,.12f,.065f));
+            iron=AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/PBR/PBR_RustedIron.mat")??Material("Iron",new Color(.13f,.15f,.16f));
+            ceramic=AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Cottage Ceramic.mat")??Material("Glazed Ceramic",new Color(.85f,.88f,.86f));
+            bread=AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/DarkBreadCrust.mat")??Material("Dark Bread",new Color(.42f,.22f,.10f));
+            brass=AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Maritime Brass.mat")??Material("Brass",new Color(.85f,.68f,.28f));
+            oilskin=AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Yellow Oilskin.mat")??Material("Yellow Oilskin",new Color(.92f,.72f,.08f));
+            darkWool=AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Dark Wool Navy.mat")??Material("Dark Wool",new Color(.08f,.11f,.16f));
+            leather=AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Weathered Leather.mat")??Material("Leather",new Color(.38f,.22f,.12f));
+            parchment=AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Aged Parchment.mat")??Material("Parchment",new Color(.91f,.85f,.72f));
+            clockDial=AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/Station Clock Dial.mat")??Material("Clock Dial",new Color(.94f,.92f,.86f));
+            copperKettle=AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Reference/TarnishedCopperKettle.mat")??Material("Tarnished Copper",new Color(0.72f,.44f,.28f));
+            stewMat=Material("Savory Stew Lit",new Color(.20f,.07f,.02f));stewMat.SetFloat("_Smoothness",.85f);stewMat.SetFloat("_Metallic",.05f);
+            teaMat=Material("Amber Tea Lit",new Color(.28f,.10f,.02f));teaMat.SetFloat("_Smoothness",.90f);teaMat.SetFloat("_Metallic",.05f);
+            pewterMat=Material("Pewter Spoon Mat",new Color(.70f,.72f,.73f));pewterMat.SetFloat("_Metallic",.75f);pewterMat.SetFloat("_Smoothness",.55f);
             var activeScene = SceneManager.GetActiveScene();
             foreach (var n in new[] { "Tower Interior Modular", "Keeper House Modular", "Cellar Complex Modular" })
             {
@@ -68,11 +82,25 @@ namespace TheLightHouse.Editor
             EnsureGameplayObjects();
             var td=Find("Tower Door");if(td)td.position=new Vector3(-0.60f,0.15f,-6.50f);
             var kh=Find("Keeper House Front Door");if(kh)kh.position=new Vector3(-9.08f,0.15f,-9.05f);
+            var fridge=Find("Vintage Enameled Refrigerator");if(fridge)fridge.position=new Vector3(-11.20f,0.95f,-4.80f);
+            var lampObj=Find("Lamp");if(lampObj){var lmr=lampObj.GetComponent<MeshRenderer>();if(lmr)lmr.enabled=false;}
+            var beam=Find("Lamp Beam Visual");if(beam)beam.position=new Vector3(0f,11.00f,0f);
+            var lc=Find("lantern-cabinet");if(lc)lc.position=new Vector3(1.80f,9.75f,-1.80f);
+            var cb=Find("crane-bed");if(cb)cb.position=new Vector3(-1.20f,3.35f,1.60f);
+            var ul=Find("upper-locker");if(ul)ul.position=new Vector3(-1.50f,6.55f,1.00f);
+            var cpw=Find("Cottage Partition West");
+            if(cpw)
+            {
+                cpw.position=new Vector3(-11.35f,1.50f,-5.00f);
+                cpw.localScale=new Vector3(2.30f,3.00f,0.20f);
+            }
             RepairTower();RepairCellar();RepairMeal();RepairTorch();
             EnsureNavMeshLinks();
             Remove("Keeper House Front Door Frame");
             Disable("Cottage Door Jamb North");Disable("Cottage Door Jamb South");
-            Disable("Tower L0 wall 16");Disable("Tower Cornice 0 wall 16");
+            Disable("Tower L0 wall 14");Disable("Tower L0 wall 15");Disable("Tower L0 wall 16");
+            Disable("Tower Cornice 0 wall 14");Disable("Tower Cornice 0 wall 15");Disable("Tower Cornice 0 wall 16");
+            Disable("GroundFloor");Disable("LanternFloor");Disable("Dining Table Lantern");
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
         static void EnsureGameplayObjects()
@@ -203,6 +231,34 @@ namespace TheLightHouse.Editor
             // The new lining must share the existing east entrance aperture.
             foreach(var t in Object.FindObjectsByType<Transform>(FindObjectsSortMode.None))
                 if(t.name.StartsWith("Outer Tower Stone Arc")&&t.position.x>4.8f&&Mathf.Abs(t.position.z)<1.7f)t.gameObject.SetActive(false);
+
+            // Storybook Vestibule Dressing (matching illustration, placed safely outside walkable path)
+            GameObject VProp(string name, PrimitiveType type, Vector3 p, Vector3 scale, Quaternion rot, Material mat)
+            {
+                var g = GameObject.CreatePrimitive(type); g.name = name; g.transform.SetParent(root, false);
+                g.transform.position = p; g.transform.rotation = rot; g.transform.localScale = scale;
+                g.GetComponent<Renderer>().sharedMaterial = mat; Object.DestroyImmediate(g.GetComponent<Collider>()); return g;
+            }
+            VProp("Vestibule Coat Rack", PrimitiveType.Cube, new(-3.75f, 1.85f, -1.80f), new(0.08f, 0.14f, 1.80f), Quaternion.identity, wood);
+            for(int i = 0; i < 4; i++)
+            {
+                float z = -2.40f + i * 0.40f;
+                VProp($"Coat Peg {i}", PrimitiveType.Cylinder, new(-3.70f, 1.85f, z), new(0.03f, 0.06f, 0.03f), Quaternion.Euler(0, 0, 90), brass);
+            }
+            VProp("Yellow Slicker Torso", PrimitiveType.Cube, new(-3.68f, 1.40f, -2.00f), new(0.10f, 0.75f, 0.38f), Quaternion.identity, oilskin);
+            VProp("Yellow Slicker Hood", PrimitiveType.Cube, new(-3.67f, 1.82f, -2.00f), new(0.12f, 0.18f, 0.20f), Quaternion.identity, oilskin);
+            VProp("Navy Coat Torso", PrimitiveType.Cube, new(-3.68f, 1.36f, -1.60f), new(0.11f, 0.82f, 0.40f), Quaternion.identity, darkWool);
+            VProp("Keeper Cap Crown", PrimitiveType.Cylinder, new(-3.67f, 1.90f, -1.20f), new(0.22f, 0.06f, 0.22f), Quaternion.Euler(0, 0, 15), darkWool);
+            VProp("Vestibule Photo Frame 1", PrimitiveType.Cube, new(-3.78f, 1.85f, -0.60f), new(0.04f, 0.45f, 0.35f), Quaternion.identity, wood);
+            VProp("Vestibule Photo Canvas 1", PrimitiveType.Cube, new(-3.75f, 1.85f, -0.60f), new(0.02f, 0.39f, 0.29f), Quaternion.identity, parchment);
+            VProp("Vestibule Photo Frame 2", PrimitiveType.Cube, new(-3.78f, 1.35f, -0.60f), new(0.04f, 0.32f, 0.42f), Quaternion.identity, wood);
+            VProp("Vestibule Photo Canvas 2", PrimitiveType.Cube, new(-3.75f, 1.35f, -0.60f), new(0.02f, 0.26f, 0.36f), Quaternion.identity, parchment);
+            VProp("Boot Stool Bench", PrimitiveType.Cube, new(-3.65f, 0.25f, -2.00f), new(0.28f, 0.25f, 0.70f), Quaternion.identity, wood);
+            VProp("Keeper Boot L", PrimitiveType.Cube, new(-3.50f, 0.42f, -2.12f), new(0.20f, 0.22f, 0.10f), Quaternion.identity, leather);
+            VProp("Keeper Boot R", PrimitiveType.Cube, new(-3.50f, 0.42f, -1.98f), new(0.20f, 0.22f, 0.10f), Quaternion.identity, leather);
+            VProp("Vestibule Supply Crate 1", PrimitiveType.Cube, new(-2.80f, 0.28f, -0.80f), new(0.55f, 0.50f, 0.60f), Quaternion.Euler(0, 15, 0), wood);
+            VProp("Vestibule Supply Crate 2", PrimitiveType.Cube, new(-2.75f, 0.72f, -0.80f), new(0.45f, 0.40f, 0.50f), Quaternion.Euler(0, -10, 0), wood);
+            VProp("Station Wall Clock", PrimitiveType.Cylinder, new(0.00f, 8.20f, 2.95f), new(0.50f, 0.04f, 0.50f), Quaternion.Euler(90, 0, 0), clockDial);
         }
         static void RepairRoomDoor(int k)
         {
@@ -322,20 +378,29 @@ namespace TheLightHouse.Editor
             var island=Find("Harrow Rock Island");
             if(island && island.TryGetComponent<MeshCollider>(out var islandCollider))
             {
-                if(islandCollider.sharedMesh == null || islandCollider.sharedMesh.vertexCount == 0)
+                var fallbackMesh = AssetDatabase.LoadAssetAtPath<Mesh>("Assets/_Project/Art/ArchitectureRepair/Act1/IslandOpening.asset");
+                if(islandCollider.sharedMesh == null || islandCollider.sharedMesh.vertexCount < 100)
                 {
-                    var fallbackMesh = AssetDatabase.LoadAssetAtPath<Mesh>("Assets/_Project/Art/ArchitectureRepair/Act1/IslandOpening.asset");
                     if(fallbackMesh)
                     {
                         islandCollider.sharedMesh = fallbackMesh;
                         if(island.TryGetComponent<MeshFilter>(out var filter)) filter.sharedMesh = fallbackMesh;
                     }
                 }
-                else
+                else if(islandCollider.sharedMesh.name != "Island with cellar opening")
                 {
                     var cut=ArchitectureTerrainCut.Cut(islandCollider.sharedMesh,island,new Rect(-8-half-.08f,-5.02f,2*half+.16f,6.6f));
-                    cut=ArchitectureMeshBuilder.Persist(cut,folder+"/IslandOpening.asset");islandCollider.sharedMesh=cut;
-                    if(island.TryGetComponent<MeshFilter>(out var filter))filter.sharedMesh=cut;
+                    if(cut != null && cut.vertexCount > 100)
+                    {
+                        cut=ArchitectureMeshBuilder.Persist(cut,folder+"/IslandOpening.asset");
+                        islandCollider.sharedMesh=cut;
+                        if(island.TryGetComponent<MeshFilter>(out var filter))filter.sharedMesh=cut;
+                    }
+                    else if(fallbackMesh)
+                    {
+                        islandCollider.sharedMesh = fallbackMesh;
+                        if(island.TryGetComponent<MeshFilter>(out var filter)) filter.sharedMesh = fallbackMesh;
+                    }
                 }
             }
             if(Find("Grand Entrance Threshold Sill") == null)
@@ -346,7 +411,7 @@ namespace TheLightHouse.Editor
         static void RepairMeal()
         {
             foreach(var t in Object.FindObjectsByType<Transform>(FindObjectsSortMode.None))
-                if(t.name.StartsWith("Meal ")||t.name.StartsWith("Sunflower ")||t.name.StartsWith("Table Lantern ")||t.name=="Dining Table Runner"||t.name=="Dining Tabletop"||t.name=="Dining Table Base"||t.name=="Dining Table Pedestal"||new[]{"Steaming Stew Bowl","Chipped Ceramic Mug","Loaf of Dark Bread","Steam placeholder"}.Contains(t.name))t.gameObject.SetActive(false);
+                if(t.name.StartsWith("Meal ")||t.name.StartsWith("Sunflower ")||t.name.StartsWith("Table Lantern ")||t.name=="Dining Table Runner"||t.name=="Dining Tabletop"||t.name=="Dining Table Base"||t.name=="Dining Table Pedestal"||new[]{"Steaming Stew Bowl","Chipped Ceramic Mug","Loaf of Dark Bread","Steam placeholder","Pewter Spoon Handle","Pewter Spoon Head","Ceramic Stew Bowl","Stew Surface Lit","Meal Steam","Ceramic Cup","Cup Tea","Bread Loaf","Breadboard"}.Contains(t.name))t.gameObject.SetActive(false);
             var da=Find("DiningArea");
             if(da)
             {
@@ -354,6 +419,9 @@ namespace TheLightHouse.Editor
                     if(new[]{"Aged Parchment","Maritime Brass","Warm Cottage Glass","Cottage Ceramic","Coastal Scrub","Dark Wool Navy","Sunflower Petal","Lamp Enamel"}.Contains(r.gameObject.name))
                         r.gameObject.SetActive(false);
             }
+            Disable("Dining Overhead Pendant Light");
+            Disable("Dining Table Ambient Fill");
+            Disable("Dining Table Lantern");
             var bulb=Find("Kitchen Lamp Bulb");
             if(bulb)
             {
@@ -362,18 +430,89 @@ namespace TheLightHouse.Editor
                 l.type=LightType.Point;l.color=new Color(1f,.82f,.62f);l.intensity=2.4f;l.range=5f;l.enabled=true;
             }
             var tbl=Find("Table");if(tbl)tbl.position=new Vector3(-9.50f,0.42f,-6.80f);
-            var hm=Find("Hot Meal");if(hm)hm.position=new Vector3(-9.50f,0.88f,-6.85f);
-            var spoon=Find("Wooden Spoon");if(spoon)spoon.position=new Vector3(-9.35f,0.865f,-7.05f);
-            var ceramic=Material("Glazed Ceramic",new Color(.66f,.73f,.70f));
-            var stew=Material("Brown Stew",new Color(.24f,.10f,.035f));var bread=Material("Bread Crust",new Color(.46f,.23f,.075f));
+            var hm=Find("Hot Meal");
+            if(hm)
+            {
+                hm.position=new Vector3(-9.50f,0.88f,-6.85f);
+                var mr=hm.GetComponent<MeshRenderer>();
+                if(mr)mr.enabled=false;
+            }
+            var spoon=Find("Wooden Spoon");
+            if(spoon)
+            {
+                var mr=spoon.GetComponent<MeshRenderer>();
+                if(mr)mr.enabled=false;
+            }
+
             GameObject Prop(string name,PrimitiveType type,Vector3 p,Vector3 scale,Material mat)
-            {var g=GameObject.CreatePrimitive(type);g.name=name;g.transform.SetParent(root,false);g.transform.position=p;g.transform.localScale=scale;g.GetComponent<Renderer>().sharedMaterial=mat;Object.DestroyImmediate(g.GetComponent<Collider>());return g;}
-            Prop("Ceramic Stew Bowl",PrimitiveType.Sphere,new(-9.50f,.915f,-6.85f),new(.28f,.12f,.28f),ceramic);
-            Prop("Stew Surface Lit",PrimitiveType.Cylinder,new(-9.50f,.945f,-6.85f),new(.25f,.005f,.25f),stew);
-            var steam=new GameObject("Meal Steam");steam.transform.SetParent(root,false);steam.transform.position=new(-9.50f,.96f,-6.85f);steam.AddComponent<SteamEmitter>();
-            Prop("Ceramic Cup",PrimitiveType.Cylinder,new(-9.80f,.90f,-6.85f),new(.10f,.09f,.10f),ceramic);
-            Prop("Cup Tea",PrimitiveType.Cylinder,new(-9.80f,.935f,-6.85f),new(.085f,.002f,.085f),stew);
-            Prop("Bread Loaf",PrimitiveType.Sphere,new(-9.20f,.905f,-6.85f),new(.18f,.10f,.28f),bread);
+            {
+                var g=GameObject.CreatePrimitive(type);g.name=name;g.transform.SetParent(root,false);
+                g.transform.position=p;g.transform.localScale=scale;g.GetComponent<Renderer>().sharedMaterial=mat;
+                Object.DestroyImmediate(g.GetComponent<Collider>());return g;
+            }
+
+            // 1. Breadboard & Crusty Dark Bread Loaf
+            Prop("Breadboard",PrimitiveType.Cube,new(-9.20f,0.872f,-6.85f),new(0.32f,0.024f,0.44f),wood);
+            Prop("Bread Loaf",PrimitiveType.Sphere,new(-9.20f,0.934f,-6.85f),new(0.18f,0.10f,0.28f),bread);
+
+            // 2. Steaming Ceramic Stew Bowl with Savory Stew
+            Prop("Ceramic Stew Bowl",PrimitiveType.Cylinder,new(-9.50f,0.910f,-6.85f),new(0.30f,0.050f,0.30f),ceramic);
+            Prop("Stew Surface Lit",PrimitiveType.Cylinder,new(-9.50f,0.961f,-6.85f),new(0.26f,0.002f,0.26f),stewMat);
+            var steam=new GameObject("Meal Steam");steam.transform.SetParent(root,false);steam.transform.position=new(-9.50f,0.965f,-6.85f);steam.AddComponent<SteamEmitter>();
+
+            // 3. Pewter Spoon (handle + head)
+            var sh=Prop("Pewter Spoon Handle",PrimitiveType.Cube,new(-9.42f,0.865f,-7.08f),new(0.022f,0.010f,0.16f),pewterMat);
+            sh.transform.rotation=Quaternion.Euler(0,35,0);
+            var sp=Prop("Pewter Spoon Head",PrimitiveType.Sphere,new(-9.36f,0.866f,-7.00f),new(0.048f,0.012f,0.075f),pewterMat);
+            sp.transform.rotation=Quaternion.Euler(0,35,0);
+
+            // 4. Ceramic Cup with Amber Tea
+            Prop("Ceramic Cup",PrimitiveType.Cylinder,new(-9.80f,0.920f,-6.85f),new(0.11f,0.060f,0.11f),ceramic);
+            Prop("Cup Tea",PrimitiveType.Cylinder,new(-9.80f,0.9805f,-6.85f),new(0.095f,0.002f,0.095f),teaMat);
+
+            // 5. Tarnished Copper Kettle
+            var kettle=Find("Tarnished Copper Kettle");
+            if(kettle)
+            {
+                kettle.position=new Vector3(-9.62f,0.860f,-6.48f);
+                var kb=kettle.Find("Kettle Body");
+                if(kb)
+                {
+                    kb.localPosition=new Vector3(0,0.11f,0);
+                    kb.localScale=new Vector3(0.26f,0.11f,0.26f);
+                    kb.GetComponent<Renderer>().sharedMaterial=copperKettle;
+                }
+            }
+            else
+            {
+                var kRoot=new GameObject("Tarnished Copper Kettle");
+                kRoot.transform.SetParent(root,false);
+                kRoot.transform.position=new Vector3(-9.62f,0.860f,-6.48f);
+                var kb=GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                kb.name="Kettle Body";kb.transform.SetParent(kRoot.transform,false);
+                kb.transform.localPosition=new Vector3(0,0.11f,0);
+                kb.transform.localScale=new Vector3(0.26f,0.11f,0.26f);
+                kb.GetComponent<Renderer>().sharedMaterial=copperKettle;
+                Object.DestroyImmediate(kb.GetComponent<Collider>());
+            }
+            kettle=Find("Tarnished Copper Kettle");
+            if(kettle)
+            {
+                var knob=kettle.Find("Kettle Lid Knob")?.gameObject;
+                if(!knob){knob=GameObject.CreatePrimitive(PrimitiveType.Sphere);knob.name="Kettle Lid Knob";knob.transform.SetParent(kettle,false);Object.DestroyImmediate(knob.GetComponent<Collider>());}
+                knob.transform.localPosition=new Vector3(0,0.23f,0);knob.transform.localScale=new Vector3(0.06f,0.05f,0.06f);knob.GetComponent<Renderer>().sharedMaterial=brass;
+
+                var handle=kettle.Find("Kettle Handle")?.gameObject;
+                if(!handle){handle=GameObject.CreatePrimitive(PrimitiveType.Cube);handle.name="Kettle Handle";handle.transform.SetParent(kettle,false);Object.DestroyImmediate(handle.GetComponent<Collider>());}
+                handle.transform.localPosition=new Vector3(0,0.25f,0);handle.transform.localScale=new Vector3(0.015f,0.06f,0.20f);handle.GetComponent<Renderer>().sharedMaterial=iron;
+
+                var spout=kettle.Find("Kettle Spout")?.gameObject;
+                if(!spout){spout=GameObject.CreatePrimitive(PrimitiveType.Cylinder);spout.name="Kettle Spout";spout.transform.SetParent(kettle,false);Object.DestroyImmediate(spout.GetComponent<Collider>());}
+                spout.transform.localPosition=new Vector3(0.14f,0.14f,0);spout.transform.localRotation=Quaternion.Euler(0,0,-45);spout.transform.localScale=new Vector3(0.05f,0.10f,0.05f);spout.GetComponent<Renderer>().sharedMaterial=copperKettle;
+
+                var kSteam=kettle.Find("Kettle Steam")?.gameObject;
+                if(!kSteam){kSteam=new GameObject("Kettle Steam");kSteam.transform.SetParent(spout.transform,false);kSteam.transform.localPosition=new Vector3(0,0.5f,0);kSteam.AddComponent<SteamEmitter>();}
+            }
         }
         static void RepairTorch()
         {
