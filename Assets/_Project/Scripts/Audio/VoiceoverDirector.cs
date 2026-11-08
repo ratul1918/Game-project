@@ -66,7 +66,11 @@ namespace TheLightHouse
         {
             if (!voiceoverSource2D)
             {
-                voiceoverSource2D = GetComponent<AudioSource>() ?? gameObject.AddComponent<AudioSource>();
+                voiceoverSource2D = GetComponent<AudioSource>();
+                if (!voiceoverSource2D)
+                {
+                    voiceoverSource2D = gameObject.AddComponent<AudioSource>();
+                }
                 voiceoverSource2D.spatialBlend = 0f; // 2D voiceover
                 voiceoverSource2D.playOnAwake = false;
                 voiceoverSource2D.priority = 16; // Higher priority than SFX
