@@ -19,3 +19,14 @@ Do not use non-commercial, no-derivatives, unclear, scraped, or attribution-free
 - Transparent fog and beam geometry must remain sparse and layered deliberately to control overdraw on Apple Silicon.
 
 Validate licenses before download and profile representative scenes on the target MacBook Air M3 before increasing any budget.
+
+## Voice & Audio Asset Policy
+
+- All voice clips must be formatted as 16-bit PCM WAV (or Vorbis compressed at 0.40 quality).
+- Sample rate: 44,100 Hz. Force to Mono = true.
+- Memory Load Type:
+  - Clips < 6.0 seconds: `CompressedInMemory` with `PreloadAudioData = true`.
+  - Clips >= 6.0 seconds: `Streaming` with `PreloadAudioData = false`.
+- Audio peaks must not exceed -0.1 dBFS (no digital clipping). Target dialogue RMS range: -20 dBFS to -16 dBFS.
+- Silence lead/trail trimming: < 150 ms silence padding before speech onset or after decay.
+- Placeholder voices generated via local macOS `say` utility must be tagged `isPlaceholder = true` and tracked separately until replaced with studio cast recordings.

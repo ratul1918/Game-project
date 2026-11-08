@@ -108,3 +108,16 @@ The cards below mirror `docs/roadmap.md`. A card is complete only when its accep
 - [x] Part B7: 3D audio reverb zones with stone presets for tower and cellar, bandpass filter on transmitter audio.
 - [x] Part B8: Performance enforcement with static batching, occlusion areas, and zero budget violations via `TheLightHouse/Check Asset Budget`.
 - [x] Part C: Validation test suite in `InteriorValidation.cs` passing all 8 checks, 12 eye-level preview PNGs captured in `docs/level-previews/`, and batch-mode compilation verified.
+
+## Card 9 — Voice System & Sound Architecture
+
+- [x] Part 1: Voice Data Architecture (`VoiceLine`, `VoiceDatabase`, `VoiceSpeaker` in `TheLightHouse.Voice`).
+- [x] Part 2: Database extraction and authored additions (Daniel spoken thoughts, physical stamina/exertion reactions, Crane hums and respirations, Drowned whispers).
+- [x] Part 3: Decoupled `VoiceManager` with 6 pooled audio sources, priority ducking, and 2D/3D spatial routing.
+- [x] Part 4: Audio mixing and ducking hierarchy (`GameAudioMixer.mixer`) and options menu logarithmic volume integration.
+- [x] Part 5: Marta integration rule enforcing shared asset identity (`A1_MARTA_001` and `A4_MARTA_REVEAL_001`).
+- [x] Part 6: Crane and Drowned vocalizations with shoreline lullaby closure.
+- [x] Part 7: Studio recording script export (`docs/voice/recording-script.md` and `.csv`) and casting documentation (`docs/voice/casting-and-direction.md`).
+- [x] Part 8: Asset import pipeline with automatic Vorbis/streaming audio settings and coverage reporting.
+- [x] Part 9: Placeholder voice generator using local macOS `say` and `afconvert`.
+- [x] Part 10: Multi-act voice validation suite (`TheLightHouse/Voice/Validate`) verifying unique IDs, null safety, clipping, trimming, Marta identity, story beats, and 8 GB budget memory.

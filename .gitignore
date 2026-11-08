@@ -108,3 +108,10 @@ InitTestScene*.unity*
 
 # Maven target directories
 target/
+
+# Local environment and config files
+.env
+*.env
+*.env.*
+*.local
+

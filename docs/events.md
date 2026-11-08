@@ -1,5 +1,15 @@
 # Game Event Contracts
 
+## Voice System Additions
+
+- `VoiceLineStarted: Action<VoiceLine>`: Published by `VoiceManager` when a voice line begins audio playback and subtitle display.
+- `VoiceLineEnded: Action<VoiceLine>`: Published by `VoiceManager` when a voice line finishes playback or is interrupted.
+- `DialogueRequested: Action<DialogueLine>`: Existing request contract remains fully supported. `VoiceManager` acts as a presentation and spatial audio subscriber, mapping legacy dialogue requests to registered `VoiceLine` assets.
+- Priority Contract:
+  - Narrative Critical (Priority 100) and Story Dialogue (Priority >= 50) immediately duck or interrupt physical vocal reactions (Priority 0).
+  - Physical reactions (stamina gasps, breath holds, exertion grunts, hard landing grunts) never interrupt active story dialogue.
+  - Reactions marked with `AudioType.Reaction` do NOT emit acoustic noise to the `StalkerAI` hearing radius.
+
 ## Shared level and HUD additions
 
 - `FlashlightToggled: Action<bool>` is published by `FPVFlashlightHandsController` / `FlashlightController` when the player toggles their handheld torch on or off. Presentation systems, Drowned awareness, and horror flicker routines subscribe to track player beam illumination.
