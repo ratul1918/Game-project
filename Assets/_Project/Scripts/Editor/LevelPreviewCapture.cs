@@ -43,7 +43,11 @@ namespace TheLightHouse.Editor
                 new PreviewShot("cellar-stair-descent", new Vector3(-8.0f, 0.8f, -4.5f), new Vector3(-8.0f, -3.8f, 1.5f), 65f),
                 new PreviewShot("cellar-vault-corridor", new Vector3(-8.0f, -3.2f, 2.0f), new Vector3(-8.0f, -3.2f, 9.0f), 70f),
                 new PreviewShot("hidden-radio-room", new Vector3(-8.0f, -3.2f, 8.5f), new Vector3(-8.0f, -3.5f, 10.7f), 70f),
-                new PreviewShot("shoreline", new Vector3(-12.0f, 1.6f, -22.0f), new Vector3(0f, 0.8f, -30f), 65f)
+                new PreviewShot("shoreline", new Vector3(-12.0f, 1.6f, -22.0f), new Vector3(0f, 0.8f, -30f), 65f),
+                new PreviewShot("lantern-balcony-catwalk", new Vector3(-1.20f, 10.95f, -4.25f), new Vector3(2.40f, 10.85f, -3.60f), 70f),
+                new PreviewShot("beacon-knife-switch", new Vector3(0.35f, 10.95f, 0.50f), new Vector3(1.05f, 10.85f, 0.50f), 55f),
+                new PreviewShot("crane-bedroom-floor3", new Vector3(-0.40f, 7.80f, -1.00f), new Vector3(1.40f, 7.35f, 0.70f), 68f),
+                new PreviewShot("crane-study-desk", new Vector3(0.0f, 4.60f, -2.40f), new Vector3(0.0f, 4.10f, 0.35f), 65f)
             };
         }
 
