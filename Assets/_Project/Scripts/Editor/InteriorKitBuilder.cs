@@ -36,6 +36,15 @@ namespace TheLightHouse.Editor
                 settings = ScriptableObject.CreateInstance<InteriorSettings>();
                 AssetDatabase.CreateAsset(settings, SettingsPath);
             }
+
+            settings.stepsPerFlight = 9;
+            settings.stepRise = 0.178f;
+            settings.stepRun = 0.28f;
+            settings.stairWidth = 1.2f;
+            settings.towerShaftSize = 5.0f;
+            settings.floorHeight = 3.2f;
+            settings.minHeadroom = 2.4f;
+            EditorUtility.SetDirty(settings);
             return settings;
         }
 
@@ -88,6 +97,8 @@ namespace TheLightHouse.Editor
             settings.flagstoneMaterial = CreatePlaceholderMaterial("Flagstone", new Color(0.28f, 0.28f, 0.27f), 0.25f, 0.0f);
             settings.sandMaterial = CreatePlaceholderMaterial("Sand", new Color(0.42f, 0.38f, 0.30f), 0.15f, 0.0f);
             settings.paperMaterial = CreatePlaceholderMaterial("Paper", new Color(0.90f, 0.88f, 0.82f), 0.10f, 0.0f);
+
+            EnsureSoftParticleAssets();
 
             Debug.Log("[InteriorKitBuilder] Missing texture folders handled with flat placeholder materials: 'Flagstone', 'Sand', 'Paper'.");
         }
@@ -219,9 +230,63 @@ namespace TheLightHouse.Editor
                 changed = true;
             }
 
+            if (importer.anisoLevel < 4)
+            {
+                importer.anisoLevel = 4;
+                changed = true;
+            }
+
             if (changed)
             {
                 importer.SaveAndReimport();
+            }
+        }
+
+        public static void EnsureSoftParticleAssets()
+        {
+            string dir = "Assets/_Project/Art/Textures/Particles";
+            Directory.CreateDirectory(dir);
+            string texPath = $"{dir}/soft_particle_smoke.png";
+            if (!File.Exists(texPath))
+            {
+                int size = 128;
+                var tex = new Texture2D(size, size, TextureFormat.RGBA32, true);
+                float center = (size - 1) * 0.5f;
+                float radius = center;
+                Color[] pixels = new Color[size * size];
+                for (int y = 0; y < size; y++)
+                {
+                    for (int x = 0; x < size; x++)
+                    {
+                        float dx = (x - center) / radius;
+                        float dy = (y - center) / radius;
+                        float dist = Mathf.Sqrt(dx * dx + dy * dy);
+                        float alpha = Mathf.Clamp01(1f - dist);
+                        alpha = Mathf.SmoothStep(0f, 1f, alpha);
+                        alpha = Mathf.Pow(alpha, 1.8f);
+                        pixels[y * size + x] = new Color(1f, 1f, 1f, alpha);
+                    }
+                }
+                tex.SetPixels(pixels);
+                tex.Apply(true);
+                File.WriteAllBytes(texPath, tex.EncodeToPNG());
+                Object.DestroyImmediate(tex);
+                AssetDatabase.ImportAsset(texPath, ImportAssetOptions.ForceUpdate);
+                ConfigureTextureImporter(texPath, false, false);
+            }
+
+            string matPath = "Assets/_Project/Materials/Level/Particle.mat";
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(matPath);
+            if (mat)
+            {
+                var softTex = AssetDatabase.LoadAssetAtPath<Texture2D>(texPath);
+                if (softTex)
+                {
+                    mat.SetTexture("_BaseMap", softTex);
+                    mat.mainTexture = softTex;
+                }
+                mat.SetColor("_BaseColor", new Color(0.75f, 0.78f, 0.80f, 0.12f));
+                EditorUtility.SetDirty(mat);
             }
         }
 
@@ -359,33 +424,26 @@ namespace TheLightHouse.Editor
             var root = new GameObject("Interior_FloorSlab");
             root.AddComponent<InteriorKit>().Configure(InteriorKit.PieceType.FloorSlab, settings);
 
-            // Outer ring slab diameter 9.0m, inner core 3.0m, stairwell opening width 1.3m, length 5.2m
-            // Built from floor sections leaving the stairwell slot open
-            // Left floor section: covers left half
-            var left = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            left.name = "Slab_West";
-            left.transform.SetParent(root.transform, false);
-            left.transform.localPosition = new Vector3(-2.3f, -0.125f, 0f);
-            left.transform.localScale = new Vector3(4.0f, 0.25f, 8.4f);
-            left.GetComponent<Renderer>().sharedMaterial = settings.woodMaterial;
-
-            // North floor section:
-            var north = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            north.name = "Slab_North";
-            north.transform.SetParent(root.transform, false);
-            north.transform.localPosition = new Vector3(1.2f, -0.125f, 2.8f);
-            north.transform.localScale = new Vector3(3.0f, 0.25f, 2.8f);
-            north.GetComponent<Renderer>().sharedMaterial = settings.woodMaterial;
-
-            // South floor section:
+            // 5.0m x 5.0m Square Shaft floor slab with switchback stairwell slots
+            // South landing slab (where each floor arrives from Flight B and departs to Flight A):
             var south = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            south.name = "Slab_South";
+            south.name = "Slab_SouthLanding";
             south.transform.SetParent(root.transform, false);
-            south.transform.localPosition = new Vector3(1.2f, -0.125f, -2.8f);
-            south.transform.localScale = new Vector3(3.0f, 0.25f, 2.8f);
+            south.transform.localPosition = new Vector3(0f, -0.125f, -1.88f);
+            south.transform.localScale = new Vector3(5.0f, 0.25f, 1.24f);
             south.GetComponent<Renderer>().sharedMaterial = settings.woodMaterial;
 
-            // Note: The East side between z in [-1.5, +3.6] remains open for the stairwell!
+            // Central well spine / divider:
+            var spine = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            spine.name = "Slab_CenterDivider";
+            spine.transform.SetParent(root.transform, false);
+            spine.transform.localPosition = new Vector3(0f, -0.125f, 0f);
+            spine.transform.localScale = new Vector3(0.2f, 0.25f, 2.52f);
+            spine.GetComponent<Renderer>().sharedMaterial = settings.woodMaterial;
+
+            // North [1.26, 2.50] remains OPEN on Floor Slabs so that North Turn Landings at mid-height (y = 1.602, 4.806, etc.) have full 3.2m headroom!
+
+            // East slot [1.3, 2.5] and West slot [-2.5, -1.3] between Z in [-1.26, 1.26] remain open for stairs!
 
             var prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
             Object.DestroyImmediate(root);
@@ -585,8 +643,8 @@ namespace TheLightHouse.Editor
             var slab = GameObject.CreatePrimitive(PrimitiveType.Cube);
             slab.name = "LandingSlab";
             slab.transform.SetParent(root.transform, false);
-            slab.transform.localPosition = new Vector3(0f, -thick * 0.5f, 0f);
-            slab.transform.localScale = new Vector3(sizeX, thick, sizeZ);
+            slab.transform.localPosition = Vector3.zero;
+            slab.transform.localScale = Vector3.one;
             slab.GetComponent<Renderer>().sharedMaterial = settings.woodMaterial;
 
             // Flush collider is already present on the cube

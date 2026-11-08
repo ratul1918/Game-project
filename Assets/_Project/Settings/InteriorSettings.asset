@@ -15,8 +15,9 @@ MonoBehaviour:
   gridUnit: 0.5
   floorHeight: 3.2
   towerBaseDiameter: 9
-  centralCoreDiameter: 3
-  stepsPerFlight: 18
+  towerShaftSize: 5
+  keeperHouseDimensions: {x: 14, y: 6.4, z: 8}
+  stepsPerFlight: 9
   stepRise: 0.178
   stepRun: 0.28
   stairWidth: 1.2

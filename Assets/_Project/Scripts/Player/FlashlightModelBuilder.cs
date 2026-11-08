@@ -49,17 +49,27 @@ namespace TheLightHouse
             bulbMaterial.EnableKeyword("_EMISSION");
             bulbMaterial.SetColor("_EmissionColor", new Color(1.0f, 0.92f, 0.75f) * 2.5f);
 
-            // 1. Main Cylindrical Barrel (Length 0.14m, Radius 0.022m)
+            // 1. Main Cylindrical Barrel (Length 0.14m, Diameter 0.040m)
             var barrel = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             barrel.name = "Flashlight_Barrel";
             barrel.transform.SetParent(modelRoot.transform, false);
             barrel.transform.localPosition = new Vector3(0, 0, -0.04f);
             barrel.transform.localRotation = Quaternion.Euler(90f, 0, 0);
-            barrel.transform.localScale = new Vector3(0.044f, 0.070f, 0.044f);
+            barrel.transform.localScale = new Vector3(0.040f, 0.070f, 0.040f);
             barrel.GetComponent<Renderer>().sharedMaterial = matMetal;
             Object.DestroyImmediate(barrel.GetComponent<Collider>());
 
-            // 2. Ribbed Knurling Rings along Barrel (vintage grip ribs)
+            // End Cap (Base of barrel)
+            var endCap = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            endCap.name = "Flashlight_End_Cap";
+            endCap.transform.SetParent(modelRoot.transform, false);
+            endCap.transform.localPosition = new Vector3(0, 0, -0.115f);
+            endCap.transform.localRotation = Quaternion.Euler(90f, 0, 0);
+            endCap.transform.localScale = new Vector3(0.042f, 0.008f, 0.042f);
+            endCap.GetComponent<Renderer>().sharedMaterial = matBrass;
+            Object.DestroyImmediate(endCap.GetComponent<Collider>());
+
+            // 2. Ribbed Knurling Rings along Barrel (vintage grip ribs, diameter 0.044m)
             for (int r = 0; r < 5; r++)
             {
                 float rz = -0.085f + r * 0.022f;
@@ -68,18 +78,18 @@ namespace TheLightHouse
                 ring.transform.SetParent(modelRoot.transform, false);
                 ring.transform.localPosition = new Vector3(0, 0, rz);
                 ring.transform.localRotation = Quaternion.Euler(90f, 0, 0);
-                ring.transform.localScale = new Vector3(0.047f, 0.003f, 0.047f);
+                ring.transform.localScale = new Vector3(0.043f, 0.003f, 0.043f);
                 ring.GetComponent<Renderer>().sharedMaterial = matBrass;
                 Object.DestroyImmediate(ring.GetComponent<Collider>());
             }
 
-            // 3. Flared Bezel / Bulb Collar (forward head)
+            // 3. Flared Bezel / Bulb Collar (forward head, max diameter 0.050m)
             var collar = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             collar.name = "Flashlight_Bezel_Collar";
             collar.transform.SetParent(modelRoot.transform, false);
-            collar.transform.localPosition = new Vector3(0, 0, 0.055f);
+            collar.transform.localPosition = new Vector3(0, 0, 0.050f);
             collar.transform.localRotation = Quaternion.Euler(90f, 0, 0);
-            collar.transform.localScale = new Vector3(0.068f, 0.028f, 0.068f);
+            collar.transform.localScale = new Vector3(0.050f, 0.022f, 0.050f);
             collar.GetComponent<Renderer>().sharedMaterial = matBrass;
             Object.DestroyImmediate(collar.GetComponent<Collider>());
 
@@ -87,9 +97,9 @@ namespace TheLightHouse
             var reflector = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             reflector.name = "Reflector_Cone";
             reflector.transform.SetParent(modelRoot.transform, false);
-            reflector.transform.localPosition = new Vector3(0, 0, 0.062f);
+            reflector.transform.localPosition = new Vector3(0, 0, 0.058f);
             reflector.transform.localRotation = Quaternion.Euler(90f, 0, 0);
-            reflector.transform.localScale = new Vector3(0.062f, 0.016f, 0.062f);
+            reflector.transform.localScale = new Vector3(0.046f, 0.012f, 0.046f);
             reflector.GetComponent<Renderer>().sharedMaterial = matReflector;
             Object.DestroyImmediate(reflector.GetComponent<Collider>());
 
@@ -97,8 +107,8 @@ namespace TheLightHouse
             var bulb = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             bulb.name = "Bulb_Filament";
             bulb.transform.SetParent(modelRoot.transform, false);
-            bulb.transform.localPosition = new Vector3(0, 0, 0.068f);
-            bulb.transform.localScale = Vector3.one * 0.016f;
+            bulb.transform.localPosition = new Vector3(0, 0, 0.062f);
+            bulb.transform.localScale = Vector3.one * 0.014f;
             bulbRenderer = bulb.GetComponent<Renderer>();
             bulbRenderer.sharedMaterial = bulbMaterial;
             Object.DestroyImmediate(bulb.GetComponent<Collider>());
@@ -107,9 +117,9 @@ namespace TheLightHouse
             var lens = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             lens.name = "Front_Glass_Lens";
             lens.transform.SetParent(modelRoot.transform, false);
-            lens.transform.localPosition = new Vector3(0, 0, 0.082f);
+            lens.transform.localPosition = new Vector3(0, 0, 0.072f);
             lens.transform.localRotation = Quaternion.Euler(90f, 0, 0);
-            lens.transform.localScale = new Vector3(0.065f, 0.0015f, 0.065f);
+            lens.transform.localScale = new Vector3(0.048f, 0.0015f, 0.048f);
             lens.GetComponent<Renderer>().sharedMaterial = matGlass;
             Object.DestroyImmediate(lens.GetComponent<Collider>());
 
@@ -117,8 +127,8 @@ namespace TheLightHouse
             var swBase = GameObject.CreatePrimitive(PrimitiveType.Cube);
             swBase.name = "Slide_Switch_Base";
             swBase.transform.SetParent(modelRoot.transform, false);
-            swBase.transform.localPosition = new Vector3(0, 0.023f, -0.015f);
-            swBase.transform.localScale = new Vector3(0.012f, 0.006f, 0.034f);
+            swBase.transform.localPosition = new Vector3(0, 0.021f, -0.015f);
+            swBase.transform.localScale = new Vector3(0.010f, 0.005f, 0.030f);
             swBase.GetComponent<Renderer>().sharedMaterial = matBrass;
             Object.DestroyImmediate(swBase.GetComponent<Collider>());
 

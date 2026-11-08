@@ -24,7 +24,17 @@ namespace TheLightHouse
         void OnDisable(){toggle?.Disable();SceneManager.sceneLoaded-=Loaded;}
         void Loaded(Scene scene,LoadSceneMode mode)=>Refresh();
         void Refresh(){lamp=FindAnyObjectByType<LampController>();drowned=FindAnyObjectByType<DrownedManager>();stalker=FindAnyObjectByType<StalkerAI>();journal=FindAnyObjectByType<LogbookJournal>();var controller=FindAnyObjectByType<FirstPersonController>();if(controller)player=controller.transform;}
-        void Update(){if(!Debug.isDebugBuild&&!Application.isEditor&&!allowInRelease)return;if(toggle?.WasPressedThisFrame()??false){shown=!shown;Cursor.visible=shown;Cursor.lockState=shown?CursorLockMode.None:CursorLockMode.Locked;}}
+        void Update()
+        {
+            if (!Debug.isDebugBuild && !Application.isEditor && !allowInRelease) return;
+            bool f1Pressed = Keyboard.current != null && Keyboard.current.f1Key.wasPressedThisFrame;
+            if (f1Pressed || (toggle?.WasPressedThisFrame() ?? false))
+            {
+                shown = !shown;
+                Cursor.visible = shown;
+                Cursor.lockState = shown ? CursorLockMode.None : CursorLockMode.Locked;
+            }
+        }
         void OnGUI()
         {
             if(!shown)return;windowRect=GUI.Window(windowId,windowRect,Draw,"The LightHouse Debug");
@@ -34,6 +44,18 @@ namespace TheLightHouse
             GUILayout.Label("Skip to act");GUILayout.BeginHorizontal();for(int i=1;i<=5;i++){int act=i;if(GUILayout.Button(i.ToString()))flow?.SkipToAct(act);}GUILayout.EndHorizontal();
             if(GUILayout.Button($"Set lamp charge {debugCharge:0.00}"))lamp?.SetCharge(debugCharge);
             if(GUILayout.Button("Give all pages"))journal?.GiveAllPages();
+            if(GUILayout.Button("Unlock cellar"))
+            {
+                var cellarDoor = GameObject.Find("Locked Cellar Door")?.GetComponent<Door>();
+                if (cellarDoor) cellarDoor.SetLocked(false);
+                var gate = FindAnyObjectByType<ActFourGate>();
+                if (gate)
+                {
+                    // Trigger gate beat to unlock
+                    GameEvents.RaiseStoryBeatTriggered(new("A4-B02"));
+                }
+                Debug.Log("[GameDebugMenu] Cellar door unlocked!");
+            }
             if(GUILayout.Button("Teleport next")&&player!=null&&teleportPoints!=null&&teleportPoints.Length>0){var target=teleportPoints[teleportIndex++%teleportPoints.Length];if(target)player.position=target.position;}
             if(GUILayout.Button("Freeze/unfreeze figures")){figuresFrozen=!figuresFrozen;drowned?.SetFrozen(figuresFrozen);}
             if(GUILayout.Button("Toggle stalker hearing")&&stalker)stalker.HearingEnabled=!stalker.HearingEnabled;

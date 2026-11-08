@@ -9,14 +9,15 @@ namespace TheLightHouse
         [Min(0.1f)] public float gridUnit = 0.5f;
         [Min(1f)] public float floorHeight = 3.2f;
         [Min(1f)] public float towerBaseDiameter = 9.0f;
-        [Min(1f)] public float centralCoreDiameter = 3.0f;
+        [Min(1f)] public float towerShaftSize = 5.0f;
+        public Vector3 keeperHouseDimensions = new Vector3(14.0f, 6.4f, 8.0f);
 
         [Header("Stairs")]
-        public int stepsPerFlight = 18;
+        public int stepsPerFlight = 9;
         public float stepRise = 0.178f;
         public float stepRun = 0.28f;
         public float stairWidth = 1.2f;
-        public Vector2 landingDimensions = new Vector2(1.6f, 1.6f);
+        public Vector2 landingDimensions = new Vector2(1.24f, 2.5f);
         public float minHeadroom = 2.4f;
         public float rampColliderAngle = 32.44f;
 
