@@ -43,13 +43,22 @@ Upon arrival, Daniel discovers that the lighthouse beacon is not an aid for navi
 - **Mechanical Dilemma**: Operating the manual crank charges the lamp and holds back the Drowned—but each turn generates loud acoustic events that pull the stalker up the spiral stairs.
 - **Fresnel Lens Mechanics**: Charge level governs light intensity, rotation cadence, fog penetration, and occult barrier effectiveness.
 
-### 🎙️ 4. Decoupled Voice Architecture & Spatial Audio (`VoiceManager`)
+### 🔦 4. First-Person Flashlight & Hand Viewmodel (`TorchViewmodel`, `FlashlightController`)
+- **Authentic 1940s Hardware**: Ribbed cylindrical brass/iron torch with textured hand grip, glass lens emitter, and realistic viewmodel sway.
+- **Accurate Optical Projection**: Spot Light anchored precisely to the front lens barrel (`(0, 0, 0.075)`), illuminating the environment forward without clipping or glowing inside the character's hands.
+- **Light Layer Separation**: Layer-based rendering isolates the first-person viewmodel and arms from harsh spotlight casting while maintaining realistic environmental beam throw.
+- **Atmospheric Audio Integration**: Dedicated foley effects for rotary switch clicks (`Switch_On`, `Switch_Off`), subtle filament hum, electrical sparks, and wet wool coat rustling.
+
+### 🎙️ 5. Decoupled Voice Architecture & Spatial Audio (`VoiceManager`)
 - **6-Channel Dynamic Ducking**: Priority-driven audio routing balancing player vocalizations, radio communications, and monster respirations.
 - **Analog Authenticity**: Voice lines utilize realistic bandpass filters, room reverb zones (cavernous cellar stone, glass gallery), and tape-flutter distortions.
 - **Marta's Secret**: Radio interactions maintain audio continuity with the antique reel-to-reel magnetic tape transmitter hidden deep in the cellar vaults.
 
-### 🏰 5. Modular Interior v2 & Subterranean Complex
+### 🏰 6. Modular Interior & Subterranean Architecture
 - **Metric 0.5m Architecture**: Complete 8-tier tapered stone lighthouse tower, continuous ramp spiral stairways, living quarters, study watchroom, and lantern chamber.
+- **Zero-Light-Leak Joint Repairs**: Procedural annular joint meshes and double-sided masonry culling (`_Cull: 0`) ensure seamless connections between outer round masonry and inner rectangular rooms.
+- **Weathered Window Enclosures**: Tower window embrasures feature solid dark-glazed glass panes (`Cold Window.mat`), stone reveals, and iron mullions (`TowerWindowEnclosure`), preventing hollow see-through artifacts.
+- **Triplanar Coastal Terrain (`TheLightHouse/CoastalIsland.shader`)**: Clustered URP Forward+ multi-compile, high-res coastal mud PBR maps, wet tide height gradations, and nighttime ambient reflection floors.
 - **Subterranean Vault**: 20-meter vaulted corridor lined with damp masonry, wet footprints with no return trail, and a concealed bunker behind sliding storage barrels.
 
 ---
@@ -138,10 +147,11 @@ Built natively with **Unity's New Input System**:
 | <kbd>Mouse</kbd> | **Look** | Smooth first-person camera rotation and entity line-of-sight tracking. |
 | <kbd>Left Shift</kbd> | **Sprint** | High-speed dash governed by stamina; emits elevated acoustic signature. |
 | <kbd>C</kbd> *(Hold)* | **Crouch** | Lowers capsule clearance for crawlspaces; reduces acoustic emissions. |
-| <kbd>Space</kbd> | **Jump** | Vertical ledge vaulting; impact generates landing noise upon contact. |
+| <kbd>Space</kbd> | **Jump / Skip** | Vertical ledge vaulting; impact generates landing noise. Skips active dialogue lines. |
 | <kbd>Z</kbd> / <kbd>X</kbd> | **Lean Left / Right** | Corner peeking without exposing character collision capsule. |
-| <kbd>E</kbd> | **Interact** | Operate doors, read logbook pages, crank dynamo, handle fuel cans. |
-| <kbd>F</kbd> | **Flashlight** | Toggles handheld torch; focuses narrow inspection beam. |
+| <kbd>E</kbd> | **Interact / Skip** | Operate doors, read logbook pages, crank dynamo, handle fuel cans. Skips dialogue. |
+| <kbd>1</kbd> | **Equip / Holster** | Toggles first-person handheld pocket torch viewmodel. |
+| <kbd>F</kbd> | **Toggle Light** | Switches torch beam on/off with authentic rotary switch click audio. |
 | <kbd>Esc</kbd> | **Journal / Pause** | Access discovered lore fragments, objectives, and audio mixer controls. |
 | <kbd>F3</kbd> | **Diagnostics** | Real-time movement speed, grounding probe, noise radius, and stamina HUD. |
 | <kbd>F4</kbd> | **Budget Overlay** | Live VRAM, texture memory, draw call counts, and performance meters. |
@@ -248,6 +258,8 @@ The codebase includes comprehensive editor-time and automated runtime validation
   Execute `TheLightHouse -> Voice -> Validate Voice Database` to verify clip assignments, ID uniqueness, Marta tape loop continuity, zero audio clipping, and streaming Vorbis import settings.
 - **Asset Budget Validator**:
   Execute `TheLightHouse -> Check Asset Budget` to assert zero memory budget violations across textures, models, audio, and materials.
+- **Pocket Torch & Viewmodel Play Mode Checks**:
+  Execute `TheLightHouse -> Checks -> Pocket Torch (Play Mode)` (`TorchPlaymodeChecks.cs`) during Play Mode to assert 14 runtime invariants: toggle cycles, FOV scaling immunity, sound effect triggers, forward beam vector alignment, and viewmodel rendering layers.
 - **Server Concurrency Suite**:
   Run `mvn test` in `/server` to verify JPA optimistic locking, session queue bounds, JWT validation, and WebSocket state transitions.
 
@@ -307,6 +319,7 @@ The LightHouse/
 | [`docs/performance-budget.md`](docs/performance-budget.md) | 8 GB Apple Silicon memory, polygon, texture, and light budget contracts. |
 | [`docs/player-movement.md`](docs/player-movement.md) | First-person locomotion physics, coyote time, and acoustic footstep tuning. |
 | [`docs/level-layout.md`](docs/level-layout.md) | Architectural plans, floor-by-floor dimensions, and route design. |
+| [`docs/interior-joint-repair.md`](docs/interior-joint-repair.md) | Procedural joint sealing, double-sided stone culling, and window embrasure specs. |
 | [`docs/voice/recording-script.md`](docs/voice/recording-script.md) | Dialogue script, audio IDs, and actor delivery guidelines. |
 | [`docs/voice/casting-and-direction.md`](docs/voice/casting-and-direction.md) | Character voice casting, acoustic profiles, and foley specifications. |
 | [`CREDITS.md`](CREDITS.md) | Third-party asset licensing, open-source attribution, and font notices. |
