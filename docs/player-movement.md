@@ -57,3 +57,13 @@ stairs climbed; all three ledges reached with a running approach;
 hidden-state movement blocked; hard landing at 30 m base loudness;
 stamina reaching zero, sprint lockout and regeneration; and recovery above the kill plane.
 No manual mouse/camera comfort evaluation or complete Act 1 dialogue/interaction replay was performed.
+
+## Pocket torch
+
+`1` equips/unequips the owned torch; `F` switches its light only while fully equipped.
+A small HUD hint reads `[1] Equip Torch | [F] Toggle Light`. Pocketing switches off
+the beam and hides the entire hand after a smooth draw/holster motion. The previous
+light preference returns on drawing. No pickup, story, environment, or fuel behavior changes.
+The right hand and flashlight share one grip frame; camera-local sway is applied after
+camera motion. A sphere probe retracts the assembly near solid surfaces, excluding the
+player and triggers. Existing scene rigs are upgraded at runtime without rewriting scenes.

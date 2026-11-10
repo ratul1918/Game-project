@@ -7,8 +7,8 @@ using UnityEngine.Audio;
 namespace TheLightHouse.Voice
 {
     /// <summary>
-    /// Central manager for voice playback, audio source pooling, priority ducking,
-    /// and subtitle synchronization across 2D and 3D spatial emitters.
+    /// Central manager for voice playback, dedicated voice channel, priority management,
+    /// dynamic audio mixer ducking, and subtitle synchronization.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class VoiceManager : MonoBehaviour
@@ -26,32 +26,26 @@ namespace TheLightHouse.Voice
         [SerializeField] private AudioMixerGroup sfxGroup;
         [SerializeField] private List<VoiceSpeaker> speakerConfigs = new();
 
-        [Header("Queue & Timing")]
-        [SerializeField] private float cadenceGap = 0.25f;
-        [SerializeField] private float subtitleTail = 0.4f;
-
         [Header("Ducking Configuration")]
         [SerializeField] private string ambienceVolumeParam = "AmbienceVolume";
+        [SerializeField] private string sfxVolumeParam = "SfxVolume";
         [SerializeField] private string musicVolumeParam = "MusicVolume";
         [SerializeField] private float duckingDb = -4.0f;
         [SerializeField] private float duckAttackSeconds = 0.045f;
         [SerializeField] private float duckReleaseSeconds = 0.350f;
 
-        private const int PoolSize = 6;
-        private readonly List<AudioSource> _sourcePool = new();
-        private readonly Queue<QueuedVoiceRequest> _playbackQueue = new();
+        [Header("Primary Voice Audio Channel")]
+        [SerializeField] private AudioSource currentVoiceSource;
+        [SerializeField] private int currentPriority = 0;
 
-        private QueuedVoiceRequest _currentActive;
-        private Coroutine _queueWorkerRoutine;
+        private VoiceLine _currentActiveLine;
+        private Coroutine _speechTrackRoutine;
         private Coroutine _duckRoutine;
         private int _duckingRefCount;
 
-        private struct QueuedVoiceRequest
-        {
-            public VoiceLine Line;
-            public Transform SourceTransform;
-            public Action OnComplete;
-        }
+        private float _lastStaminaReactionTime;
+        private int _staminaReactionIndex;
+        private float _lastCrankReactionTime;
 
         private void Awake()
         {
@@ -63,7 +57,8 @@ namespace TheLightHouse.Voice
             Instance = this;
             DontDestroyOnLoad(gameObject);
 
-            InitializePool();
+            EnsureVoiceSource();
+
             if (voiceDatabase) voiceDatabase.InitializeLookup();
         }
 
@@ -81,87 +76,39 @@ namespace TheLightHouse.Voice
             GameEvents.StaminaChanged -= OnStaminaChanged;
             GameEvents.PlayerHidden -= OnPlayerHidden;
             GameEvents.CrankActiveChanged -= OnCrankActiveChanged;
+
             if (Instance == this) Instance = null;
             StopAllCoroutines();
-            _playbackQueue.Clear();
-            _currentActive = default;
+            if (currentVoiceSource && currentVoiceSource.isPlaying) currentVoiceSource.Stop();
+            currentPriority = 0;
+            _currentActiveLine = null;
         }
 
-        private float _lastStaminaReactionTime;
-        private int _staminaReactionIndex;
-        private float _lastCrankReactionTime;
-
-        private void OnCrankActiveChanged(bool active)
+        private void EnsureVoiceSource()
         {
-            if (active && Time.time - _lastCrankReactionTime > 3.5f)
+            if (!currentVoiceSource)
             {
-                _lastCrankReactionTime = Time.time;
-                if (voiceDatabase != null && voiceDatabase.TryGetLine("REACT_DAN_CRANK_EFFORT", out var line))
+                currentVoiceSource = GetComponent<AudioSource>();
+                if (!currentVoiceSource)
                 {
-                    PlayVoice(line);
+                    currentVoiceSource = gameObject.AddComponent<AudioSource>();
                 }
             }
-        }
 
-        private void OnStaminaChanged(StaminaChangedEvent e)
-        {
-            if (e.Capacity <= 0) return;
-            float norm = e.Current / e.Capacity;
-            if (norm < 0.20f && Time.time - _lastStaminaReactionTime > 4.5f)
-            {
-                _lastStaminaReactionTime = Time.time;
-                string[] exhaustIds = { "REACT_DAN_EXHAUST_01", "REACT_DAN_EXHAUST_02", "REACT_DAN_EXHAUST_03" };
-                string id = exhaustIds[_staminaReactionIndex % exhaustIds.Length];
-                _staminaReactionIndex++;
-                if (voiceDatabase != null && voiceDatabase.TryGetLine(id, out var line))
-                {
-                    PlayVoice(line);
-                }
-            }
-        }
-
-        private void OnPlayerHidden(PlayerHiddenEvent e)
-        {
-            if (e.IsHidden && voiceDatabase != null && voiceDatabase.TryGetLine("REACT_DAN_HOLD_BREATH", out var line))
-            {
-                PlayVoice(line);
-            }
-        }
-
-        private void InitializePool()
-        {
-            if (_sourcePool.Count > 0) return;
-
-            for (int i = 0; i < PoolSize; i++)
-            {
-                var sourceGo = new GameObject($"VoiceSource_Pool_{i:D2}");
-                sourceGo.transform.SetParent(transform, false);
-                var src = sourceGo.AddComponent<AudioSource>();
-                src.playOnAwake = false;
-                src.spatialBlend = 0f;
-                src.rolloffMode = AudioRolloffMode.Logarithmic;
-                src.minDistance = 1.5f;
-                src.maxDistance = 18f;
-                src.outputAudioMixerGroup = voiceGroup;
-                _sourcePool.Add(src);
-            }
-        }
-
-        private AudioSource GetAvailableSource()
-        {
-            foreach (var src in _sourcePool)
-            {
-                if (src && !src.isPlaying) return src;
-            }
-            // If all busy, pick the oldest or return first
-            return _sourcePool.Count > 0 ? _sourcePool[0] : null;
+            currentVoiceSource.playOnAwake = false;
+            currentVoiceSource.spatialBlend = 0.0f;
+            currentVoiceSource.rolloffMode = AudioRolloffMode.Logarithmic;
+            currentVoiceSource.minDistance = 1.5f;
+            currentVoiceSource.maxDistance = 18.0f;
+            currentVoiceSource.priority = 10; // High audio priority
+            if (voiceGroup) currentVoiceSource.outputAudioMixerGroup = voiceGroup;
         }
 
         private void OnDialogueRequested(DialogueLine line)
         {
             if (line == null) return;
 
-            // Try to find matching VoiceLine in database by text or speaker
+            // Try to find matching VoiceLine in database by text
             if (voiceDatabase != null)
             {
                 foreach (var vLine in voiceDatabase.AllLines)
@@ -169,7 +116,7 @@ namespace TheLightHouse.Voice
                     if (vLine != null && !string.IsNullOrEmpty(vLine.Text) &&
                         string.Equals(vLine.Text.Trim(), line.text.Trim(), StringComparison.OrdinalIgnoreCase))
                     {
-                        PlayVoice(vLine);
+                        PlayVoiceLine(vLine, null);
                         return;
                     }
                 }
@@ -186,188 +133,133 @@ namespace TheLightHouse.Voice
             temp.SpatialMode = SpatialMode.TwoDimensional;
             temp.AudioType = VoiceAudioType.Spoken;
 
-            PlayVoice(temp);
+            PlayVoiceLine(temp, null);
         }
 
-        public void PlayVoice(VoiceLine line, Transform sourceTransform = null, Action onComplete = null)
+        /// <summary>
+        /// Dedicated Audio Channel playback method to prevent voice stacking and overlapping.
+        /// </summary>
+        public void PlayVoiceLine(VoiceLine line, Transform emitter = null, Action onComplete = null)
         {
             if (line == null) return;
+            EnsureVoiceSource();
 
-            var request = new QueuedVoiceRequest
+            // 1. If a lower or equal priority line is playing, stop it immediately.
+            // If the playing line has higher priority, ignore incoming lower priority request.
+            if (currentVoiceSource.isPlaying)
             {
-                Line = line,
-                SourceTransform = sourceTransform,
-                OnComplete = onComplete
-            };
-
-            // Priority Check: Story lines (Priority >= 50) immediately interrupt reactions (Priority 0)
-            if (_currentActive.Line != null)
-            {
-                if (_currentActive.Line.Priority == 0 && line.Priority >= 50)
+                if (line.Priority < currentPriority)
                 {
-                    // Interrupt lower priority reaction
-                    InterruptCurrent();
-                    _playbackQueue.Enqueue(request);
-                    if (_queueWorkerRoutine == null) _queueWorkerRoutine = StartCoroutine(QueueWorker());
-                    return;
+                    return; // Ignore lower priority voice request
                 }
-
-                if (line.Priority < 50 && _currentActive.Line.Priority >= 50)
+                currentVoiceSource.Stop();
+                if (_speechTrackRoutine != null)
                 {
-                    // Reactions never interrupt story dialogue, drop or silently discard stamina gasps during speech
-                    if (line.AudioType == VoiceAudioType.Reaction) return;
+                    StopCoroutine(_speechTrackRoutine);
+                    _speechTrackRoutine = null;
+                }
+                if (_currentActiveLine != null)
+                {
+                    VoiceLineEnded?.Invoke(_currentActiveLine);
+                    GameEvents.RaiseVoiceLineEnded(_currentActiveLine);
                 }
             }
 
-            _playbackQueue.Enqueue(request);
-            if (_queueWorkerRoutine == null)
+            // 2. Set channel & priority
+            currentPriority = line.Priority;
+            _currentActiveLine = line;
+            currentVoiceSource.clip = line.Clip;
+
+            // 3. Configure 2D vs 3D Spatial Blend
+            if (line.SpatialMode == SpatialMode.ThreeDimensional && emitter != null)
             {
-                _queueWorkerRoutine = StartCoroutine(QueueWorker());
-            }
-        }
-
-        private void InterruptCurrent()
-        {
-            foreach (var src in _sourcePool)
-            {
-                if (src && src.isPlaying) src.Stop();
-            }
-
-            if (_currentActive.Line != null)
-            {
-                VoiceLineEnded?.Invoke(_currentActive.Line);
-                _currentActive.OnComplete?.Invoke();
-                _currentActive = default;
-            }
-
-            if (_queueWorkerRoutine != null)
-            {
-                StopCoroutine(_queueWorkerRoutine);
-                _queueWorkerRoutine = null;
-            }
-        }
-
-        private IEnumerator QueueWorker()
-        {
-            while (_playbackQueue.Count > 0)
-            {
-                var req = _playbackQueue.Dequeue();
-                _currentActive = req;
-                var line = req.Line;
-
-                // Fire event
-                VoiceLineStarted?.Invoke(line);
-                GameEvents.RaiseVoiceLineStarted(line);
-
-                // Acquire audio source
-                var src = GetAvailableSource();
-                VoiceSpeaker speakerCfg = GetSpeakerConfig(line.Speaker);
-
-                if (src)
-                {
-                    ConfigureSource(src, line, req.SourceTransform, speakerCfg);
-                }
-
-                // Show subtitles
-                float effectiveDuration = line.GetEffectiveDuration();
-                var subtitleUi = FindAnyObjectByType<SubtitleUI>();
-                if (subtitleUi)
-                {
-                    subtitleUi.enabled = true;
-                    // Subtitle is handled synchronously with line.duration + tail
-                }
-
-                // Begin Ducking
-                StartDucking();
-
-                // Play Audio
-                if (src && line.Clip != null)
-                {
-                    src.clip = line.Clip;
-                    src.Play();
-                }
-
-                float waitTime = effectiveDuration + subtitleTail;
-                yield return new WaitForSeconds(waitTime);
-
-                // Stop Audio & Ducking
-                if (src && src.isPlaying)
-                {
-                    src.Stop();
-                }
-
-                StopDucking();
-
-                VoiceLineEnded?.Invoke(line);
-                GameEvents.RaiseVoiceLineEnded(line);
-                req.OnComplete?.Invoke();
-                _currentActive = default;
-
-                // Back-to-back cadence gap
-                if (_playbackQueue.Count > 0)
-                {
-                    yield return new WaitForSeconds(cadenceGap);
-                }
-            }
-
-            _queueWorkerRoutine = null;
-        }
-
-        private void ConfigureSource(AudioSource src, VoiceLine line, Transform sourceTransform, VoiceSpeaker speakerCfg)
-        {
-            if (line.SpatialMode == SpatialMode.ThreeDimensional && sourceTransform != null)
-            {
-                src.transform.position = sourceTransform.position;
-                src.spatialBlend = 1.0f;
-                src.minDistance = 1.5f;
-                src.maxDistance = 18.0f;
-                src.rolloffMode = AudioRolloffMode.Logarithmic;
+                currentVoiceSource.transform.position = emitter.position;
+                currentVoiceSource.spatialBlend = 1.0f;
+                currentVoiceSource.minDistance = 1.5f;
+                currentVoiceSource.maxDistance = 18.0f;
+                currentVoiceSource.rolloffMode = AudioRolloffMode.Logarithmic;
             }
             else
             {
-                src.transform.position = transform.position;
-                src.spatialBlend = 0f;
+                currentVoiceSource.transform.position = transform.position;
+                currentVoiceSource.spatialBlend = 0.0f;
             }
 
-            // Assign mixer group
+            // Route audio through AudioMixer/Voice (or Radio group)
+            VoiceSpeaker speakerCfg = GetSpeakerConfig(line.Speaker);
             if (line.AudioType == VoiceAudioType.Radio || line.AudioType == VoiceAudioType.Tape)
             {
-                src.outputAudioMixerGroup = radioGroup ? radioGroup : voiceGroup;
+                currentVoiceSource.outputAudioMixerGroup = radioGroup ? radioGroup : voiceGroup;
             }
             else if (speakerCfg && speakerCfg.OutputGroup)
             {
-                src.outputAudioMixerGroup = speakerCfg.OutputGroup;
+                currentVoiceSource.outputAudioMixerGroup = speakerCfg.OutputGroup;
             }
             else
             {
-                src.outputAudioMixerGroup = voiceGroup;
+                currentVoiceSource.outputAudioMixerGroup = voiceGroup;
             }
 
-            // Pitch & Volume trim
-            float pitch = speakerCfg ? speakerCfg.GetRandomPitch() : 1.0f;
-            float volumeMul = speakerCfg ? speakerCfg.GetLinearVolumeMultiplier() : 1.0f;
-            src.pitch = pitch;
-            src.volume = volumeMul;
-        }
+            currentVoiceSource.pitch = speakerCfg ? speakerCfg.GetRandomPitch() : 1.0f;
+            currentVoiceSource.volume = speakerCfg ? speakerCfg.GetLinearVolumeMultiplier() : 1.0f;
 
-        private VoiceSpeaker GetSpeakerConfig(SpeakerId speakerId)
-        {
-            foreach (var cfg in speakerConfigs)
+            if (line.Clip != null)
             {
-                if (cfg != null && cfg.SpeakerId == speakerId) return cfg;
+                currentVoiceSource.Play();
             }
-            return null;
+
+            // 4. Fire Subtitles with exact matching duration
+            float displayTime = (line.Clip != null) ? line.Clip.length + 0.4f : line.SubtitleOverrideDuration;
+            if (displayTime <= 0.05f) displayTime = line.GetEffectiveDuration();
+
+            string speakerName = GetSpeakerDisplayName(line.Speaker);
+            if (SubtitleUI.Instance != null)
+            {
+                SubtitleUI.Instance.Show(speakerName, line.Text, displayTime);
+            }
+            else
+            {
+                var sub = FindAnyObjectByType<SubtitleUI>();
+                if (sub) sub.Show(speakerName, line.Text, displayTime);
+            }
+
+            // Fire events
+            VoiceLineStarted?.Invoke(line);
+            GameEvents.RaiseVoiceLineStarted(line);
+
+            // Audio Mixer Ducking & duration tracking
+            if (_speechTrackRoutine != null) StopCoroutine(_speechTrackRoutine);
+            _speechTrackRoutine = StartCoroutine(DuckAndTrackSpeechRoutine(displayTime, line, onComplete));
         }
 
-        private static SpeakerId ParseSpeaker(string speakerName)
+        /// <summary>
+        /// Backwards compatible signature for PlayVoice callers.
+        /// </summary>
+        public void PlayVoice(VoiceLine line, Transform sourceTransform = null, Action onComplete = null)
         {
-            if (string.IsNullOrEmpty(speakerName)) return SpeakerId.DanielHale;
-            var lower = speakerName.ToLowerInvariant();
-            if (lower.Contains("boat")) return SpeakerId.Boatman;
-            if (lower.Contains("marta")) return SpeakerId.Marta;
-            if (lower.Contains("crane")) return SpeakerId.ThomasCrane;
-            if (lower.Contains("drown")) return SpeakerId.TheDrowned;
-            return SpeakerId.DanielHale;
+            PlayVoiceLine(line, sourceTransform, onComplete);
+        }
+
+        private IEnumerator DuckAndTrackSpeechRoutine(float duration, VoiceLine line, Action onComplete)
+        {
+            StartDucking();
+
+            yield return new WaitForSeconds(duration);
+
+            if (currentVoiceSource != null && currentVoiceSource.isPlaying)
+            {
+                currentVoiceSource.Stop();
+            }
+
+            StopDucking();
+
+            currentPriority = 0;
+            _currentActiveLine = null;
+            _speechTrackRoutine = null;
+
+            VoiceLineEnded?.Invoke(line);
+            GameEvents.RaiseVoiceLineEnded(line);
+            onComplete?.Invoke();
         }
 
         private void StartDucking()
@@ -401,13 +293,87 @@ namespace TheLightHouse.Voice
                 float curDb = Mathf.Lerp(startAmbience, targetDb, t);
 
                 audioMixer.SetFloat(ambienceVolumeParam, curDb);
+                audioMixer.SetFloat(sfxVolumeParam, curDb);
                 audioMixer.SetFloat(musicVolumeParam, curDb);
                 yield return null;
             }
 
             audioMixer.SetFloat(ambienceVolumeParam, targetDb);
+            audioMixer.SetFloat(sfxVolumeParam, targetDb);
             audioMixer.SetFloat(musicVolumeParam, targetDb);
             _duckRoutine = null;
+        }
+
+        private void OnCrankActiveChanged(bool active)
+        {
+            if (active && Time.time - _lastCrankReactionTime > 3.5f)
+            {
+                _lastCrankReactionTime = Time.time;
+                if (voiceDatabase != null && voiceDatabase.TryGetLine("REACT_DAN_CRANK_EFFORT", out var line))
+                {
+                    PlayVoiceLine(line);
+                }
+            }
+        }
+
+        private void OnStaminaChanged(StaminaChangedEvent e)
+        {
+            if (e.Capacity <= 0) return;
+            float norm = e.Current / e.Capacity;
+            if (norm < 0.20f && Time.time - _lastStaminaReactionTime > 4.5f)
+            {
+                _lastStaminaReactionTime = Time.time;
+                string[] exhaustIds = { "REACT_DAN_EXHAUST_01", "REACT_DAN_EXHAUST_02", "REACT_DAN_EXHAUST_03" };
+                string id = exhaustIds[_staminaReactionIndex % exhaustIds.Length];
+                _staminaReactionIndex++;
+                if (voiceDatabase != null && voiceDatabase.TryGetLine(id, out var line))
+                {
+                    PlayVoiceLine(line);
+                }
+            }
+        }
+
+        private void OnPlayerHidden(PlayerHiddenEvent e)
+        {
+            if (e.IsHidden && voiceDatabase != null && voiceDatabase.TryGetLine("REACT_DAN_HOLD_BREATH", out var line))
+            {
+                PlayVoiceLine(line);
+            }
+        }
+
+        private VoiceSpeaker GetSpeakerConfig(SpeakerId speakerId)
+        {
+            foreach (var cfg in speakerConfigs)
+            {
+                if (cfg != null && cfg.SpeakerId == speakerId) return cfg;
+            }
+            return null;
+        }
+
+        private string GetSpeakerDisplayName(SpeakerId id)
+        {
+            var cfg = GetSpeakerConfig(id);
+            if (cfg != null && !string.IsNullOrEmpty(cfg.DisplayName)) return cfg.DisplayName;
+            return id switch
+            {
+                SpeakerId.DanielHale => "Daniel",
+                SpeakerId.Boatman => "Boatman",
+                SpeakerId.Marta => "Marta",
+                SpeakerId.ThomasCrane => "Thomas Crane",
+                SpeakerId.TheDrowned => "The Drowned",
+                _ => id.ToString()
+            };
+        }
+
+        private static SpeakerId ParseSpeaker(string speakerName)
+        {
+            if (string.IsNullOrEmpty(speakerName)) return SpeakerId.DanielHale;
+            var lower = speakerName.ToLowerInvariant();
+            if (lower.Contains("boat")) return SpeakerId.Boatman;
+            if (lower.Contains("marta")) return SpeakerId.Marta;
+            if (lower.Contains("crane")) return SpeakerId.ThomasCrane;
+            if (lower.Contains("drown")) return SpeakerId.TheDrowned;
+            return SpeakerId.DanielHale;
         }
     }
 }

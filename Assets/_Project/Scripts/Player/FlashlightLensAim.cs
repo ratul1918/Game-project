@@ -12,16 +12,9 @@ namespace TheLightHouse
         { view = cameraTransform; lens = glass; beam = light; }
         void LateUpdate()
         {
-            if (!view || !lens || !beam) return;
-            var target = view.position + view.forward * aimDistance;
-            foreach (var hit in Physics.RaycastAll(view.position, view.forward, aimDistance, ~0, QueryTriggerInteraction.Ignore))
-            {
-                if (hit.transform.IsChildOf(view.root)) continue;
-                if ((hit.point - view.position).sqrMagnitude < (target - view.position).sqrMagnitude)
-                    target = hit.point;
-            }
-            beam.transform.position = lens.position + lens.up * .002f;
-            beam.transform.rotation = Quaternion.LookRotation(target - beam.transform.position, view.up);
+            if (!lens || !beam) return;
+            beam.transform.position = lens.position + lens.up * .003f;
+            beam.transform.rotation = lens.parent ? lens.parent.rotation : transform.rotation;
         }
     }
 }

@@ -12,7 +12,8 @@
 
 ## Shared level and HUD additions
 
-- `FlashlightToggled: Action<bool>` is published by `FPVFlashlightHandsController` / `FlashlightController` when the player toggles their handheld torch on or off. Presentation systems, Drowned awareness, and horror flicker routines subscribe to track player beam illumination.
+- `FlashlightToggled: Action<bool>` reports effective torch illumination. The FPV controller is the sole publisher for a hand rig; the legacy controller delegates to it. Holstering and disabling cut illumination immediately; flicker cannot relight a pocketed torch.
+- `TorchEquippedChanged: Action<bool>` reports the pocket slot state after drawing completes, or immediately when holstering begins. The torch is owned from scene start (published once as `ItemCollected("torch")` for the existing inventory); `1` draws/holsters and `F` only switches illumination while fully equipped. Drawing restores the last switch preference. Inputs are ignored during transitions, pause, reading, or unlocked cursor UI. The existing initially equipped/lit state is preserved.
 - `RoomEntered: Action<RoomEnteredEvent>` is published by `RoomTrigger` when the player enters a generated room volume. The immutable payload carries stable `RoomId`, display-safe `DisplayName`, and integer `FloorLevel`. HUD subscribers may show a temporary room/floor label; it is not a minimap and does not own progression.
 - Noise, stamina, lamp, objective, inventory, checkpoint, journal, and interaction HUD elements remain presentation subscribers to their existing owning events. HUD settings never suppress gameplay events.
 

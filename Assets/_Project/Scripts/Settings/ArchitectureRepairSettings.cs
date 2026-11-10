@@ -11,6 +11,10 @@ namespace TheLightHouse
         [Min(2.2f)] public float roomDoorHeight = 2.2f;
         [Min(1.2f)] public float cellarWidth = 1.4f;
         public float cellarDescent = 4.5f;
+        [Range(.01f, .05f)] public float interiorJointGap = .02f;
+        [Min(.02f)] public float ceilingThickness = .04f;
+        [Min(.04f)] public float stairSoffitDepth = .08f;
+        [Min(.02f)] public float handrailThickness = .045f;
         public Vector3 torchAnchor = new(0.24f, -0.22f, 0.45f);
     }
 }

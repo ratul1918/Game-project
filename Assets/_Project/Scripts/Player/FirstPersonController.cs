@@ -80,6 +80,7 @@ namespace TheLightHouse
 
         private void Awake()
         {
+            if (Time.timeScale <= 0f) Time.timeScale = 1.0f;
             characterController = GetComponent<CharacterController>();
             if (cameraTransform) pitch = Mathf.DeltaAngle(0f, cameraTransform.localEulerAngles.x);
             noiseEmitter ??= GetComponent<NoiseEmitter>();

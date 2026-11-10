@@ -128,6 +128,7 @@ namespace TheLightHouse.Editor
             }
 
             RepairTower();
+            LighthouseInteriorJointRepair.ApplyCurrent();
             RepairCellar();
             RepairMeal();
             RepairTorch();
@@ -239,7 +240,6 @@ namespace TheLightHouse.Editor
             }
             Disable("Lantern Central Beacon Deck"); Disable("Lantern Solid Walkway"); Disable("Lantern Stair Landing");
             Disable("Beacon Iron Pedestal"); Disable("Fresnel Brass Housing"); Disable("Beacon Concentric Glass Lens");
-            Disable("Courtyard Window L3");
             foreach (var t in Object.FindObjectsByType<Transform>(FindObjectsSortMode.None))
             {
                 if (t.name.StartsWith("Lantern Outer Walkway Segment") || t.name.StartsWith("Wellhole ")
@@ -293,9 +293,46 @@ namespace TheLightHouse.Editor
             float R_room_center = 3.15f;
 
             // -------------------------------------------------------------
-            // FLOOR 1: GROUND ENTRY VESTIBULE (y = 0.15m)
+            // FLOOR 1: GROUND ENTRY VESTIBULE & COTTAGE FOUNDATION (y = 0.15m)
             // -------------------------------------------------------------
             Sector("Repaired Floor 1", 0.001f, R_wall, 0, 360, Levels[0], Levels[0], .14f, stone, true);
+
+            // Solid continuous ground floor foundation slabs covering cottage and tower base (Size: 12m x 12m foundation coverage)
+            // Main cottage floor ends at Z = -5.0f so it does not obstruct the descending cellar stairwell at (-8, 0.15f, -4.8f)
+            var cMain = Box("Cottage Ground Foundation Main", new Vector3(-7.0f, Levels[0] - 0.25f, -8.0f), new Vector3(12.0f, 0.50f, 6.0f), Quaternion.identity, stone, true);
+            cMain.layer = LayerMask.NameToLayer("Default");
+            var cWest = Box("Cottage Ground Foundation West", new Vector3(-11.1f, Levels[0] - 0.25f, -2.5f), new Vector3(3.8f, 0.50f, 5.0f), Quaternion.identity, stone, true);
+            cWest.layer = LayerMask.NameToLayer("Default");
+            var cEast = Box("Cottage Ground Foundation East", new Vector3(-3.9f, Levels[0] - 0.25f, -2.5f), new Vector3(5.8f, 0.50f, 5.0f), Quaternion.identity, stone, true);
+            cEast.layer = LayerMask.NameToLayer("Default");
+            var tEntry = Box("Tower Entryway Foundation Slab", new Vector3(-1.0f, Levels[0] - 0.25f, -5.5f), new Vector3(4.5f, 0.50f, 3.5f), Quaternion.identity, stone, true);
+            tEntry.layer = LayerMask.NameToLayer("Default");
+
+            // Seamless Doorway Connector Colliders across thresholds to prevent falling through mesh seams
+            var towerThreshold = Box("Doorway Seam Connector Tower", new Vector3(-0.60f, Levels[0] - 0.10f, -6.50f), new Vector3(2.5f, 0.30f, 1.8f), Quaternion.identity, stone, true);
+            towerThreshold.layer = LayerMask.NameToLayer("Default");
+            var cottageThreshold = Box("Doorway Seam Connector Cottage", new Vector3(-9.08f, Levels[0] - 0.10f, -9.05f), new Vector3(2.5f, 0.30f, 1.8f), Quaternion.identity, stone, true);
+            cottageThreshold.layer = LayerMask.NameToLayer("Default");
+            var courtyardThreshold = Box("Doorway Seam Connector Courtyard", new Vector3(0.0f, Levels[0] - 0.10f, -8.0f), new Vector3(4.5f, 0.30f, 2.5f), Quaternion.identity, stone, true);
+            courtyardThreshold.layer = LayerMask.NameToLayer("Default");
+
+            // Fallback Safety Plane: Invisible trigger box below the island (Y = -2.0m)
+            var safetyPlaneObj = GameObject.Find("Fallback Safety Plane");
+            if (safetyPlaneObj == null)
+            {
+                safetyPlaneObj = new GameObject("Fallback Safety Plane");
+            }
+            safetyPlaneObj.transform.SetParent(root, false);
+            safetyPlaneObj.transform.position = new Vector3(0f, -2.0f, -6f);
+            var boxCol = safetyPlaneObj.GetComponent<BoxCollider>();
+            if (!boxCol) boxCol = safetyPlaneObj.AddComponent<BoxCollider>();
+            boxCol.isTrigger = true;
+            boxCol.size = new Vector3(140f, 1.0f, 140f);
+            if (!safetyPlaneObj.GetComponent<FallbackSafetyPlane>())
+            {
+                safetyPlaneObj.AddComponent<FallbackSafetyPlane>();
+            }
+
             RepairVestibuleProps();
 
             // -------------------------------------------------------------
@@ -824,6 +861,21 @@ namespace TheLightHouse.Editor
         {
             Disable("Descending Cellar Stone Stairs");
             Disable("Cellar Entrance Portal & Vestibule");
+            Disable("Flooded Corridor");
+            Disable("Flooded Corridor Trigger");
+
+            // Water Depth Mask / Exclusion Volume covering subterranean staircase and radio room
+            var maskObj = GameObject.Find("Cellar Water Depth Mask");
+            if (maskObj == null)
+            {
+                maskObj = new GameObject("Cellar Water Depth Mask");
+            }
+            maskObj.transform.SetParent(root, false);
+            maskObj.transform.position = new Vector3(-8.0f, -2.5f, 3.5f);
+            if (!maskObj.GetComponent<WaterDepthMask>())
+            {
+                maskObj.AddComponent<WaterDepthMask>();
+            }
             if (!Find("Low Subterranean Corridor"))
             {
                 var p = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Art/ArchitectureRepair/SubterraneanCorridor.prefab");
@@ -1038,7 +1090,30 @@ namespace TheLightHouse.Editor
             var spot = lights.FirstOrDefault(l => l.type == LightType.Spot && socket && l.transform.IsChildOf(socket));
             var fill = lights.FirstOrDefault(l => l.type == LightType.Point && socket && l.transform.IsChildOf(socket));
             foreach (var light in lights) if (light != spot && light != fill) Object.DestroyImmediate(light.gameObject);
-            if (socket) socket.position = lens.position;
+            if (socket)
+            {
+                socket.localPosition = new Vector3(0f, 0f, 0.075f);
+                socket.localRotation = Quaternion.identity;
+            }
+            if (spot)
+            {
+                spot.transform.localPosition = Vector3.zero;
+                spot.transform.localRotation = Quaternion.identity;
+                spot.shadowNearPlane = 0.05f;
+                spot.renderingLayerMask = 1;
+            }
+            if (fill)
+            {
+                fill.transform.localPosition = Vector3.zero;
+                fill.transform.localRotation = Quaternion.identity;
+                fill.intensity = 0f;
+                fill.enabled = false;
+                fill.renderingLayerMask = 1;
+            }
+            int vmLayer = LayerMask.NameToLayer("Viewmodel");
+            if (vmLayer < 0) vmLayer = 2;
+            if (spot) spot.cullingMask &= ~(1 << vmLayer);
+            if (fill) fill.cullingMask &= ~(1 << vmLayer);
             var old = model.parent.GetComponent<FlashlightController>();
             if (old)
             {

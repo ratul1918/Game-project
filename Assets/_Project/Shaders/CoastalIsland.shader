@@ -41,6 +41,7 @@ Shader "TheLightHouse/CoastalIsland"
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
+            #pragma multi_compile _ _FORWARD_PLUS
             #pragma multi_compile _ _SHADOWS_SOFT
             #pragma multi_compile_fog
 
@@ -137,7 +138,7 @@ Shader "TheLightHouse/CoastalIsland"
                 half4 rockDiffY = SAMPLE_TEXTURE2D(_RockTex, sampler_RockTex, rockUV_Y);
                 half4 rockDiffZ = SAMPLE_TEXTURE2D(_RockTex, sampler_RockTex, rockUV_Z);
                 half4 rockAlbedo = rockDiffX * triWeights.x + rockDiffY * triWeights.y + rockDiffZ * triWeights.z;
-                rockAlbedo.rgb *= _CliffColor.rgb * 1.35;
+                rockAlbedo.rgb *= _CliffColor.rgb * 3.2;
 
                 half3 rockNormX = UnpackNormal(SAMPLE_TEXTURE2D(_RockNormal, sampler_RockNormal, rockUV_X));
                 half3 rockNormY = UnpackNormal(SAMPLE_TEXTURE2D(_RockNormal, sampler_RockNormal, rockUV_Y));
@@ -153,7 +154,11 @@ Shader "TheLightHouse/CoastalIsland"
                 half4 mudDiffY = SAMPLE_TEXTURE2D(_MudTex, sampler_MudTex, mudUV_Y);
                 half4 mudDiffZ = SAMPLE_TEXTURE2D(_MudTex, sampler_MudTex, mudUV_Z);
                 half4 mudAlbedo = mudDiffX * triWeights.x + mudDiffY * triWeights.y + mudDiffZ * triWeights.z;
-                mudAlbedo.rgb *= _MudColor.rgb * 1.55;
+                if (dot(mudAlbedo.rgb, mudAlbedo.rgb) < 0.001)
+                {
+                    mudAlbedo = half4(0.38, 0.35, 0.32, 1.0);
+                }
+                mudAlbedo.rgb *= _MudColor.rgb * 4.2;
 
                 half3 mudNormX = UnpackNormal(SAMPLE_TEXTURE2D(_MudNormal, sampler_MudNormal, mudUV_X));
                 half3 mudNormY = UnpackNormal(SAMPLE_TEXTURE2D(_MudNormal, sampler_MudNormal, mudUV_Y));
@@ -164,6 +169,10 @@ Shader "TheLightHouse/CoastalIsland"
                 half4 mudMaskY = SAMPLE_TEXTURE2D(_MudMask, sampler_MudMask, mudUV_Y);
                 half4 mudMaskZ = SAMPLE_TEXTURE2D(_MudMask, sampler_MudMask, mudUV_Z);
                 half4 mudMask = mudMaskX * triWeights.x + mudMaskY * triWeights.y + mudMaskZ * triWeights.z;
+                if (dot(mudMask.rgba, mudMask.rgba) < 0.001)
+                {
+                    mudMask = half4(0.0, 0.85, 0.5, 0.45);
+                }
 
                 // --- 3. LAYER COMPOSITION & PBR PROPERTIES ---
                 // Base surface is the deep dark wet coastal mud / churned earth
@@ -242,10 +251,12 @@ Shader "TheLightHouse/CoastalIsland"
                 }
                 #endif
 
-                // Ambient lighting modulated by ambient occlusion
-                half3 ambient = SampleSH(worldNormal) * ao;
+                // Ambient lighting modulated by ambient occlusion with minimum night floor
+                half3 ambient = max(SampleSH(worldNormal), half3(0.06, 0.08, 0.11)) * max(0.45, ao);
 
                 half3 finalColor = albedo * (directLighting + additionalLighting + ambient);
+                // Night sky environmental reflection across wet shoreline / puddles
+                finalColor += half3(0.015, 0.024, 0.035) * smoothness;
 
                 return half4(MixFog(finalColor, input.fogFactor), 1.0);
             }

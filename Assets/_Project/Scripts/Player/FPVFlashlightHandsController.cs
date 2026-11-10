@@ -4,28 +4,18 @@ using UnityEngine.InputSystem;
 
 namespace TheLightHouse
 {
-    /// <summary>
-    /// Operates Daniel Hale's First-Person View (FPV) animated arms and pocket equip/holster system.
-    /// Manages the FPV_Flashlight_Hands animator state machine, audio synchronization (cloth rustle,
-    /// heavy tactile switch click, filament hum), procedural weapon sway/lag, and horror electrical flicker.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class FPVFlashlightHandsController : MonoBehaviour
     {
-        [Header("Animator & State")]
         [SerializeField] private Animator handsAnimator;
         [SerializeField] private bool isEquipped = true;
         [SerializeField] private bool isOn = true;
-
-        [Header("Lighting Components")]
         [SerializeField] private Light spotLight;
         [SerializeField] private Light fillLight;
         [SerializeField] private Renderer bulbFilamentRenderer;
         [SerializeField] private Material bulbMaterial;
         [SerializeField] private float spotIntensity = 24f;
-        [SerializeField] private float fillIntensity = 0.85f;
-
-        [Header("Audio FX")]
+        [SerializeField] private float fillIntensity = .85f;
         [SerializeField] private AudioSource sfxSource;
         [SerializeField] private AudioSource humSource;
         [SerializeField] private AudioClip switchOnClip;
@@ -33,431 +23,211 @@ namespace TheLightHouse
         [SerializeField] private AudioClip clothRustleClip;
         [SerializeField] private AudioClip filamentHumClip;
         [SerializeField] private AudioClip flickerSparksClip;
-
-        [Header("Sway & Lag")]
         [SerializeField] private Transform armRootTransform;
-        [SerializeField] private float swayAmount = 2.4f;
-        [SerializeField] private float maxSwayAngle = 6.0f;
-        [SerializeField] private float swaySmoothSpeed = 8.5f;
-
-        [Header("Bobbing")]
-        [SerializeField] private float idleBobSpeed = 1.4f;
-        [SerializeField] private float idleBobAmount = 0.0035f;
-        [SerializeField] private float walkBobSpeed = 7.5f;
-        [SerializeField] private float walkBobAmount = 0.012f;
-
-        [Header("Input Action")]
         [SerializeField] private InputActionReference toggleAction;
-
-        private Transform _parentCamera;
-        private Quaternion _lastCamRot;
-        private Quaternion _swayRot;
-        private Vector3 _initialArmLocalPos;
-        private Quaternion _initialArmLocalRot;
-        private float _bobTimer;
-        private bool _isTransitioning;
+        [SerializeField, Min(.1f)] private float equipDuration = .45f;
+        private TorchViewmodel _viewmodel;
+        private Coroutine _transition;
         private Coroutine _flickerRoutine;
-        private Transform _flashlightRoot;
-        private FirstPersonController _fpc;
-
-        private static readonly int IsEquippedHash = Animator.StringToHash("isEquipped");
-
+        private bool _switchOn;
+        private bool _reading;
+        private bool _started;
+        private bool _enabledToggleAction;
         public bool IsEquipped => isEquipped;
         public bool IsOn => isOn;
-        public bool IsTransitioning => _isTransitioning;
+        public bool IsTransitioning => _transition != null;
 
-        public void Initialize(
-            Animator animator,
-            AudioSource sfxAudio,
-            AudioSource humAudio,
-            Light spot,
-            Light fill,
-            Renderer bulbRenderer,
-            Material bulbMat,
-            Transform armRootTransform,
-            Transform flashlightRoot)
+        public void Initialize(Animator animator, AudioSource sfxAudio, AudioSource humAudio,
+            Light spot, Light fill, Renderer bulbRenderer, Material bulbMat,
+            Transform armRootTransform, Transform flashlightRoot)
         {
-            handsAnimator = animator;
-            sfxSource = sfxAudio;
-            humSource = humAudio;
-            spotLight = spot;
-            fillLight = fill;
-            bulbFilamentRenderer = bulbRenderer;
-            bulbMaterial = bulbMat;
-            this.armRootTransform = armRootTransform;
-            _flashlightRoot = flashlightRoot;
-
-            LoadAudioClipsIfMissing();
-        }
-
-        private void Awake()
-        {
-            _parentCamera = transform.parent;
-            if (_parentCamera) _lastCamRot = _parentCamera.rotation;
-
-            if (armRootTransform)
-            {
-                _initialArmLocalPos = armRootTransform.localPosition;
-                _initialArmLocalRot = armRootTransform.localRotation;
-            }
-            _swayRot = Quaternion.identity;
-
-            _fpc = GetComponentInParent<FirstPersonController>();
-            LoadAudioClipsIfMissing();
+            handsAnimator = animator; sfxSource = sfxAudio; humSource = humAudio;
+            spotLight = spot; fillLight = fill; bulbFilamentRenderer = bulbRenderer;
+            bulbMaterial = bulbMat; this.armRootTransform = armRootTransform;
         }
 
         private void Start()
         {
-            // Start in equipped and illuminated state for seamless narrative immersion
-            if (isEquipped)
+            if (handsAnimator) handsAnimator.enabled = false;
+            _switchOn = isOn;
+            if (!switchOnClip) switchOnClip = Resources.Load<AudioClip>("TorchAudio/Flashlight_Switch_On");
+            if (!switchOffClip) switchOffClip = Resources.Load<AudioClip>("TorchAudio/Flashlight_Switch_Off");
+            if (!clothRustleClip) clothRustleClip = Resources.Load<AudioClip>("TorchAudio/Coat_Rustle_WetWool");
+            if (!filamentHumClip) filamentHumClip = Resources.Load<AudioClip>("TorchAudio/Flashlight_Filament_Hum");
+            if (!flickerSparksClip) flickerSparksClip = Resources.Load<AudioClip>("TorchAudio/Flashlight_Flicker_Sparks");
+            if (humSource) humSource.clip = filamentHumClip;
+            _viewmodel = gameObject.AddComponent<TorchViewmodel>();
+            _viewmodel.Initialize(armRootTransform);
+            _viewmodel.DrawAmount = isEquipped ? 1f : 0f;
+            gameObject.AddComponent<TorchControlsHint>();
+            if (bulbFilamentRenderer) bulbMaterial = bulbFilamentRenderer.material;
+            int vmLayer = LayerMask.NameToLayer("Viewmodel");
+            if (vmLayer < 0) vmLayer = 2;
+            if (spotLight)
             {
-                if (handsAnimator) handsAnimator.SetBool(IsEquippedHash, true);
-                TurnOnLight();
+                spotLight.cullingMask &= ~(1 << vmLayer);
+                spotLight.renderingLayerMask = 1;
+                spotLight.shadowNearPlane = 0.05f;
             }
-            else
+            if (fillLight)
             {
-                if (handsAnimator) handsAnimator.SetBool(IsEquippedHash, false);
-                DisableTorchMesh();
+                fillLight.cullingMask &= ~(1 << vmLayer);
+                fillLight.renderingLayerMask = 1;
+                fillLight.intensity = 0f;
+                fillLight.enabled = false;
             }
-        }
-
-        private void LoadAudioClipsIfMissing()
-        {
-            if (!switchOnClip) switchOnClip = LoadAudio("Flashlight_Switch_On.wav");
-            if (!switchOffClip) switchOffClip = LoadAudio("Flashlight_Switch_Off.wav");
-            if (!clothRustleClip) clothRustleClip = LoadAudio("Coat_Rustle_WetWool.wav");
-            if (!filamentHumClip) filamentHumClip = LoadAudio("Flashlight_Filament_Hum.wav");
-            if (!flickerSparksClip) flickerSparksClip = LoadAudio("Flashlight_Flicker_Sparks.wav");
-
-            if (humSource && filamentHumClip)
-            {
-                humSource.clip = filamentHumClip;
-            }
-        }
-
-        private static AudioClip LoadAudio(string filename)
-        {
-#if UNITY_EDITOR
-            return UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>($"Assets/_Project/Audio/{filename}");
-#else
-            return null;
-#endif
+            // Old scenes can contain a second light pair created by the compatibility component.
+            foreach (var light in GetComponentsInChildren<Light>(true))
+                if (light != spotLight && light != fillLight) light.enabled = false;
+            ApplyLight(isEquipped && _switchOn, false);
+            _started = true;
+            GameEvents.RaiseTorchEquippedChanged(isEquipped);
+            GameEvents.RaiseItemCollected(new ItemCollectedEvent("torch"));
         }
 
         private void OnEnable()
         {
-            if (toggleAction != null && toggleAction.action != null)
+            GameEvents.ReadingStateChanged += OnReading;
+            if (toggleAction != null && toggleAction.action != null && !toggleAction.action.enabled)
             {
                 toggleAction.action.Enable();
-                toggleAction.action.performed += OnToggleInput;
+                _enabledToggleAction = true;
             }
+            if (_viewmodel) _viewmodel.enabled = true;
+            if (_started) ApplyLight(isEquipped && _switchOn, false);
         }
 
         private void OnDisable()
         {
-            if (toggleAction != null && toggleAction.action != null)
-            {
-                toggleAction.action.performed -= OnToggleInput;
-                toggleAction.action.Disable();
-            }
-
-            if (_flickerRoutine != null)
-            {
-                StopCoroutine(_flickerRoutine);
-                _flickerRoutine = null;
-            }
+            GameEvents.ReadingStateChanged -= OnReading;
+            if (_enabledToggleAction) toggleAction.action.Disable();
+            _enabledToggleAction = false;
+            if (_viewmodel) _viewmodel.enabled = false;
+            if (_transition != null) StopCoroutine(_transition);
+            _transition = null;
+            if (_viewmodel) _viewmodel.DrawAmount = isEquipped ? 1f : 0f;
+            ApplyLight(false, false);
         }
 
-        private void OnToggleInput(InputAction.CallbackContext ctx)
-        {
-            Toggle();
-        }
+        private void OnReading(ReadingStateChangedEvent e) => _reading = e.IsReading;
+        private bool CanInput => Time.timeScale > 0f && !_reading && (Cursor.lockState == CursorLockMode.Locked || Application.isEditor);
 
         private void Update()
         {
-            // Keyboard 'F' key and Gamepad D-pad Up fallback checks via New Input System
-            if (Keyboard.current != null && Keyboard.current.fKey.wasPressedThisFrame)
+            if (!CanInput) return;
+            if (Keyboard.current != null && Keyboard.current.digit1Key.wasPressedThisFrame)
             {
-                Toggle();
+                if (isEquipped) Unequip(); else Equip();
+                return;
             }
-            else if (Gamepad.current != null && Gamepad.current.dpad.up.wasPressedThisFrame)
-            {
-                Toggle();
-            }
-
-            if (isEquipped && !_isTransitioning)
-            {
-                UpdateBobbing(Time.deltaTime);
-            }
-        }
-
-        private void LateUpdate()
-        {
-            if (isEquipped && !_isTransitioning)
-            {
-                UpdateSway(Time.deltaTime);
-            }
+            bool pressed = (toggleAction != null && toggleAction.action != null && toggleAction.action.WasPressedThisFrame())
+                || (Keyboard.current != null && Keyboard.current.fKey.wasPressedThisFrame)
+                || (Gamepad.current != null && Gamepad.current.dpad.up.wasPressedThisFrame);
+            if (pressed) Toggle();
         }
 
         public void Toggle()
         {
-            if (_isTransitioning) return; // Anti-spam prevention during active transitions
+            if (!isActiveAndEnabled || !isEquipped || IsTransitioning || !CanInput) return;
+            SetLight(!_switchOn);
+        }
 
-            if (isEquipped)
-            {
-                Unequip();
-            }
-            else
-            {
-                Equip();
-            }
+        public void SetLight(bool on)
+        {
+            if (!isActiveAndEnabled || !isEquipped || IsTransitioning) return;
+            _switchOn = on;
+            ApplyLight(on, true);
         }
 
         public void Equip()
         {
-            if (_isTransitioning) return;
-
-            isEquipped = true;
-            _isTransitioning = true;
-
-            if (_flashlightRoot) _flashlightRoot.gameObject.SetActive(true);
-
-            if (handsAnimator)
-            {
-                handsAnimator.SetBool(IsEquippedHash, true);
-            }
-            else
-            {
-                // Fallback if animator is not bound
-                TurnOnLight();
-                _isTransitioning = false;
-            }
+            if (!isActiveAndEnabled || !_started || isEquipped || IsTransitioning) return;
+            _transition = StartCoroutine(AnimatePocket(true));
         }
 
         public void Unequip()
         {
-            if (_isTransitioning) return;
-
+            if (!isActiveAndEnabled || !_started || !isEquipped || IsTransitioning) return;
             isEquipped = false;
-            _isTransitioning = true;
+            ApplyLight(false, false);
+            GameEvents.RaiseTorchEquippedChanged(false);
+            _transition = StartCoroutine(AnimatePocket(false));
+        }
 
-            // Cut light and click off immediately when thumb starts pulling back
-            CutLightOff();
-
+        private IEnumerator AnimatePocket(bool drawing)
+        {
             PlayClothRustle();
-
-            if (handsAnimator)
+            float from = _viewmodel.DrawAmount;
+            for (float elapsed = 0f; elapsed < equipDuration; elapsed += Time.deltaTime)
             {
-                handsAnimator.SetBool(IsEquippedHash, false);
+                _viewmodel.DrawAmount = Mathf.Lerp(from, drawing ? 1f : 0f,
+                    Mathf.SmoothStep(0f, 1f, elapsed / equipDuration));
+                yield return null;
             }
-            else
+            _viewmodel.DrawAmount = drawing ? 1f : 0f;
+            isEquipped = drawing;
+            _transition = null;
+            if (drawing)
             {
-                DisableTorchMesh();
+                ApplyLight(_switchOn, false);
+                GameEvents.RaiseTorchEquippedChanged(true);
             }
         }
 
-        // =========================================================================
-        // Animation Event Callbacks
-        // =========================================================================
-
-        /// <summary>
-        /// Fired by Draw_From_Pocket animation event at keyframe 0.45s as the torch levels with crosshair.
-        /// </summary>
-        public void TurnOnLight()
-        {
-            isOn = true;
-            _isTransitioning = false;
-
-            if (spotLight) spotLight.enabled = true;
-            if (fillLight) fillLight.enabled = true;
-
-            UpdateBulbEmission(1.0f);
-
-            if (sfxSource && switchOnClip)
-            {
-                sfxSource.PlayOneShot(switchOnClip, 0.95f);
-            }
-
-            if (humSource && filamentHumClip && !humSource.isPlaying)
-            {
-                humSource.Play();
-            }
-
-            GameEvents.RaiseFlashlightToggled(true);
-        }
-
-        /// <summary>
-        /// Cuts the spotlight beam, ambient fill, and hum off immediately.
-        /// </summary>
-        private void CutLightOff()
-        {
-            isOn = false;
-
-            if (_flickerRoutine != null)
-            {
-                StopCoroutine(_flickerRoutine);
-                _flickerRoutine = null;
-            }
-
-            if (spotLight) spotLight.enabled = false;
-            if (fillLight) fillLight.enabled = false;
-
-            UpdateBulbEmission(0.0f);
-
-            if (sfxSource && switchOffClip)
-            {
-                sfxSource.PlayOneShot(switchOffClip, 0.95f);
-            }
-
-            if (humSource && humSource.isPlaying)
-            {
-                humSource.Stop();
-            }
-
-            GameEvents.RaiseFlashlightToggled(false);
-        }
-
-        /// <summary>
-        /// Fired by Put_Into_Pocket animation event at keyframe 0.48s when the arm is out of view.
-        /// </summary>
-        public void DisableTorchMesh()
-        {
-            _isTransitioning = false;
-            CutLightOff();
-        }
-
-        /// <summary>
-        /// Fired by Draw_From_Pocket and Put_Into_Pocket as heavy wool & oilskin sleeves slide into motion.
-        /// </summary>
+        // Compatibility for older animation events; procedural motion owns completion now.
+        public void TurnOnLight() { if (!IsTransitioning) SetLight(true); }
+        public void DisableTorchMesh() { if (!isEquipped) ApplyLight(false, false); }
         public void PlayClothRustle()
         {
-            if (sfxSource && clothRustleClip)
+            if (sfxSource && clothRustleClip) sfxSource.PlayOneShot(clothRustleClip, .75f);
+        }
+
+        private void ApplyLight(bool on, bool audio)
+        {
+            if (_flickerRoutine != null) StopCoroutine(_flickerRoutine);
+            _flickerRoutine = null;
+            bool changed = isOn != on;
+            isOn = on;
+            SetIntensity(on ? 1f : 0f);
+            if (humSource)
             {
-                sfxSource.PlayOneShot(clothRustleClip, 0.75f);
+                if (on && humSource.clip && !humSource.isPlaying) humSource.Play();
+                if (!on) humSource.Stop();
+            }
+            var clip = on ? switchOnClip : switchOffClip;
+            if (changed && audio && clip && sfxSource) sfxSource.PlayOneShot(clip);
+            if (changed || !_started) GameEvents.RaiseFlashlightToggled(on);
+        }
+
+        private void SetIntensity(float level)
+        {
+            if (spotLight) { spotLight.enabled = level > 0f; spotLight.intensity = spotIntensity * level; }
+            if (fillLight) { fillLight.enabled = false; fillLight.intensity = 0f; }
+            if (bulbMaterial)
+            {
+                bulbMaterial.EnableKeyword("_EMISSION");
+                bulbMaterial.SetColor("_EmissionColor", new Color(1f, .88f, .65f) * (level * 3.8f));
             }
         }
-
-        // =========================================================================
-        // Sway, Lag & Bobbing
-        // =========================================================================
-
-        private void UpdateSway(float dt)
-        {
-            if (!_parentCamera || !armRootTransform) return;
-
-            Quaternion camRot = _parentCamera.rotation;
-            Quaternion deltaRot = Quaternion.Inverse(_lastCamRot) * camRot;
-            _lastCamRot = camRot;
-
-            float yawDelta = Mathf.DeltaAngle(0f, deltaRot.eulerAngles.y);
-            float pitchDelta = Mathf.DeltaAngle(0f, deltaRot.eulerAngles.x);
-
-            float targetSwayY = Mathf.Clamp(-yawDelta * swayAmount, -maxSwayAngle, maxSwayAngle);
-            float targetSwayX = Mathf.Clamp(pitchDelta * swayAmount, -maxSwayAngle, maxSwayAngle);
-
-            Quaternion targetSway = Quaternion.Euler(targetSwayX, targetSwayY, -targetSwayY * 0.4f);
-            _swayRot = Quaternion.Slerp(_swayRot, targetSway, dt * swaySmoothSpeed);
-
-            armRootTransform.localRotation = _initialArmLocalRot * _swayRot;
-        }
-
-        private void UpdateBobbing(float dt)
-        {
-            if (!armRootTransform) return;
-
-            float speed = _fpc != null ? _fpc.Speed : 0f;
-            bool isMoving = speed > 0.1f;
-
-            float currentBobSpeed = isMoving ? walkBobSpeed : idleBobSpeed;
-            float currentBobAmount = isMoving ? walkBobAmount : idleBobAmount;
-
-            _bobTimer += dt * currentBobSpeed;
-
-            float bobY = Mathf.Sin(_bobTimer) * currentBobAmount;
-            float bobX = Mathf.Cos(_bobTimer * 0.5f) * (currentBobAmount * 0.5f);
-
-            armRootTransform.localPosition = _initialArmLocalPos + new Vector3(bobX, bobY, 0f);
-        }
-
-        // =========================================================================
-        // Horror Flicker Routine
-        // =========================================================================
 
         public void TriggerFlicker(float duration = 1.4f, int flickerCount = 7)
         {
-            if (!isEquipped || !isOn || !gameObject.activeInHierarchy || !enabled) return;
-
+            if (!isActiveAndEnabled || !isEquipped || !isOn || IsTransitioning) return;
             if (_flickerRoutine != null) StopCoroutine(_flickerRoutine);
-            _flickerRoutine = StartCoroutine(FlickerRoutine(duration, flickerCount));
+            _flickerRoutine = StartCoroutine(Flicker(duration, flickerCount));
         }
 
-        private IEnumerator FlickerRoutine(float duration, int flickerCount)
+        private IEnumerator Flicker(float duration, int count)
         {
-            if (flickerSparksClip && sfxSource)
+            if (sfxSource && flickerSparksClip) sfxSource.PlayOneShot(flickerSparksClip, .85f);
+            float step = Mathf.Max(.01f, duration / Mathf.Max(2, count * 2));
+            for (float elapsed = 0; elapsed < duration; elapsed += step)
             {
-                sfxSource.PlayOneShot(flickerSparksClip, 0.85f);
-            }
-
-            float elapsed = 0f;
-            float step = duration / Mathf.Max(2, flickerCount * 2);
-
-            while (elapsed < duration)
-            {
-                bool lightState = Random.value > 0.45f;
-                float intensityMult = lightState ? Random.Range(0.25f, 1.15f) : 0f;
-
-                if (spotLight)
-                {
-                    spotLight.enabled = intensityMult > 0.01f;
-                    spotLight.intensity = spotIntensity * intensityMult;
-                }
-                if (fillLight)
-                {
-                    fillLight.enabled = intensityMult > 0.01f;
-                    fillLight.intensity = fillIntensity * intensityMult;
-                }
-
-                UpdateBulbEmission(intensityMult);
-
-                elapsed += step;
+                SetIntensity(Random.value > .45f ? Random.Range(.25f, 1.15f) : 0f);
                 yield return new WaitForSeconds(step);
             }
-
-            // Restore normal light state
-            if (spotLight)
-            {
-                spotLight.enabled = true;
-                spotLight.intensity = spotIntensity;
-            }
-            if (fillLight)
-            {
-                fillLight.enabled = true;
-                fillLight.intensity = fillIntensity;
-            }
-            UpdateBulbEmission(1.0f);
+            SetIntensity(isEquipped && isOn ? 1f : 0f);
             _flickerRoutine = null;
-        }
-
-        private void UpdateBulbEmission(float level)
-        {
-            if (!bulbMaterial && bulbFilamentRenderer)
-            {
-                bulbMaterial = bulbFilamentRenderer.material;
-            }
-
-            if (bulbMaterial)
-            {
-                Color emissionColor = new Color(1.0f, 0.88f, 0.65f) * (level * 3.8f);
-                bulbMaterial.SetColor("_EmissionColor", emissionColor);
-                if (level > 0.01f)
-                {
-                    bulbMaterial.EnableKeyword("_EMISSION");
-                }
-                else
-                {
-                    bulbMaterial.DisableKeyword("_EMISSION");
-                }
-            }
         }
     }
 }
