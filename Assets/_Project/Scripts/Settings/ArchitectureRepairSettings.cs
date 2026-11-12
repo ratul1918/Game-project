@@ -15,6 +15,14 @@ namespace TheLightHouse
         [Min(.02f)] public float ceilingThickness = .04f;
         [Min(.04f)] public float stairSoffitDepth = .08f;
         [Min(.02f)] public float handrailThickness = .045f;
+        [Header("Solid stair envelope")]
+        [Min(.2f)] public float solidWallThickness = .4f;
+        public float wallInnerRadius = 5f;
+        public float masonryTop = 9.8f;
+        public float architecturalDoorTop = 2.6f;
+        public float stairGuardHeight = 1.05f;
+        public float stairOpeningMargin = 6f;
+        [Range(1f, 5f)] public float stairMeshAngle = 3f;
         public Vector3 torchAnchor = new(0.24f, -0.22f, 0.45f);
     }
 }

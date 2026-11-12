@@ -252,6 +252,10 @@ Detailed specifications available in [`docs/websocket-messages.md`](docs/websock
 
 The codebase includes comprehensive editor-time and automated runtime validation suites:
 
+- **Build & Play**:
+  - `TheLightHouse -> Play Game (MainMenu)`: Opens `MainMenu.unity` and begins Play Mode in one click.
+  - `TheLightHouse -> Build & Run Standalone (macOS)`: Compiles the full 6-scene campaign (`Builds/macOS/TheLighthouse.app`) and launches it.
+  - `TheLightHouse -> Build & Play -> Build Full Game`: Re-generates and bakes lighting/surfaces across all acts.
 - **Interior Architecture Validation**:
   Execute `TheLightHouse -> Validate Interior Kit` or run `InteriorValidation.cs` to test 8 structural checks (stair headroom $\ge 2.4\text{ m}$, continuous ramp colliders $\approx 32^\circ$, hiding spot tags, NavMesh baking, and logbook page anchors).
 - **Voice System Validation**:
@@ -274,7 +278,7 @@ The LightHouse/
 │   ├── Audio/                    # Spatial sound effects, mixers, voice lines
 │   ├── Materials/                # Packed Metallic-Smoothness PBR materials
 │   ├── Prefabs/                  # Modular interior kit, actors, interactables
-│   ├── Scenes/                   # Playable Acts 1–5, MovementTest, MoodTest
+│   ├── Scenes/                   # Playable Acts 1–5, MainMenu
 │   ├── Scripts/
 │   │   ├── AI/                   # StalkerAI acoustic tracking & state machines
 │   │   ├── Core/                 # GameStateMachine, SceneLoader, Bootstrappers

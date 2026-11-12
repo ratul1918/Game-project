@@ -15,7 +15,7 @@ namespace TheLightHouse.Editor
         static readonly float[] Starts = { 225f, 105f, 345f };
         static readonly float[] Ends = { 435f, 315f, 525f };
 
-        [MenuItem("The LightHouse/Level/Repair Interior Joints")]
+        [MenuItem("TheLightHouse/Level/Repair Interior Joints")]
         public static void ApplyAll()
         {
             if (EditorApplication.isPlaying) throw new InvalidOperationException("Exit Play Mode before repairing geometry.");
@@ -67,13 +67,15 @@ namespace TheLightHouse.Editor
                 if (filter.TryGetComponent<MeshCollider>(out var collider)) collider.sharedMesh = mesh;
             }
 
-            Replace("Repaired Floor 1", .001f, 4.65f, 0, 360, .15f, .14f);
+            Replace("Repaired Floor 1", .001f, settings.wallInnerRadius, 0, 360, .15f, .14f);
             for (int level = 1; level < 4; level++)
                 Replace($"Repaired Floor {level + 1} Central", .001f, 3.15f, 0, 360,
                     ArchitectureCollisionOverhaul.Levels[level], level == 3 ? .16f : .14f);
-            float gapAngle = settings.interiorJointGap / 3.25f * Mathf.Rad2Deg;
-            Replace("Repaired Floor 2 Outer", 3.15f, 4.65f, 75f + gapAngle, 220f, 3.35f, .14f);
-            Replace("Repaired Floor 3 Outer", 3.15f, 4.65f, 315f + gapAngle, 460f, 6.55f, .14f);
+            float gapAngle = 0f;
+            float openingMargin = settings.stairOpeningMargin;
+            float openingStart = Starts[0] + (3.2f - settings.headClearance - .18f) / 3.2f * 210f - openingMargin;
+            Replace("Repaired Floor 2 Outer", 3.15f, settings.wallInnerRadius, 75f + gapAngle, openingStart, 3.35f, .14f);
+            Replace("Repaired Floor 3 Outer", 3.15f, settings.wallInnerRadius, 315f + gapAngle, openingStart + 240f, 6.55f, .14f);
             Replace("Repaired Landing 4", 3.15f, 4.85f, 165f + gapAngle, 200f, 9.75f, .16f);
             // The landing already fills this part of the catwalk; adjoining edges replace coplanar slabs.
             Replace("Lantern Balcony Catwalk", 3.35f, 4.85f, 200f, 340f, 9.75f, .16f);
@@ -87,7 +89,7 @@ namespace TheLightHouse.Editor
                 {
                     float a = Mathf.Lerp(Starts[flight], Ends[flight], (float)step / treads.Length);
                     float b = Mathf.Lerp(Starts[flight], Ends[flight], (float)(step + 1) / treads.Length);
-                    float y = Mathf.Lerp(lower, upper, (float)(step + 1) / treads.Length);
+                    float y = Mathf.Lerp(lower, upper, (float)step / (treads.Length - 1));
                     Replace($"Visual Tread {flight + 1}-{step}", 3.25f, 4.65f, a, b, y,
                         (upper - lower) / treads.Length + settings.stairSoffitDepth);
                 }
@@ -100,7 +102,7 @@ namespace TheLightHouse.Editor
                 var mesh = Object.Instantiate(source);
                 mesh.name = floor.name + " Ceiling";
                 var vertices = mesh.vertices;
-                float top = source.bounds.min.y - settings.interiorJointGap;
+                float top = source.bounds.min.y;
                 for (int i = 0; i < vertices.Length; i++)
                     vertices[i].y = Mathf.Lerp(top - settings.ceilingThickness, top,
                         Mathf.InverseLerp(source.bounds.min.y, source.bounds.max.y, vertices[i].y));
@@ -139,6 +141,7 @@ namespace TheLightHouse.Editor
                     .OrderBy(t => int.Parse(t.name.Split(' ').Last())).ToArray();
                 for (int i = 1; i < posts.Length; i++) Rail(posts[i - 1], posts[i], group.name + " Handrail " + i);
             }
+            LighthouseSolidEnvelopeRepair.ApplyCurrent();
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
     }

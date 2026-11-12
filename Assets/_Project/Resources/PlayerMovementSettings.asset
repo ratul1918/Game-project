@@ -25,8 +25,9 @@ MonoBehaviour:
   coyoteTime: 0.12
   jumpBuffer: 0.15
   groundedVelocity: -2
-  slopeLimit: 45
-  stepOffset: 0.3
+  slopeLimit: 38
+  stepOffset: 0.2
+  capsuleRadius: 0.3
   skinWidth: 0.04
   groundProbeDistance: 0.12
   groundProbeInset: 0.04
