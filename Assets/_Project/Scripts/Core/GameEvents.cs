@@ -231,6 +231,7 @@ namespace TheLightHouse
             ObjectiveChanged = null;
             DialogueRequested = null;
             FlashlightToggled = null;
+            TorchEquippedChanged = null;
             NoiseEmitted = null;
             LampStateChanged = null;
             FuelChanged = null;
@@ -294,6 +295,8 @@ namespace TheLightHouse
         public static event Action<TheLightHouse.Voice.VoiceLine> VoiceLineStarted;
         public static event Action<TheLightHouse.Voice.VoiceLine> VoiceLineEnded;
         public static event Action<bool> FlashlightToggled;
+        public static event Action<bool> TorchEquippedChanged;
+        public static void RaiseTorchEquippedChanged(bool equipped) => TorchEquippedChanged?.Invoke(equipped);
         public static void RaiseGameStateChanged(GameStateChangedEvent e) => GameStateChanged?.Invoke(e);
         public static void RaiseLampNotLitInTime() => LampNotLitInTime?.Invoke();
         public static void RaiseStorySignal(string id) => StorySignal?.Invoke(id);

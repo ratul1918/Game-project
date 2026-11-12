@@ -48,8 +48,10 @@ The lighthouse tower maintains its classic round, tapered stone exterior shell, 
 - **Access Doors & Landings**: Rectangular doorways (1.1 m width × 2.2 m height) at Floor 2 (Mid-Level Study) and Floor 3 (Upper Service Watchroom) with 1.5 × 1.5 m flat stone landings and standard wooden doors with interaction triggers.
 - **Subterranean Vault & Descent**: Heavy arched stone cellar door with 1.2 × 2.4 m masonry portal in keeper's house storeroom descends 4.5 m into bedrock via straight stone stairs with smooth ramp collider. Vaulted barrel-arch corridor with conduit, cable runs, supply crates, puddles, and iron drums. `WetFootprints` lead into the corridor with zero footprints exiting.
 - **Hidden Room**: Behind sliding barrel stack (`hidden shelf`), housing the recorded transmitter with script-driven reel rotation (`ReelRotator`), glowing tube radios, nautical charts marked with the *Marguerite* wreck, the harbor board ledger, and the photograph of the ship *Marguerite*.
+- **Exterior & Surface Rendering**: Island ground mesh uses `TheLightHouse/CoastalIsland.shader` with Triplanar coastal mud diffuse, normal, and mask layers, clustered URP Forward+ multi-compile, and an ambient nighttime reflection floor to prevent pitch-black void rendering. Tower stone walls utilize double-sided culling (`_Cull: 0`) and `TowerWindowEnclosure` to ensure window embrasures contain solid dark glazed frames and stone reveals with zero transparent through-wall voids.
+- **HUD Toast Layout**: `InventoryStrip` is anchored at Y: (0.16, 0.20) with auto-fade timeout (`RestartFade`) to prevent visual collision with `SubtitleUI` (anchored at Y: 0.08). Boatman opening dialogue sequences utilize unscaled time advancement with player skip options to prevent input freezes.
 - **Cottage Interior & Dining Table**: Unshaded/white placeholders and spiky sunflower/lantern artifacts removed. Weathered oak dining table features UV-unwrapped props (steaming ceramic stew bowl with steam emitter, ceramic tea cup, dark crust bread loaf, wooden spoon) resting flush on the tabletop under warm overhead lamp illumination. Clear >= 1.0 m aperture doorway between living room and kitchen.
-- **Flashlight FPV Rig**: Handheld vintage flashlight scaled to 4 cm barrel diameter and 22 cm length, anchored at (0.24, -0.22, 0.45) in the lower right of camera view. Spotlight beam emanates directly from the lens glass aimed precisely at screen center.
+- **Flashlight FPV Rig**: Handheld vintage flashlight scaled to 4 cm barrel diameter and 22 cm length, anchored at (0.24, -0.22, 0.45) in the lower right of camera view. Spotlight beam emanates directly from the front lens glass and aligns with the barrel's forward direction into the environment, culled from the viewmodel layer to prevent illuminating or clipping through the hand and torch model.
 - **Hiding Spots**: 10 canonical hiding spots across the complex (`keeper-wardrobe`, `pantry-cupboard`, `generator-locker`, `boat-shed-crate`, `vestibule-nook`, `crane-wardrobe`, `watchroom-alcove`, `lantern-cabinet`, `cellar-coal-bin`, `hidden-room-crate`).
 - **Navigation**: NavMesh baked directly from physics colliders (`agentRadius = 0.4`, `agentHeight = 1.8`, `agentSlope = 45`, `agentClimb = 0.3`). NavMeshLinks span stair flights, doorways, and subterranean thresholds. Continuous path verified from House Entry to Lantern Room, Crane's Room, and Cellar Hidden Room.
 
@@ -84,3 +86,16 @@ Validation automated via:
 - `TheLightHouse.Editor.ArchitectureTraversalValidation.Inspect()`: 0 issues across all 5 acts (minimum 484 clearance/floor samples per act).
 - `TheLightHouse.Editor.LevelBuildValidation.ValidateBatch()`: PASSED across Acts 1–5.
 - `TheLightHouse.Editor.InteriorValidation.ValidateAll()`: PASSED across Acts 1–5.
+
+## Interior joint repair (2026-11-10; supersedes older tower dimensions above)
+
+The current Acts 1–5 tower has four decks at 0.15, 3.35, 6.55 and
+9.75 m, joined by three perimeter spiral flights. Preserve this layout and
+all story props. Each upper deck keeps the incoming stair opening clear.
+Floor surfaces must stop 0.02 m beyond the final tread rather than overlapping
+it. Stair treads have closed risers down to the supporting stringer depth;
+the continuous ramp remains the walking collider. Ceilings are separate solid
+meshes 0.02 m below the floor underside and reproduce exactly the same holes.
+The lantern landing and balcony must meet edge-to-edge, without duplicate
+coplanar faces. Inner stair rails and well guards have continuous handrails.
+The repair is repeatable and runs after the existing tower authoring pass.

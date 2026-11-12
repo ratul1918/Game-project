@@ -62,7 +62,7 @@ namespace TheLightHouse
         private Coroutine _flickerRoutine;
         private float _bobTimer;
 
-        public bool IsOn => isOn;
+        public bool IsOn => GetComponentInParent<FPVFlashlightHandsController>() is { } hands ? hands.IsOn : isOn;
 
         private void Awake()
         {
@@ -75,17 +75,17 @@ namespace TheLightHouse
 
             _fpc = GetComponentInParent<FirstPersonController>();
 
-            EnsureComponents();
+            if (!GetComponentInParent<FPVFlashlightHandsController>()) EnsureComponents();
         }
 
         private void Start()
         {
-            SetFlashlightOn(startsOn, playAudio: false);
+            if (!GetComponentInParent<FPVFlashlightHandsController>()) SetFlashlightOn(startsOn, playAudio: false);
         }
 
         private void OnEnable()
         {
-            if (toggleAction != null && toggleAction.action != null)
+            if (!GetComponentInParent<FPVFlashlightHandsController>() && toggleAction != null && toggleAction.action != null)
             {
                 toggleAction.action.Enable();
                 toggleAction.action.performed += OnTogglePerformed;
@@ -94,7 +94,7 @@ namespace TheLightHouse
 
         private void OnDisable()
         {
-            if (toggleAction != null && toggleAction.action != null)
+            if (!GetComponentInParent<FPVFlashlightHandsController>() && toggleAction != null && toggleAction.action != null)
             {
                 toggleAction.action.performed -= OnTogglePerformed;
                 toggleAction.action.Disable();
@@ -149,6 +149,8 @@ namespace TheLightHouse
 
         public void SetFlashlightOn(bool state, bool playAudio = true)
         {
+            var hands = GetComponentInParent<FPVFlashlightHandsController>();
+            if (hands) { hands.SetLight(state); return; }
             isOn = state;
 
             if (_flickerRoutine != null)
@@ -158,7 +160,7 @@ namespace TheLightHouse
             }
 
             if (spotLight) spotLight.enabled = isOn;
-            if (fillLight) fillLight.enabled = isOn;
+            if (fillLight) { fillLight.enabled = false; fillLight.intensity = 0f; }
 
             UpdateBulbEmission(isOn ? 1.0f : 0.0f);
 
@@ -213,8 +215,8 @@ namespace TheLightHouse
 
                 if (fillLight)
                 {
-                    fillLight.enabled = intensityMult > 0.01f;
-                    fillLight.intensity = fillIntensity * intensityMult;
+                    fillLight.enabled = false;
+                    fillLight.intensity = 0f;
                 }
 
                 UpdateBulbEmission(intensityMult);
@@ -233,8 +235,8 @@ namespace TheLightHouse
 
             if (fillLight)
             {
-                fillLight.enabled = isOn;
-                fillLight.intensity = fillIntensity;
+                fillLight.enabled = false;
+                fillLight.intensity = 0f;
             }
 
             UpdateBulbEmission(isOn ? 1.0f : 0.0f);
@@ -298,7 +300,7 @@ namespace TheLightHouse
 
         public void SetupLightsAndAudio()
         {
-            EnsureComponents();
+            if (!GetComponentInParent<FPVFlashlightHandsController>()) EnsureComponents();
         }
 
         private void EnsureComponents()
@@ -323,13 +325,27 @@ namespace TheLightHouse
 #endif
             }
 
+            // Configure Front Lens Socket
+            var socket = transform.Find("Flashlight_Lens_Socket");
+            if (!socket)
+            {
+                var socketGo = new GameObject("Flashlight_Lens_Socket");
+                socketGo.transform.SetParent(transform, false);
+                socket = socketGo.transform;
+            }
+            socket.localPosition = new Vector3(0f, 0f, 0.075f);
+            socket.localRotation = Quaternion.identity;
+
+            int vmLayer = LayerMask.NameToLayer("Viewmodel");
+            if (vmLayer < 0) vmLayer = 2;
+
             // Configure Spot Light
             if (!spotLight)
             {
-                var existingSpot = transform.Find("Flashlight_Primary_Spot");
+                var existingSpot = socket.Find("Flashlight_Primary_Spot") ?? transform.Find("Flashlight_Primary_Spot");
                 var spotGo = existingSpot ? existingSpot.gameObject : new GameObject("Flashlight_Primary_Spot");
-                spotGo.transform.SetParent(transform, false);
-                spotGo.transform.localPosition = new Vector3(0, 0, 0.15f);
+                spotGo.transform.SetParent(socket, false);
+                spotGo.transform.localPosition = Vector3.zero;
                 spotGo.transform.localRotation = Quaternion.identity;
 
                 spotLight = spotGo.GetComponent<Light>();
@@ -338,6 +354,9 @@ namespace TheLightHouse
 
             if (spotLight)
             {
+                spotLight.transform.SetParent(socket, false);
+                spotLight.transform.localPosition = Vector3.zero;
+                spotLight.transform.localRotation = Quaternion.identity;
                 spotLight.type = LightType.Spot;
                 spotLight.range = spotRange;
                 spotLight.innerSpotAngle = spotInnerAngle;
@@ -345,16 +364,20 @@ namespace TheLightHouse
                 spotLight.color = lightColor;
                 spotLight.intensity = spotIntensity;
                 spotLight.shadows = LightShadows.Soft;
+                spotLight.shadowNearPlane = 0.05f;
+                spotLight.cullingMask &= ~(1 << vmLayer);
+                spotLight.renderingLayerMask = 1;
                 if (lensCookie) spotLight.cookie = lensCookie;
             }
 
             // Configure Fill Light
             if (!fillLight)
             {
-                var existingFill = transform.Find("Flashlight_Ambient_Fill");
+                var existingFill = socket.Find("Flashlight_Ambient_Fill") ?? transform.Find("Flashlight_Ambient_Fill");
                 var fillGo = existingFill ? existingFill.gameObject : new GameObject("Flashlight_Ambient_Fill");
-                fillGo.transform.SetParent(transform, false);
-                fillGo.transform.localPosition = new Vector3(0, 0, 0.15f);
+                fillGo.transform.SetParent(socket, false);
+                fillGo.transform.localPosition = Vector3.zero;
+                fillGo.transform.localRotation = Quaternion.identity;
 
                 fillLight = fillGo.GetComponent<Light>();
                 if (!fillLight) fillLight = fillGo.AddComponent<Light>();
@@ -362,11 +385,17 @@ namespace TheLightHouse
 
             if (fillLight)
             {
+                fillLight.transform.SetParent(socket, false);
+                fillLight.transform.localPosition = Vector3.zero;
+                fillLight.transform.localRotation = Quaternion.identity;
                 fillLight.type = LightType.Point;
                 fillLight.range = fillRange;
                 fillLight.color = lightColor;
-                fillLight.intensity = fillIntensity;
+                fillLight.intensity = 0f;
+                fillLight.enabled = false;
                 fillLight.shadows = LightShadows.None;
+                fillLight.cullingMask &= ~(1 << vmLayer);
+                fillLight.renderingLayerMask = 1;
             }
         }
 

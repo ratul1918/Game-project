@@ -64,7 +64,7 @@ namespace TheLightHouse
         Transform player;
         StalkerAI stalker;
         LampState currentLamp;
-        Coroutine checkpointRoutine,pageRoutine,roomRoutine,noiseRoutine,staminaRoutine,lampRoutine,objectiveRoutine;
+        Coroutine checkpointRoutine,pageRoutine,roomRoutine,noiseRoutine,staminaRoutine,lampRoutine,objectiveRoutine,inventoryRoutine;
         readonly StringBuilder inventoryBuilder=new();
 
         void Awake()
@@ -73,7 +73,18 @@ namespace TheLightHouse
             stalker=FindAnyObjectByType<StalkerAI>();
             ApplySettings();
             SetAlpha(checkpointToast,0);SetAlpha(pageToast,0);SetAlpha(roomToast,0);
-            SetAlpha(noiseGroup,0);SetAlpha(staminaGroup,0);SetAlpha(lampGroup,0);SetAlpha(objectiveGroup,0);
+            SetAlpha(noiseGroup,0);SetAlpha(staminaGroup,0);SetAlpha(lampGroup,0);SetAlpha(objectiveGroup,0);SetAlpha(inventoryGroup,0);
+            if(inventoryRoot)
+            {
+                var rt=inventoryRoot.GetComponent<RectTransform>();
+                if(rt)
+                {
+                    rt.anchorMin=new Vector2(0.31f,0.16f);
+                    rt.anchorMax=new Vector2(0.69f,0.20f);
+                    rt.offsetMin=Vector2.zero;
+                    rt.offsetMax=Vector2.zero;
+                }
+            }
         }
 
         void OnEnable()
@@ -148,7 +159,15 @@ namespace TheLightHouse
             RestartFade(ref objectiveRoutine, objectiveGroup, objectiveVisibleSeconds);
         }
         void UpdateObjectiveVisibility(){if(objectiveGroup&&Keyboard.current!=null&&Keyboard.current.anyKey.wasPressedThisFrame){ShowGroup(objectiveGroup);RestartFade(ref objectiveRoutine,objectiveGroup,objectiveVisibleSeconds);}}
-        void Item(ItemCollectedEvent value){if(!inventoryText)return;if(inventoryBuilder.Length>0)inventoryBuilder.Append("  •  ");inventoryBuilder.Append(value.Id);inventoryText.text=inventoryBuilder.ToString();ShowGroup(inventoryGroup);}
+        void Item(ItemCollectedEvent value)
+        {
+            if(!inventoryText)return;
+            if(inventoryBuilder.Length>0)inventoryBuilder.Append("  •  ");
+            inventoryBuilder.Append(value.Id);
+            inventoryText.text=inventoryBuilder.ToString();
+            ShowGroup(inventoryGroup);
+            RestartFade(ref inventoryRoutine,inventoryGroup,toastDuration);
+        }
         void Checkpoint(CheckpointReachedEvent value){ShowToast(ref checkpointRoutine,checkpointToast,checkpointText,$"Checkpoint — {value.Id}");}
         void Page(PageReadEvent value){ShowToast(ref pageRoutine,pageToast,pageText,$"Page added — {value.Id}");}
         void Room(RoomEnteredEvent value){if(settings&&settings.ShowRoomNames)ShowToast(ref roomRoutine,roomToast,roomText,$"{value.DisplayName}\n<size=70%>Floor {value.FloorLevel}</size>",false);}

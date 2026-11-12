@@ -80,6 +80,7 @@ namespace TheLightHouse
 
         private void Awake()
         {
+            if (Time.timeScale <= 0f) Time.timeScale = 1.0f;
             characterController = GetComponent<CharacterController>();
             if (cameraTransform) pitch = Mathf.DeltaAngle(0f, cameraTransform.localEulerAngles.x);
             noiseEmitter ??= GetComponent<NoiseEmitter>();
@@ -101,6 +102,8 @@ namespace TheLightHouse
             Ensure<StaminaBar>();
             if (cameraTransform && cameraTransform.TryGetComponent<Camera>(out var viewCamera))
                 viewCamera.nearClipPlane = settings.cameraNearClip;
+            characterController.radius = settings.capsuleRadius;
+            characterController.minMoveDistance = 0f;
             characterController.slopeLimit = settings.slopeLimit;
             characterController.skinWidth = settings.skinWidth;
             arms = GetComponentInChildren<FirstPersonArms>();
@@ -263,6 +266,8 @@ namespace TheLightHouse
             characterController.stepOffset = groundBefore ? Mathf.Min(settings.stepOffset, characterController.height) : 0f;
             Vector3 previousPosition = transform.position;
             CollisionFlags flags = characterController.Move((horizontalVelocity + Vector3.up * verticalVelocity) * dt);
+            if (groundBefore && verticalVelocity <= 0f && (flags & CollisionFlags.Below) == 0)
+                flags |= ControllerGrounding.Snap(characterController, settings);
             if ((flags & CollisionFlags.Above) != 0 && verticalVelocity > 0f) verticalVelocity = 0f;
             Grounded = verticalVelocity <= 0f && ((flags & CollisionFlags.Below) != 0 || ProbeGround(out groundHit));
             if (Grounded) surface.Detect(groundHit, settings);
@@ -296,15 +301,7 @@ namespace TheLightHouse
             }
         }
 
-        private bool ProbeGround(out RaycastHit hit)
-        {
-            float radius = Mathf.Max(settings.groundProbeInset, characterController.radius - settings.groundProbeInset);
-            Vector3 origin = transform.position + Vector3.up * (characterController.radius + settings.groundProbeInset);
-            if (!Physics.SphereCast(origin, radius, Vector3.down, out hit,
-                settings.groundProbeDistance + settings.groundProbeInset * 2f,
-                Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) return false;
-            return Vector3.Angle(hit.normal, Vector3.up) <= settings.slopeLimit;
-        }
+        private bool ProbeGround(out RaycastHit hit) => ControllerGrounding.Probe(characterController, settings, out hit);
 
         private void UpdateCrouch(bool requested)
         {

@@ -23,6 +23,7 @@ namespace TheLightHouse
         public float groundedVelocity = -2f;
         [Range(0, 89)] public float slopeLimit = 45f;
         [Min(0)] public float stepOffset = .3f;
+        [Min(.1f)] public float capsuleRadius = .3f;
         [Min(.001f)] public float skinWidth = .04f;
         [Min(.001f)] public float groundProbeDistance = .12f;
         [Min(.001f)] public float groundProbeInset = .04f;

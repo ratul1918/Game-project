@@ -156,8 +156,11 @@ namespace TheLightHouse
             // Front Lens Socket for Light Components
             var lensSocket = new GameObject("Flashlight_Lens_Socket");
             lensSocket.transform.SetParent(flashlightGo.transform, false);
-            lensSocket.transform.localPosition = new Vector3(0f, 0f, 0.22f);
+            lensSocket.transform.localPosition = new Vector3(0f, 0f, 0.075f);
             lensSocket.transform.localRotation = Quaternion.identity;
+
+            int vmLayer = LayerMask.NameToLayer("Viewmodel");
+            if (vmLayer < 0) vmLayer = 2;
 
             // Spot Light
             var spotGo = new GameObject("Flashlight_Primary_Spot");
@@ -172,6 +175,9 @@ namespace TheLightHouse
             spot.color = new Color(1.0f, 0.957f, 0.839f);
             spot.intensity = 24f;
             spot.shadows = LightShadows.Soft;
+            spot.shadowNearPlane = 0.05f;
+            spot.cullingMask &= ~(1 << vmLayer);
+            spot.renderingLayerMask = 1;
 
 #if UNITY_EDITOR
             var cookie = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/_Project/Art/Textures/Lighting/flashlight_cookie_grungy.png");
@@ -187,8 +193,11 @@ namespace TheLightHouse
             fill.type = LightType.Point;
             fill.range = 1.25f;
             fill.color = new Color(1.0f, 0.957f, 0.839f);
-            fill.intensity = 0.85f;
+            fill.intensity = 0f;
+            fill.enabled = false;
             fill.shadows = LightShadows.None;
+            fill.cullingMask &= ~(1 << vmLayer);
+            fill.renderingLayerMask = 1;
 
             // Audio Sources (1 for switch click & rustle, 1 for continuous filament hum loop)
             var sfxAudio = rootGo.AddComponent<AudioSource>();

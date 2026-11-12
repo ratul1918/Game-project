@@ -15,7 +15,6 @@ namespace TheLightHouse.Editor
         const string RootName = "[Graphics 1]";
         const string SettingsFolder = "Assets/_Project/Settings";
         const string MaterialFolder = "Assets/_Project/Materials/Graphics1";
-        const string MoodScene = "Assets/_Project/Scenes/MoodTest.unity";
         static readonly string[] ActScenes = {
             "Assets/_Project/Scenes/Act1.unity",
             "Assets/_Project/Scenes/Act2.unity",
@@ -36,11 +35,10 @@ namespace TheLightHouse.Editor
             Sprite glow = CreateGlowSprite();
             foreach (string path in ActScenes)
                 if (File.Exists(path)) ApplyToScene(path, settings, profiles, fogMaterial, beamMaterial, cone, glow);
-            BuildMoodTest(settings, profiles, fogMaterial, beamMaterial, cone, glow);
             ConfigureLightmapping();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("Graphics 1 applied to Acts 1-5 and MoodTest with realistic maritime horror atmosphere and soft shadows.");
+            Debug.Log("Graphics 1 applied to Acts 1-5 with realistic maritime horror atmosphere and soft shadows.");
         }
 
         static void EnsureFolders()
@@ -344,31 +342,6 @@ namespace TheLightHouse.Editor
             LightmapEditorSettings.maxAtlasSize = 1024;
             LightmapEditorSettings.padding = 2;
 #pragma warning restore 618
-        }
-
-        static void BuildMoodTest(AtmosphereSettings settings, VolumeProfile[] profiles, Material fogMaterial, Material beamMaterial, Mesh cone, Sprite glow)
-        {
-            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            Cube("Ground", new(0, -.25f, 0), new(35, .5f, 35));
-            Cube("Tower", new(0, 4, 4), new(10, 8, 10));
-            Cube("Dock", new(0, .1f, -13), new(5, .3f, 14));
-            var figure = Cube("Figure Silhouette", new(5, 1, -11), new(.7f, 2.2f, .5f));
-            var renderer = figure.GetComponent<Renderer>();
-            var silhouette = CreateMaterial(MaterialFolder + "/Silhouette.mat", "Universal Render Pipeline/Lit", new Color(.015f, .02f, .025f));
-            renderer.sharedMaterial = silhouette;
-            var cameraObject = new GameObject("Mood Camera", typeof(Camera));
-            cameraObject.tag = "MainCamera";
-            cameraObject.transform.position = new(13, 7, -20);
-            cameraObject.transform.LookAt(new Vector3(0, 3, 0));
-            var sunObject = new GameObject("Dusk Sun", typeof(Light));
-            var sun = sunObject.GetComponent<Light>();
-            sun.type = LightType.Directional;
-            sun.transform.rotation = Quaternion.Euler(28, -35, 0);
-            var lampObject = new GameObject("Lamp", typeof(Light), typeof(LampController));
-            lampObject.transform.position = new(0, 7, 4);
-            ApplyToOpenScene(settings, profiles, fogMaterial, beamMaterial, cone, glow, true);
-            ConfigureLightmapping();
-            EditorSceneManager.SaveScene(scene, MoodScene);
         }
 
         static GameObject Cube(string name, Vector3 position, Vector3 scale)

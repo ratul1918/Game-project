@@ -57,3 +57,23 @@ stairs climbed; all three ledges reached with a running approach;
 hidden-state movement blocked; hard landing at 30 m base loudness;
 stamina reaching zero, sprint lockout and regeneration; and recovery above the kill plane.
 No manual mouse/camera comfort evaluation or complete Act 1 dialogue/interaction replay was performed.
+
+## Pocket torch
+
+`1` equips/unequips the owned torch; `F` switches its light only while fully equipped.
+A small HUD hint reads `[1] Equip Torch | [F] Toggle Light`. Pocketing switches off
+the beam and hides the entire hand after a smooth draw/holster motion. The previous
+light preference returns on drawing. No pickup, story, environment, or fuel behavior changes.
+The right hand and flashlight share one grip frame; camera-local sway is applied after
+camera motion. A sphere probe retracts the assembly near solid surfaces, excluding the
+player and triggers. Existing scene rigs are upgraded at runtime without rewriting scenes.
+
+## Stair grounding acceptance — 2026-11-11
+
+Standing capsule: 1.8 m high, 0.30 m radius, 0.04 m skin, 0.30 m step offset,
+45 degree slope limit, zero minimum move distance. Ground probes ignore the
+player's own collider and reject steep normals. A short downward snap after
+non-jumping grounded movement follows descending ramps without airborne chatter;
+it must not bridge unsupported gaps or snap a jumping player back down.
+The editor's third-person stair inspection uses the same dimensions and shared
+movement settings, with WASD and mouse orbit; it is a diagnostic mode only.

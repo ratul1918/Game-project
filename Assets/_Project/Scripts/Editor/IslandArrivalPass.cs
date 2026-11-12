@@ -98,7 +98,7 @@ namespace TheLightHouse.Editor
             var old=GameObject.Find(RootName);if(old)Object.DestroyImmediate(old);
             root=new GameObject(RootName).transform;
             foreach(var fog in Object.FindObjectsByType<FogCards>(FindObjectsSortMode.None))fog.gameObject.SetActive(false);
-            foreach(string name in new[]{"Beach","Sea Plane","Cliff West","Cliff East","Dock","Cliff Path","Courtyard Window L0","Shallows Window L0","Salt Grass"})
+            foreach(string name in new[]{"Beach","Sea Plane","Cliff West","Cliff East","Dock","Cliff Path","Courtyard Window L0","Shallows Window L0","Salt Grass","Flooded Corridor","Flooded Corridor Trigger"})
             {
                 var go=GameObject.Find(name);if(!go)continue;
                 foreach(var r in go.GetComponents<Renderer>())r.enabled=false;
@@ -405,7 +405,30 @@ namespace TheLightHouse.Editor
         {
             var points=new List<Vector3>();var triangles=new List<int>();int n=settings.seaSegments;
             for(int z=0;z<=n;z++)for(int x=0;x<=n;x++)points.Add(new((x/(float)n-.5f)*settings.seaSize,settings.seaLevel,(z/(float)n-.5f)*settings.seaSize));
-            for(int z=0;z<n;z++)for(int x=0;x<n;x++){int k=z*(n+1)+x;triangles.AddRange(new[]{k,k+n+1,k+1,k+1,k+n+1,k+n+2});}
+            for(int z=0;z<n;z++)
+            {
+                for(int x=0;x<n;x++)
+                {
+                    float cx=((x+0.5f)/(float)n-0.5f)*settings.seaSize;
+                    float cz=((z+0.5f)/(float)n-0.5f)*settings.seaSize;
+
+                    // Preserve water in dock cove & boat berth slipway
+                    bool isDockCove = (cx < 1.0f && cx > -22.0f && cz < -24.0f);
+
+                    // Island landmass cutout boundary to prevent ocean geometry from penetrating island & cellar interior
+                    float nx = cx / 23.0f;
+                    float nz = (cz + 6.0f) / 28.0f;
+                    bool isInsideIsland = !isDockCove && ((nx * nx + nz * nz) < 0.95f);
+
+                    if (isInsideIsland)
+                    {
+                        continue;
+                    }
+
+                    int k=z*(n+1)+x;
+                    triangles.AddRange(new[]{k,k+n+1,k+1,k+1,k+n+1,k+n+2});
+                }
+            }
             MeshObject("Open Sea",SaveMesh("Sea",points,triangles),water,root);
         }
 

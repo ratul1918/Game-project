@@ -1,0 +1,7 @@
+Act5: FAIL; 4527 Move calls; 14 stops; 3 wall pushes; 6 failures
+Ascending r=3.65 sample 130 blocked at (3.50, 3.46, -1.21), target (3.43, 3.43, -1.25)
+Descending r=3.65 sample 1 blocked at (0.13, 9.79, -3.70), target (0.13, 9.75, -3.65)
+Ascending r=3.925 sample 233 blocked at (-2.78, 6.59, 2.79), target (-2.73, 6.55, 2.82)
+Descending r=3.925 sample 106 blocked at (-2.03, 6.59, 3.35), target (-2.08, 6.55, 3.33)
+Ascending r=4.25 sample 234 blocked at (-2.87, 6.59, 3.17), target (-2.84, 6.55, 3.16)
+Descending r=4.25 sample 108 blocked at (-2.52, 6.59, 3.47), target (-2.50, 6.55, 3.44)

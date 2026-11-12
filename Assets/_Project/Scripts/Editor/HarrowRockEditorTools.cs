@@ -14,6 +14,34 @@ namespace TheLightHouse.Editor
         private const string IslandScenePath = "Assets/_Project/Scenes/Act1.unity";
         private const string IslandSceneFallback = "Assets/Scenes/HarrowRock.unity";
 
+        // --- PLAY GAME ---
+        [MenuItem("TheLightHouse/Play Game (MainMenu)", priority = 0)]
+        [MenuItem("TheLightHouse/Build & Play/Play Game (MainMenu)", priority = 0)]
+        public static void PlayGameFromMainMenu()
+        {
+            if (EditorApplication.isPlaying)
+            {
+                EditorApplication.isPlaying = false;
+                Debug.Log("[HarrowRock] Stopping Play Mode.");
+                return;
+            }
+
+            if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                string path = File.Exists(MainMenuScenePath) ? MainMenuScenePath : MainMenuSceneFallback;
+                if (File.Exists(path))
+                {
+                    EditorSceneManager.OpenScene(path);
+                    EditorApplication.isPlaying = true;
+                    Debug.Log($"[HarrowRock] Opened {path} and launched Play Mode.");
+                }
+                else
+                {
+                    Debug.LogError($"[HarrowRock] Main Menu scene not found at {path}");
+                }
+            }
+        }
+
         // --- QUICK SCENES ---
         [MenuItem("TheLightHouse/Quick Scenes/Open Main Menu", priority = 1)]
         public static void OpenMainMenu()
@@ -48,6 +76,7 @@ namespace TheLightHouse.Editor
         }
 
         // --- BUILD SYSTEM ---
+        [MenuItem("TheLightHouse/Build & Play/Build Full Game", priority = 2)]
         [MenuItem("TheLightHouse/Build/Build Full Game", priority = 20)]
         public static void BuildFullGame()
         {
@@ -55,6 +84,7 @@ namespace TheLightHouse.Editor
             BuildFullGameScenes.Build();
         }
 
+        [MenuItem("TheLightHouse/Build & Play/Build & Run Standalone (macOS)", priority = 1)]
         [MenuItem("TheLightHouse/Build/Build & Run Standalone (macOS)", priority = 21)]
         public static void BuildStandalone()
         {
@@ -119,8 +149,8 @@ namespace TheLightHouse.Editor
             Debug.Log("[HarrowRock QA] Validation screenshots captured to docs/level-previews/");
         }
 
-        // --- UNIFIED TOOLS MENU ---
-        [MenuItem("Tools/Harrow Rock/Setup Active Scene Environment", priority = 10)]
+        // --- ENVIRONMENT & QA ---
+        [MenuItem("TheLightHouse/Environment/Setup Active Scene Environment", priority = 30)]
         public static void SetupActiveSceneEnvironment()
         {
             Debug.Log("[HarrowRock] Setting up active scene environment & collision overhaul...");
@@ -128,7 +158,7 @@ namespace TheLightHouse.Editor
             Debug.Log("[HarrowRock] Active scene environment setup complete.");
         }
 
-        [MenuItem("Tools/Harrow Rock/Capture QA Validation Suite", priority = 11)]
+        [MenuItem("TheLightHouse/QA & Validation/Capture QA Validation Suite", priority = 43)]
         public static void CaptureQAValidationSuite()
         {
             Debug.Log("[HarrowRock QA] Capturing complete QA validation suite...");

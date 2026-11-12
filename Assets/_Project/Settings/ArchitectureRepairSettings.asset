@@ -19,4 +19,15 @@ MonoBehaviour:
   roomDoorHeight: 2.2
   cellarWidth: 1.4
   cellarDescent: 4.5
+  interiorJointGap: 0.02
+  ceilingThickness: 0.04
+  stairSoffitDepth: 0.08
+  handrailThickness: 0.045
+  solidWallThickness: 0.4
+  wallInnerRadius: 5
+  masonryTop: 9.8
+  architecturalDoorTop: 2.6
+  stairGuardHeight: 1.05
+  stairOpeningMargin: 6
+  stairMeshAngle: 3
   torchAnchor: {x: 0.24, y: -0.22, z: 0.45}
